@@ -1,0 +1,130 @@
+.exam-schedule-root .exam-schedule-filters .col-form-label {
+  font-weight: 500;
+}
+
+.exam-schedule-root .exam-schedule-semester-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.exam-schedule-root .exam-schedule-semester-option {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #dee2e6;
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.exam-schedule-root .exam-schedule-semester-option:has(input:checked) {
+  border-color: #0d6efd;
+  background: #f0f6ff;
+  color: #0a4a8f;
+  font-weight: 500;
+}
+
+.exam-schedule-root .exam-schedule-semester-option input {
+  display: none;
+}
+
+.exam-schedule-root .exam-schedule-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.exam-schedule-root .exam-schedule-summary strong {
+  color: #212529;
+}
+
+.exam-schedule-root .exam-schedule-table-wrap {
+  overflow: auto;
+  max-height: min(70vh, 720px);
+}
+
+.exam-schedule-root .exam-schedule-table {
+  margin-bottom: 0;
+  font-size: 0.85rem;
+  min-width: 1080px;
+}
+
+.exam-schedule-root .exam-schedule-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #e9ecef;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.exam-schedule-root .exam-schedule-table tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+.exam-schedule-root .exam-schedule-table .subject-code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  color: #495057;
+}
+
+.exam-schedule-root .exam-schedule-table .subject-name {
+  min-width: 160px;
+  max-width: 220px;
+}
+
+.exam-schedule-root .exam-schedule-session-toggle {
+  display: inline-flex;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.exam-schedule-root .exam-schedule-session-toggle button {
+  border: 0;
+  background: #fff;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+.exam-schedule-root .exam-schedule-session-toggle button.active {
+  background: #0d6efd;
+  color: #fff;
+}
+
+.exam-schedule-root .exam-schedule-chip-select {
+  min-width: 140px;
+}
+
+.exam-schedule-root .exam-schedule-chip-select .chip-multi-select {
+  font-size: 0.8rem;
+}
+
+.exam-schedule-root .exam-schedule-chip-select .chip-multi-select .badge {
+  font-size: 0.72rem;
+  padding: 0.35rem 0.55rem !important;
+}
+
+.exam-schedule-root .exam-schedule-chip-select.invigilator-select {
+  min-width: 180px;
+}
+
+.exam-schedule-root .exam-schedule-mark-input {
+  width: 4rem;
+}
+
+.exam-schedule-root .exam-schedule-empty {
+  border: 1px dashed #dee2e6;
+  border-radius: 0.5rem;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #6c757d;
+  background: #fafbfc;
+}

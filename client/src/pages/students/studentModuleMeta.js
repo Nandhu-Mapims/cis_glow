@@ -1,0 +1,165 @@
+export const STUDENT_CORE_LINKS = [
+  {
+    to: '/students',
+    label: 'Edit Profile',
+    legacy: 'student_profile_edit.php',
+    section: 'Core',
+    icon: 'fa fa-search',
+  },
+  {
+    to: '/students/new',
+    label: 'New Profile',
+    legacy: 'student_profile_add.php',
+    section: 'Core',
+    icon: 'fa fa-user-plus',
+  },
+  {
+    to: '/students/reports',
+    label: 'Student Report',
+    legacy: 'student_profile_export.php',
+    section: 'Core',
+    icon: 'fa fa-file-text-o',
+  },
+];
+
+export const STUDENT_SCREEN_META = {
+  'temp-admission-add': {
+    title: 'Student Admission — Add',
+    legacy: 'student_profile_temp_add.php',
+    type: 'temp-form',
+    hubSection: 'Admission',
+    icon: 'fa fa-plus-circle',
+  },
+  'temp-admission-edit': {
+    title: 'Student Admission — Edit',
+    legacy: 'student_profile_temp_edit.php',
+    type: 'temp-form-search',
+    hubSection: 'Admission',
+    icon: 'fa fa-pencil-square-o',
+  },
+  'temp-affidavit': {
+    title: 'Student Admission — Print',
+    legacy: 'student_profile_temp_affidavit.php',
+    type: 'application-report',
+    hubSection: 'Admission',
+    icon: 'fa fa-print',
+  },
+  'academic-promotion': {
+    title: 'Academic Promotion',
+    legacy: 'student_academic.php',
+    type: 'academic-form',
+    hubSection: 'Admission',
+    icon: 'fa fa-level-up',
+  },
+  promote: {
+    title: 'Promotion',
+    legacy: 'student_promote.php',
+    type: 'promote-form',
+    hubSection: 'Admission',
+    icon: 'fa fa-arrow-up',
+  },
+  'attachments-upload': {
+    title: 'Attachments — Upload',
+    legacy: 'student_attachments.php',
+    type: 'attachments',
+    hubSection: 'Documents & ID',
+    icon: 'fa fa-paperclip',
+  },
+  'attachments-view': {
+    title: 'Attachments — View',
+    legacy: 'student_attachments_view.php',
+    type: 'attachments-view',
+    hubSection: 'Documents & ID',
+    icon: 'fa fa-folder-open-o',
+  },
+  'attachments-report': {
+    title: 'Attachments — Report',
+    legacy: 'student_attachments_report.php',
+    type: 'course-report',
+    hubSection: 'Documents & ID',
+    icon: 'fa fa-list-alt',
+  },
+  'id-card': {
+    title: 'Student ID Card',
+    legacy: 'student_id_card.php',
+    type: 'student-search-report',
+    hubSection: 'Documents & ID',
+    icon: 'fa fa-id-card-o',
+  },
+  'photo-empty': {
+    title: 'Photo Empty Report',
+    legacy: 'student_photo_empty.php',
+    type: 'course-year-report',
+    hubSection: 'Documents & ID',
+    icon: 'fa fa-image',
+  },
+  'photo-upload': {
+    title: 'Upload Photo',
+    legacy: 'student_photo_upload.php',
+    type: 'upload',
+    hubSection: 'Documents & ID',
+    icon: 'fa fa-camera',
+  },
+  'address-label': {
+    title: 'Address Label',
+    legacy: 'student_address.php',
+    type: 'student-search-report',
+    hubSection: 'Documents & ID',
+    icon: 'fa fa-map-marker',
+  },
+  'collage-generate': {
+    title: 'Student/Staff Image — Generate',
+    legacy: 'colage_generate.php',
+    type: 'collage-generate',
+    hubSection: 'Documents & ID',
+    icon: 'fa fa-th',
+  },
+  'collage-image': {
+    title: 'Student/Staff Image',
+    legacy: 'colage_image.php',
+    type: 'collage-image',
+    hubSection: 'Documents & ID',
+    icon: 'fa fa-picture-o',
+  },
+  'alumni-registration': {
+    title: 'Alumni Registration',
+    legacy: 'alumni_registration.php',
+    type: 'alumni-search',
+    hubSection: 'Alumni',
+    icon: 'fa fa-graduation-cap',
+  },
+  'alumni-edit': {
+    title: 'Alumni Profile Edit',
+    legacy: 'alumni_profile_edit.php',
+    type: 'alumni-form',
+    hubSection: 'Alumni',
+    icon: 'fa fa-user-circle-o',
+  },
+  'alumni-report': {
+    title: 'Alumni Report',
+    legacy: 'alumni_report.php',
+    type: 'alumni-filter',
+    hubSection: 'Alumni',
+    icon: 'fa fa-bar-chart',
+  },
+  'alumni-id-card': {
+    title: 'Alumni ID Card',
+    legacy: 'alumni_id_card.php',
+    type: 'alumni-id-card',
+    hubSection: 'Alumni',
+    icon: 'fa fa-id-badge',
+  },
+};
+
+export const STUDENT_SCREEN_LINKS = Object.entries(STUDENT_SCREEN_META).map(([slug, meta]) => ({
+  to: `/students/${slug}`,
+  label: meta.title,
+  legacy: meta.legacy,
+  section: meta.hubSection,
+  icon: meta.icon,
+}));
+
+export const STUDENT_HUB_LINKS = [
+  ...STUDENT_CORE_LINKS,
+  ...STUDENT_SCREEN_LINKS,
+];

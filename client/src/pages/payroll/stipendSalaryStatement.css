@@ -1,0 +1,39 @@
+.stipend-statement-root .stipend-statement-filters .col-form-label {
+  font-weight: 500;
+}
+
+.stipend-statement-root .stipend-statement-report {
+  overflow-x: auto;
+}
+
+.stipend-statement-root .stipend-statement-report table.table-bordered {
+  min-width: 960px;
+  background: #fff;
+  font-size: 0.85rem;
+}
+
+.stipend-statement-root .stipend-statement-report .header1 {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+}
+
+.stipend-statement-root .stipend-statement-report td.text-right,
+.stipend-statement-root .stipend-statement-report th.text-right {
+  text-align: right !important;
+}
+
+.stipend-statement-root .stipend-statement-report td.staff_name,
+.stipend-statement-root .stipend-statement-report th:nth-child(3) {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.stipend-statement-root .stipend-statement-report .signature_table,
+.stipend-statement-root .stipend-statement-report .signature_table_small {
+  margin-top: 2.5rem;
+}
+
+.stipend-statement-root .payroll-report-panel .payroll-report-empty {
+  margin: 0;
+}

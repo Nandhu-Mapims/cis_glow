@@ -1,0 +1,6 @@
+{
+  "name": "cis-crud-tests",
+  "private": true,
+  "type": "module",
+  "description": "HTTP CRUD verification tests for CIS modules"
+}

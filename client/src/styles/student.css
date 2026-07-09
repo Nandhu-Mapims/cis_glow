@@ -1,0 +1,243 @@
+/* ── Student module — profile tabs, hero strip ── */
+
+.cis-student-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cis-student-profile-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.25rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--cis-card-radius);
+  background: linear-gradient(105deg, var(--cis-peach-soft, #fff5f2) 0%, #fff 100%);
+  border: 1px solid var(--cis-border);
+  box-shadow: 0 4px 16px rgba(26, 26, 26, 0.04);
+}
+
+.cis-student-profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.cis-student-profile-photo {
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
+  object-fit: cover;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(26, 26, 26, 0.08);
+  flex-shrink: 0;
+}
+
+.cis-student-profile-name {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--cis-text);
+  margin: 0 0 0.25rem;
+  line-height: 1.2;
+}
+
+.cis-student-profile-meta {
+  font-size: 0.875rem;
+  color: var(--cis-text-muted);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.cis-student-profile-course {
+  font-size: 0.8125rem;
+  color: var(--cis-text-subtle);
+  margin: 0.15rem 0 0;
+}
+
+.cis-student-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.25rem;
+  border-radius: 12px;
+  background: var(--cis-bg-subtle);
+  border: 1px solid var(--cis-border);
+}
+
+.cis-student-tabs .nav-link {
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--cis-text-muted);
+  background: transparent;
+}
+
+.cis-student-tabs .nav-link:hover {
+  color: var(--cis-text);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.cis-student-tabs .nav-link.active {
+  color: #fff;
+  background: var(--cis-primary);
+  box-shadow: 0 2px 8px rgba(var(--cis-primary-rgb), 0.28);
+}
+
+.cis-student-form-card .card-footer {
+  background: var(--cis-bg-subtle);
+  border-top: 1px solid var(--cis-border);
+}
+
+.cis-student-screen-card {
+  border: 1px solid var(--cis-border);
+  border-radius: var(--cis-card-radius);
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(26, 26, 26, 0.04);
+}
+
+.cis-student-screen-card > .card-body {
+  padding: 1.25rem;
+}
+
+.cis-student-filter-heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--cis-text);
+  margin-bottom: 0.25rem;
+}
+
+.cis-student-report-output {
+  border: 1px solid var(--cis-border);
+  border-radius: var(--cis-card-radius);
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(26, 26, 26, 0.04);
+}
+
+.cis-student-report-output > .card-body {
+  padding: 1.25rem;
+}
+
+.cis-student-report-page .card-header {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  background: var(--cis-bg-subtle);
+  border-bottom: 1px solid var(--cis-border);
+}
+
+.student-report-preview-frame {
+  display: block;
+  width: 100%;
+  min-height: 480px;
+  height: 70vh;
+  border: 0;
+  background: #fff;
+}
+
+.cis-alumni-result-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.cis-alumni-result-btn {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--cis-border);
+  border-radius: var(--cis-radius-sm);
+  background: #fff;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8125rem;
+  color: var(--cis-text);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.cis-alumni-result-btn:hover {
+  border-color: var(--cis-primary);
+}
+
+.cis-alumni-result-btn.is-active {
+  color: #5a8f2e;
+  border-color: #7ab12c;
+  font-weight: 600;
+}
+
+.cis-collage-filter-table td {
+  vertical-align: middle;
+  font-size: 0.8125rem;
+}
+
+.cis-collage-label {
+  white-space: nowrap;
+  width: 5.5rem;
+}
+
+.cis-collage-mini {
+  width: 4rem;
+  min-width: 4rem;
+}
+
+.cis-collage-grid-table {
+  width: auto;
+}
+
+.cis-collage-grid-cell {
+  font-size: 10px;
+  text-align: center;
+  padding: 4px;
+}
+
+.cis-collage-grid-cell.is-merge-hint {
+  background: #ccc;
+}
+
+.cis-collage-output-image {
+  max-width: 700px;
+}
+
+.cis-collage-template-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.cis-collage-template-card {
+  width: 110px;
+}
+
+.cis-collage-template-select {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.8125rem;
+}
+
+.cis-collage-template-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 72px;
+  margin-bottom: 0.35rem;
+  border: 1px solid var(--cis-border);
+  border-radius: 0.375rem;
+  background:
+    repeating-conic-gradient(#dfe3e8 0% 25%, #f4f6f8 0% 50%) 50% / 14px 14px;
+}
+
+.cis-collage-template-preview img {
+  max-width: 90px;
+  max-height: 64px;
+  object-fit: contain;
+}
+

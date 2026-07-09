@@ -1,0 +1,138 @@
+.exam-setup-root .table {
+  font-size: 0.9rem;
+}
+
+.exam-setup-root .form-control {
+  min-width: 0;
+}
+
+.exam-setup-card {
+  overflow-x: auto;
+}
+
+.exam-dashboard-page.exam-setup-card {
+  overflow: visible;
+}
+
+.exam-setup-root .modal {
+  position: fixed;
+}
+
+.exam-dashboard-root {
+  min-height: 12rem;
+}
+
+.exam-dashboard-content {
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.exam-dashboard-block + .exam-dashboard-block {
+  margin-top: 1.75rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--cis-border, #dee2e6);
+}
+
+.exam-dashboard-block__header {
+  margin-bottom: 1rem;
+}
+
+.exam-dashboard-block__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--cis-primary-hover, #0a4a8f);
+  line-height: 1.35;
+}
+
+.exam-dashboard-panels {
+  --bs-gutter-x: 1rem;
+  --bs-gutter-y: 1rem;
+}
+
+.exam-dashboard-root .exam-dashboard-panel {
+  height: 100%;
+  min-height: 20rem;
+  margin-bottom: 0;
+  border: 1px solid var(--cis-border, #dee2e6);
+  border-radius: var(--cis-card-radius, 0.5rem);
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.exam-dashboard-root .panel-heading {
+  background: linear-gradient(180deg, var(--cis-primary-soft, #e8f1fb) 0%, #fff 100%);
+  border-bottom: 1px solid var(--cis-border, #dee2e6);
+  color: var(--cis-primary-hover, #0a4a8f);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.65rem 0.9rem;
+}
+
+.exam-dashboard-root .exam-dashboard-panel__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.75rem 0.9rem 1rem;
+}
+
+.exam-dashboard-root .exam-dashboard-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.exam-dashboard-root .exam-dashboard-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f1f3f5;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.exam-dashboard-root .exam-dashboard-table tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+.exam-dashboard-root .exam-dashboard-table td,
+.exam-dashboard-root .exam-dashboard-table th {
+  padding: 0.45rem 0.55rem;
+  vertical-align: middle;
+  word-break: break-word;
+}
+
+.exam-dashboard-root .exam-dashboard-table td.text-end,
+.exam-dashboard-root .exam-dashboard-table th.text-end,
+.exam-dashboard-root .exam-dashboard-table td.text-right,
+.exam-dashboard-root .exam-dashboard-table th.text-right {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.exam-dashboard-root table {
+  font-size: 0.85rem;
+}
+
+.exam-schedule-print-preview {
+  margin-top: 0.5rem;
+  overflow-x: auto;
+}
+
+.exam-schedule-print-preview #total_con {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.exam-schedule-print-preview .table-bordered > thead > tr > th {
+  background: #ccc;
+}
+
+.exam-schedule-print-preview h4 {
+  text-align: center;
+  margin: 1rem 0 0.75rem;
+}

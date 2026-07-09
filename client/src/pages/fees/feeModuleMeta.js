@@ -1,0 +1,281 @@
+/** Hub and screen metadata for the Fees module (legacy PHP parity). */
+
+export const FEE_HUB_LINKS = [
+  {
+    to: '/fees/dashboard',
+    label: 'Fee Dashboard',
+    legacy: 'fee_dashboard_v2.php',
+    desc: 'Academic-year fee summary, collection stats, and drill-down reports',
+    icon: 'fa fa-dashboard',
+    section: 'Overview',
+  },
+  {
+    to: '/fees/setup',
+    label: 'Fee Setup',
+    legacy: 'fee_label_config.php',
+    desc: 'Account heads, types, banks, fines, and course fee amounts',
+    icon: 'fa fa-cog',
+    section: 'Overview',
+  },
+  {
+    to: '/fees/collection',
+    label: 'Fee Collection',
+    legacy: 'student_fee_slip_new.php',
+    desc: 'Load student fee sheet by roll number',
+    icon: 'fa fa-money',
+    section: 'Transactions',
+  },
+  {
+    to: '/fees/slips/pending',
+    label: 'Pending Slips',
+    legacy: 'student_fee_add_new.php',
+    desc: 'Fee slips awaiting approval',
+    icon: 'fa fa-clock-o',
+    section: 'Transactions',
+  },
+  {
+    to: '/fees/slips/approved',
+    label: 'Approved Slips',
+    legacy: 'student_fee_delete.php',
+    desc: 'Delete or reprint posted slips',
+    icon: 'fa fa-check-circle',
+    section: 'Transactions',
+  },
+  {
+    to: '/fees/report/collection',
+    label: 'Collection Report',
+    legacy: 'student_fee_report.php',
+    desc: 'Date-wise fee collection report with filters',
+    icon: 'fa fa-file-text-o',
+    section: 'Reports',
+  },
+  {
+    to: '/fees/history',
+    label: 'Student Fee History',
+    legacy: 'student_fee_paid.php',
+    desc: 'Receipt-wise payment history by register number',
+    icon: 'fa fa-history',
+    section: 'Reports',
+  },
+  {
+    to: '/fees/pending-sms',
+    label: 'Pending SMS',
+    legacy: 'fee_pending_sms.php',
+    desc: 'Generate and send SMS for fee pending students',
+    icon: 'fa fa-commenting',
+    section: 'Communications',
+  },
+  {
+    to: '/fees/pending-letter',
+    label: 'Pending Letter',
+    legacy: 'fee_pending_sms_v1.php',
+    desc: 'Print fee reminder letters with pending fee details',
+    icon: 'fa fa-envelope-o',
+    section: 'Communications',
+  },
+  {
+    to: '/fees/acmec-config',
+    label: 'ACMEC Scholarship Entry',
+    legacy: 'student_acmec_config.php',
+    desc: 'Student ACMEC/scholarship configuration',
+    icon: 'fa fa-pencil-square-o',
+    section: 'Scholarship & admin',
+  },
+  {
+    to: '/fees/delete',
+    label: 'Receipt Delete Workflow',
+    legacy: 'fee_delete_request.php',
+    desc: 'Request, approve, and report fee receipt deletions',
+    icon: 'fa fa-trash',
+    section: 'Scholarship & admin',
+  },
+];
+
+export const FEE_SETUP_HUB_LINKS = [
+  {
+    to: '/fees/setup/label',
+    label: 'Account Heads',
+    legacy: 'fee_label_config.php',
+    desc: 'Fee labels / account heads',
+    icon: 'fa fa-tags',
+    section: 'Master data',
+  },
+  {
+    to: '/fees/setup/type',
+    label: 'Fee Types',
+    legacy: 'fee_type_config.php',
+    desc: 'Fee type categories',
+    icon: 'fa fa-list-alt',
+    section: 'Master data',
+  },
+  {
+    to: '/fees/setup/bank',
+    label: 'Banks',
+    legacy: 'fee_bank_config.php',
+    desc: 'Bank accounts for fee collection',
+    icon: 'fa fa-university',
+    section: 'Master data',
+  },
+  {
+    to: '/fees/setup/fine',
+    label: 'Fine Rules',
+    legacy: 'fee_fine_config.php',
+    desc: 'Due dates and fine amounts by course/year',
+    icon: 'fa fa-exclamation-triangle',
+    section: 'Amounts & rules',
+  },
+  {
+    to: '/fees/setup/name',
+    label: 'Fee Amounts',
+    legacy: 'fee_name_config.php',
+    desc: 'Course-wise fee name and amount setup',
+    icon: 'fa fa-inr',
+    section: 'Amounts & rules',
+  },
+  {
+    to: '/fees/setup/scholarship',
+    label: 'Scholarship Received',
+    legacy: 'fee_scholarship_received.php',
+    desc: 'Scholarship amount setup by course/year',
+    icon: 'fa fa-graduation-cap',
+    section: 'Amounts & rules',
+  },
+  {
+    to: '/fees/setup/dme-approve',
+    label: 'DME Fee Approve',
+    legacy: 'dme_fee_approve.php',
+    desc: 'Approve DME/TF receipt amounts',
+    icon: 'fa fa-check-square-o',
+    section: 'Approvals',
+  },
+  {
+    to: '/fees/setup/acmec-scholarship',
+    label: 'ACMEC Scholarship Approved',
+    legacy: 'acmec_fee_scholarship.php',
+    desc: 'Approve ACMEC scholarship amounts by batch',
+    icon: 'fa fa-certificate',
+    section: 'Approvals',
+  },
+  {
+    to: '/fees/acmec-config',
+    label: 'ACMEC Scholarship Entry',
+    legacy: 'student_acmec_config.php',
+    desc: 'Configure student ACMEC/scholarship eligibility',
+    icon: 'fa fa-pencil-square-o',
+    section: 'Approvals',
+  },
+];
+
+export const FEE_DELETE_HUB_LINKS = [
+  {
+    to: '/fees/delete/request',
+    label: 'Delete Request',
+    legacy: 'fee_delete_request.php',
+    desc: 'Request cancellation of a posted receipt',
+    icon: 'fa fa-trash-o',
+    section: 'Workflow',
+  },
+  {
+    to: '/fees/delete/approve',
+    label: 'Approve Delete',
+    legacy: 'fee_delete_approve.php',
+    desc: 'Approve pending receipt delete requests',
+    icon: 'fa fa-check',
+    section: 'Workflow',
+  },
+  {
+    to: '/fees/delete/report',
+    label: 'Deleted Receipts Report',
+    legacy: 'fee_delete_report.php',
+    desc: 'Date-wise report of approved deletions',
+    icon: 'fa fa-file-text-o',
+    section: 'Reports',
+  },
+];
+
+export const FEE_SETUP_BREADCRUMB = { label: 'Setup', to: '/fees/setup' };
+export const FEE_DELETE_BREADCRUMB = { label: 'Delete', to: '/fees/delete' };
+
+export const FEE_SCREEN_META = {
+  dashboard: {
+    title: 'Fee Dashboard',
+    legacy: 'fee_dashboard_v2.php',
+    breadcrumbLabel: 'Dashboard',
+  },
+  collection: {
+    title: 'Fee Collection',
+    legacy: 'student_fee_slip_new.php',
+    breadcrumbLabel: 'Fee Collection',
+  },
+  'report-collection': {
+    title: 'Fee Collection Report',
+    legacy: 'student_fee_report.php',
+    breadcrumbLabel: 'Collection Report',
+  },
+  history: {
+    title: 'Student Fee History',
+    legacy: 'student_fee_paid.php',
+    breadcrumbLabel: 'Student History',
+  },
+  'slips-pending': {
+    title: 'Pending Fee Slips',
+    legacy: 'student_fee_add_new.php',
+    breadcrumbLabel: 'Pending Slips',
+  },
+  'slips-approved': {
+    title: 'Approved Fee Slips',
+    legacy: 'student_fee_delete.php',
+    breadcrumbLabel: 'Approved Slips',
+    subtitle: 'Delete or reprint posted slips',
+  },
+  'slip-approve': {
+    title: 'Approve Fee Slip',
+    legacy: 'student_fee_add_new.php',
+    breadcrumbLabel: 'Approve',
+    parentBreadcrumb: { label: 'Pending Slips', to: '/fees/slips/pending' },
+  },
+  'pending-sms': {
+    title: 'Fee Pending SMS',
+    legacy: 'fee_pending_sms.php',
+    breadcrumbLabel: 'Pending SMS',
+  },
+  'pending-letter': {
+    title: 'Fee Pending Letter',
+    legacy: 'fee_pending_sms_v1.php',
+    breadcrumbLabel: 'Pending Letter',
+  },
+  'acmec-config': {
+    title: 'ACMEC Scholarship Entry',
+    legacy: 'student_acmec_config.php',
+    breadcrumbLabel: 'ACMEC Scholarship Entry',
+  },
+  'delete-request': {
+    title: 'Fee Delete Request',
+    legacy: 'fee_delete_request.php',
+    breadcrumbLabel: 'Request',
+    parentBreadcrumb: FEE_DELETE_BREADCRUMB,
+  },
+  'delete-approve': {
+    title: 'Approve Fee Delete',
+    legacy: 'fee_delete_approve.php',
+    breadcrumbLabel: 'Approve',
+    parentBreadcrumb: FEE_DELETE_BREADCRUMB,
+  },
+  'delete-report': {
+    title: 'Deleted Receipts Report',
+    legacy: 'fee_delete_report.php',
+    breadcrumbLabel: 'Report',
+    parentBreadcrumb: FEE_DELETE_BREADCRUMB,
+  },
+};
+
+export const FEE_SETUP_SCREEN_META = {
+  label: { title: 'Fee Account Heads', legacy: 'fee_label_config.php' },
+  type: { title: 'Fee Types', legacy: 'fee_type_config.php' },
+  bank: { title: 'Fee Banks', legacy: 'fee_bank_config.php' },
+  fine: { title: 'Fee Fine Setup', legacy: 'fee_fine_config.php' },
+  name: { title: 'Fee Name / Amount Setup', legacy: 'fee_name_config.php' },
+  scholarship: { title: 'Scholarship Received', legacy: 'fee_scholarship_received.php' },
+  'dme-approve': { title: 'DME Fee Approve', legacy: 'dme_fee_approve.php' },
+  'acmec-scholarship': { title: 'ACMEC Scholarship Approved', legacy: 'acmec_fee_scholarship.php' },
+};

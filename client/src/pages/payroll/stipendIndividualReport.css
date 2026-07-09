@@ -1,0 +1,44 @@
+.stipend-individual-report-root .stipend-copy-type-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.stipend-individual-report-root .stipend-copy-type-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.stipend-individual-report-root .stipend-copy-type-option:has(input:checked) {
+  border-color: #0d6efd;
+  background: #f0f6ff;
+}
+
+.stipend-individual-report-root .stipend-individual-report-table {
+  overflow-x: auto;
+}
+
+.stipend-individual-report-root .stipend-individual-report-table h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+}
+
+.stipend-individual-report-root .stipend-individual-report-table table.table-bordered {
+  min-width: 520px;
+  background: #fff;
+  font-size: 0.85rem;
+}
+
+.stipend-individual-report-root .stipend-individual-report-table td.text-right,
+.stipend-individual-report-root .stipend-individual-report-table th.text-right {
+  text-align: right !important;
+}

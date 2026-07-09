@@ -1,0 +1,33 @@
+.chip-multi-select-list {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.chip-multi-select-item {
+  background: #fff;
+  transition: background-color 0.15s ease;
+}
+
+.chip-multi-select-item:hover:not(:disabled) {
+  background: #f8f9fa;
+}
+
+.chip-multi-select-item--selected {
+  background: #e7f1ff;
+}
+
+.chip-multi-select-item--selected:hover:not(:disabled) {
+  background: #dbeafe;
+}
+
+.chip-multi-select-item--blocked {
+  cursor: not-allowed;
+}
+
+.chip-multi-select-item + .chip-multi-select-item {
+  border-top: 1px solid #e9ecef !important;
+}
+
+.chip-multi-select-item:disabled {
+  opacity: 0.65;
+}

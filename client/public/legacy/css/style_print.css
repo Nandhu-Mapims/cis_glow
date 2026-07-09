@@ -1,0 +1,174 @@
+/*{
+-webkit-touch-callout:none; 
+-webkit-user-select:none; 
+-moz-user-select:none; 
+-ms-user-select:none; 
+user-select:none; 
+} */
+
+body {
+	font-family: Arial, Helvetica, sans-serif;
+	margin: 0 40px 0 60px;
+	padding: 0px;
+	counter-reset:section;
+}
+ 
+.header_table {
+	margin:8px 0px;
+	min-width:800px;
+	width:100%;
+	height: 90px;
+	border-bottom: 1px solid #999;
+}
+
+.promote_card {
+	font-size: 14px;
+	color: #000000;
+	margin: 15px 15px 0px 0px;
+	padding:0px;
+
+}
+.promote_card p{ padding:0px; margin:0px; }
+.promote_card .title{ font-size: 1.5em; font-weight: bold; text-transform: uppercase; }
+.promote_card .sub-title{ font-size: 1em; }
+#printHeaderpanel .sub-title-1{ font-size: 14px; padding:0px 5px; margin: -20px 10px 0 0; font-weight:bold; background: #FFF; float:right; }
+
+
+@page {
+  size: auto;
+}
+
+#printHeaderpanel-bak {
+  display: table-header-group;
+}
+#printHeaderpanel-bak.first-page{
+  display: table-row-group;
+}
+#printingBody-bak, .printingBody-bak {
+  display: table-row-group;
+}
+#printingBody-bak #printHeaderpanel-bak, .printingBody-bak #printHeaderpanel-bak{
+  display: block;
+}
+#printingBody-bak table > thead { display: table-header-group; }
+#printFooterpanel-bak {
+ display:none;
+}
+
+.footer_table{
+	margin:0px 0px 0px;
+	width:100%;
+	height: 80px;
+	border-top: 1px solid #999;
+}
+#generated_by{ padding:4px 0px 5px; margin:0px; font-size:10px; }
+
+
+.right_container{
+	position:relative;
+	float:right;
+	width: 10px;
+}
+.vertical_container{
+	-webkit-transform: rotate(-90deg);
+	-webkit-transform-origin: right top;
+	-moz-transform: rotate(-90deg);
+	-moz-transform-origin:  right top;
+	-o-transform: rotate(-90deg);
+	-o-transform-origin:  right top;
+	transform: rotate(-90deg);
+	transform-origin:  right top;
+	font-size:16px;
+	white-space:nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	width:500px;
+	float: right;
+	margin-top:-470px;
+	margin-right:-15px;
+	padding-right:-15px;
+}
+
+@media print {
+#printFooterpanel-bak {
+  display:block;
+  display: table-footer-group;
+  border-top: 1px solid #333;
+}
+#printFooterpanel-bak #print_page_no{ padding:5px 0px; margin:0px; font-size:10px; text-align: right;}
+#print_page_no:after{counter-increment:section; content: "Page: " counter(section); }
+}
+
+.footer_sign_name{ padding:45px 0px 0px; margin:0px; font-size:12px!important; line-height:12px; font-weight:bold; text-align: center;}
+.footer_sign_desig{ padding:0px; margin:0px; font-size:12px!important; line-height:12px; text-align: center;}
+.footer_sign_note{ padding:0px; margin:0px; font-size:11px; }
+
+.footer_sign_name.small{ padding:35px 0px 0px; font-size:11px!important;}
+.footer_sign_desig.small{font-size:10px!important;}
+
+
+
+.course_title {
+	font-size: 16px;
+	font-weight: bold;
+	margin: 0px;
+	padding: 10px 0px;
+}
+
+
+
+.header1 {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 18px;
+	font-weight: bold;
+	padding: 2px;
+	margin: 0px;
+	text-transform: uppercase;
+
+}
+
+
+.header2 {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	padding: 2px;
+	margin: 0px;
+	text-transform: uppercase;
+}
+
+
+
+table {border-collapse: collapse; border-spacing: 0;}
+.table-bordered > thead > tr > th, .table-bordered > tbody > tr > th, .table-bordered > tfoot > tr > th {
+    border: 1px solid #333;  vertical-align:top; font-size: 12px;  font-weight:bold;
+}
+.table-bordered > thead > tr > th.border_none, .table-bordered > tbody > tr > th.border_none, .table-bordered > tfoot > tr > th.border_none {
+    border: 0px solid #333;  
+}
+
+.table-bordered > thead > tr > td, .table-bordered > tbody > tr > td, .table-bordered > tfoot > tr > td {
+    border: 1px solid #333;  vertical-align:top; font-size: 12px;
+}
+.sal_note_table-bordered > thead > tr > td, .sal_note_table-bordered > tbody > tr > td, .sal_note_table-bordered > tfoot > tr > td {
+    border: 1px solid #333;  vertical-align:top; font-size: 16px;
+}
+
+
+.staff_name{ width:200px!important; }
+.staff_desc{ width:150px!important; }
+
+.border_top { border-top:solid 1px #333; }
+.border_right { border-right:solid 1px #333; }
+.border_bottom { border-bottom:solid 1px #333; }
+.border_left { border-left:solid 1px #333; }
+
+.text-right{ text-align:right; }
+.text-center{ text-align:center; }
+
+ul.list-group{ margin: 0 0 0 -20px; }
+ul.list-group li {
+    list-style: decimal;
+    padding: 0px;
+    margin: 0px; 
+}
+.hide-default{ display:none; }

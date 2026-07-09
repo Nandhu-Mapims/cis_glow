@@ -1,0 +1,146 @@
+.internship-certificate-preview,
+.internship-certificate-print {
+  font-family: "Times New Roman", Times, serif;
+  color: #000;
+  background: #fff;
+}
+
+.internship-certificate-preview p,
+.internship-certificate-print p {
+  margin-bottom: 0;
+}
+
+.internship-certificate-preview table,
+.internship-certificate-print table {
+  margin-bottom: 0;
+}
+
+.internship-certificate-preview #cri_container,
+.internship-certificate-print #cri_container {
+  position: relative;
+  width: 899px;
+  min-height: 1255px;
+  margin: 10px auto;
+  padding: 24px 28px 40px;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.internship-certificate-preview #cri_name,
+.internship-certificate-print #cri_name {
+  text-align: right;
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0 0 12px;
+  padding-right: 8px;
+}
+
+.internship-certificate-preview #cri_title,
+.internship-certificate-print #cri_title {
+  text-align: center;
+  font-size: 25px;
+  font-weight: bold;
+  line-height: 1.25;
+  margin: 0 0 20px;
+  padding: 0 20px;
+}
+
+.internship-certificate-preview .cri_intro_row,
+.internship-certificate-print .cri_intro_row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.internship-certificate-preview .cri_intro_text,
+.internship-certificate-print .cri_intro_text {
+  flex: 1 1 72%;
+  min-width: 0;
+}
+
+.internship-certificate-preview .cri_intro_photo,
+.internship-certificate-print .cri_intro_photo {
+  flex: 0 0 150px;
+  text-align: center;
+}
+
+.internship-certificate-preview .cri_intro_photo img,
+.internship-certificate-print .cri_intro_photo img {
+  border: 2px solid #0f0f0f;
+  max-width: 100%;
+  height: auto;
+}
+
+.internship-certificate-preview .cri_content,
+.internship-certificate-print .cri_content {
+  font-size: 17px;
+  margin: 0 0 10px;
+  padding-left: 12px;
+  line-height: 1.35;
+  text-indent: 36px;
+  text-align: justify;
+}
+
+.internship-certificate-preview .cri_table_wrap,
+.internship-certificate-print .cri_table_wrap {
+  clear: both;
+  margin-top: 8px;
+}
+
+.internship-certificate-preview .cri_table_wrap table,
+.internship-certificate-print .cri_table_wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.internship-certificate-preview .cri_table_wrap .table_border,
+.internship-certificate-print .cri_table_wrap .table_border {
+  border: 1px solid #000;
+}
+
+.internship-certificate-preview .mark_content,
+.internship-certificate-print .mark_content {
+  font-size: 17px;
+  margin: 0;
+  padding: 5px 6px 6px 10px;
+  line-height: 1.25;
+}
+
+.internship-certificate-preview .mark_td_bottom_border,
+.internship-certificate-print .mark_td_bottom_border {
+  border-bottom: 1px solid #000;
+}
+
+.internship-certificate-preview .mark_td_left_bottom_border,
+.internship-certificate-print .mark_td_left_bottom_border {
+  border-bottom: 1px solid #000;
+  border-left: 1px solid #000;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+.internship-certificate-preview .cri_footer,
+.internship-certificate-print .cri_footer {
+  font-size: 17px;
+  line-height: 1.35;
+  margin: 14px 8px 0;
+  text-align: justify;
+}
+
+.internship-certificate-preview .cri_signatures,
+.internship-certificate-print .cri_signatures {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 28px;
+  padding: 0 40px 0 66px;
+  font-size: 17px;
+}
+
+@media print {
+  .internship-certificate-print #cri_container {
+    margin: 0;
+    padding: 20px 24px;
+  }
+}

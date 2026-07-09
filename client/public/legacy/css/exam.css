@@ -1,0 +1,155 @@
+/**{
+-webkit-touch-callout:none; 
+-webkit-user-select:none; 
+-moz-user-select:none; 
+-ms-user-select:none; 
+user-select:none; 
+}*/
+
+body {
+	font-family: Arial, Helvetica, sans-serif;
+	margin: 0 40px 0 60px;
+	padding: 0px;
+	counter-reset:section;
+}
+ 
+.header_table {
+	margin:8px 0px;
+	width:100%;
+	height: 90px;
+	border-bottom: 1px solid #999;
+}
+
+.promote_card {
+	font-size: 14px;
+	color: #000000;
+	margin: 15px 15px 0px 0px;
+	padding:0px;
+
+}
+.promote_card p{ padding:0px; margin:0px; }
+.promote_card .title{ font-size: 1.5em; font-weight: bold; text-transform: uppercase; }
+.promote_card .sub-title{ font-size: 1em; }
+#printHeaderpanel .sub-title-1{ font-size: 14px; padding:0px 5px; margin: -20px 10px 0 0; font-weight:bold; background: #FFF; float:right; }
+
+
+@page {
+  size: auto;
+}
+
+#printHeaderpanel {
+  display: table-header-group;
+}
+#printHeaderpanel.first-page{
+  display: table-row-group;
+}
+#printingBody, .printingBody {
+  display: table-row-group;
+}
+
+#printingBody #printHeaderpanel, .printingBody #printHeaderpanel{
+  display: block;
+}
+#printingBody table > thead { display: table-header-group; }
+#printFooterpanel {
+ display:none;
+}
+
+.footer_table{
+	margin:0px 0px 0px;
+	width:100%;
+	height: 80px;
+	border-top: 1px solid #999;
+}
+#generated_by{ padding:4px 0px 5px; margin:0px; font-size:10px; }
+
+
+.right_container{
+	position:relative;
+	float:right;
+	width: 10px;
+}
+.vertical_container{
+	-webkit-transform: rotate(-90deg);
+	-webkit-transform-origin: right top;
+	-moz-transform: rotate(-90deg);
+	-moz-transform-origin:  right top;
+	-o-transform: rotate(-90deg);
+	-o-transform-origin:  right top;
+	transform: rotate(-90deg);
+	transform-origin:  right top;
+	font-size:16px;
+	white-space:nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	width:500px;
+	float: right;
+	margin-top:-470px;
+	margin-right:-15px;
+	padding-right:-15px;
+}
+
+@media print {
+#printFooterpanel {
+  display:block;
+  display: table-footer-group;
+  border-top: 1px solid #333;
+}
+#printFooterpanel #print_page_no{ padding:5px 0px; margin:0px; font-size:10px; text-align: right;}
+#print_page_no:after{counter-increment:section; content: "Page: " counter(section); }
+}
+
+.footer_sign_name{ padding:45px 0px 0px; margin:0px; font-size:12px!important; line-height:12px; font-weight:bold; text-align: center;}
+.footer_sign_desig{ padding:0px; margin:0px; font-size:12px!important; line-height:12px; text-align: center;}
+.footer_sign_note{ padding:0px; margin:0px; font-size:11px; }
+
+.footer_sign_name.small{ padding:35px 0px 0px; font-size:11px!important;}
+.footer_sign_desig.small{font-size:10px!important;}
+
+
+
+.course_title {
+	font-size: 16px;
+	font-weight: bold;
+	margin: 0px;
+	padding: 10px 0px;
+}
+
+.ver_text{
+	-webkit-transform-origin: 100% 100%;
+	-webkit-transform: rotate(270deg);
+	-moz-transform: rotate(270deg);
+	-o-transform: rotate(270deg);
+	height: 50px;
+	font-size:16px;
+}
+
+
+table {border-collapse: collapse; border-spacing: 0;}
+.table-bordered > thead > tr > th, .table-bordered > tbody > tr > th, .table-bordered > tfoot > tr > th {
+    border: 1px solid #333;  vertical-align:top; font-size: 11px;  font-weight:bold;
+}
+
+.table-bordered > thead > tr.vmiddle > th, .table-bordered > tbody > tr.vmiddle > th, .table-bordered > tfoot.vmiddle > tr > th {
+   vertical-align:middle; 
+}
+
+
+
+.table-bordered > thead > tr > td, .table-bordered > tbody > tr > td, .table-bordered > tfoot > tr > td {
+    border: 1px solid #333;  vertical-align:top; font-size: 12px;
+}
+
+.border_top { border-top:solid 1px #333; }
+.border_right { border-right:solid 1px #333; }
+.border_bottom { border-bottom:solid 1px #333; }
+.border_left { border-left:solid 1px #333; }
+.tt_time{ background:#DDD; font-size:12px; font-weight:bold;  padding:8px;}
+.tt_subject{ font-size:13px;  line-height:13px; padding: 5px ; margin:0px; }
+.tt_subject span{ font-size:12px; padding:0px; margin:0px; color:#333; }
+.tt_subject small{ font-size:11px; padding:0px; margin:0px; color:#999;}
+
+.subject_name{ font-size:12px; font-weight:bold; line-height:13px; padding: 3px; }
+.staff_name{ font-size:12px; line-height:12px; padding: 3px; }
+.subject_name.border_left{ padding-left:20px;}
+.hod_sign{ font-size:10px; line-height:12px; padding: 3px; border-top:solid 1px #999999; text-align:center;}

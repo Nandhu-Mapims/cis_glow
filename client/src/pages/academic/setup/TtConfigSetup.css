@@ -1,0 +1,21 @@
+.tt-config-grid .tt-config-cell:hover {
+  background-color: #f0f7ff;
+}
+
+.tt-allocation-modal .modal-body.tt-allocation-body {
+  max-height: min(70vh, 720px);
+  overflow-y: auto;
+}
+
+.tt-allocation-root .tt-allocation-grid th,
+.tt-allocation-root .tt-allocation-grid td {
+  vertical-align: middle;
+}
+
+.tt-allocation-root .tt-allocation-grid select[multiple] {
+  min-height: 4.5rem;
+}
+
+.tt-allocation-root .tt-allocation-meta .border {
+  background: #f8f9fa;
+}

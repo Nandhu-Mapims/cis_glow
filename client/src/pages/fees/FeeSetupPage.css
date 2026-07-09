@@ -1,0 +1,40 @@
+.fee-setup-root .table {
+  font-size: 0.9rem;
+}
+
+.fee-setup-root .form-control {
+  min-width: 0;
+}
+
+.fee-setup-root .dorder {
+  width: 50px;
+}
+
+.fee-setup-card {
+  overflow-x: auto;
+}
+
+.fee-setup-root .modal {
+  position: fixed;
+}
+
+.fee-setup-root .cis-fee-setup-table thead th,
+.fee-setup-root .table thead.table-secondary th {
+  background: #e9ecef;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom-width: 1px;
+}
+
+.fee-setup-root .btn-info {
+  background: transparent;
+  border-color: var(--cis-border-strong, #ced4da);
+  color: var(--cis-text, #212529);
+}
+
+.fee-setup-root .btn-info:hover {
+  background: var(--cis-bg-subtle, #f8f9fa);
+  border-color: var(--cis-primary, #a61a1a);
+  color: var(--cis-primary, #a61a1a);
+}

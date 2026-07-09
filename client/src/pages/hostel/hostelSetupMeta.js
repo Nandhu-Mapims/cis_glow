@@ -1,0 +1,17 @@
+export const HOSTEL_SCREEN_META = {
+  'dashboard': { title: 'Hostel Dashboard', legacy: 'dashboard_hostel.php' },
+  'block-setup': { title: 'Block Setup', legacy: 'block_setup.php' },
+  'room-setup-add': { title: 'Room Add', legacy: 'room_setup_add.php' },
+  'room-setup-edit': { title: 'Room Edit', legacy: 'room_setup_edit.php' },
+  'room-rental-setup': { title: 'Rental Config', legacy: 'room_rental_setup.php' },
+  'transport-add': { title: 'Transport Add', legacy: 'transport_add.php' },
+  'transport-edit': { title: 'Transport Edit', legacy: 'transport_edit.php' },
+  'transport-stopping-setup': { title: 'Stopping Setup', legacy: 'transport_stopping_setup.php' },
+  'transport-fee-config': { title: 'Transport Fee Config', legacy: 'transport_fee_config.php' },
+  'student-hostel': { title: 'Student Hostel', legacy: 'student_hostel.php' },
+  'att-setup': { title: 'Hostel Attendance Setup', legacy: 'hostel_att_setup.php' },
+  'attendance-report': { title: 'Hostel Attendance Report', legacy: 'hostel_attendance_report.php' },
+  'pass-approval': { title: 'Pass Approval', legacy: 'hostel_pass_approval.php' },
+  'pass-report': { title: 'Hostel Pass Report', legacy: 'hostel_student_report.php' },
+  'staff-rental': { title: 'Staff Quarters / Hostel', legacy: 'staff_rental_hostel.php' },
+};

@@ -1,0 +1,18 @@
+export const CERTIFICATE_SCREEN_META = {
+  'internship-schedule': { title: 'Schedule', legacy: 'student_internship.php' },
+  'implant-cert': { title: 'Implant Certificate', legacy: 'aaadar_implant.php' },
+  'tc-details': { title: 'TC Details', legacy: 'tc_details.php' },
+  generate: { title: 'Certificate Generate', legacy: 'certificate_generate.php' },
+  'tc-request-add': { title: 'TC Request', legacy: 'tc_approve_add.php' },
+  'tc-generate': { title: 'TC Generate', legacy: 'tc_generate.php' },
+  'cert-request': { title: 'Certificate Request', legacy: 'create_crequest.php' },
+  'laser-cert': { title: 'Laser Certificate', legacy: 'aaadar_laser.php' },
+  approve: { title: 'Approve & Print', legacy: 'certificate_approve.php', initialLoadFields: { status: '0' } },
+  setup: { title: 'Setup', legacy: 'certificate_setup.php' },
+  'internship-generate': { title: 'Internship Print', legacy: 'internship_generate.php' },
+  'tc-request-edit': { title: 'Edit TC Request', legacy: 'tc_approve_edit.php', initialLoadFields: { fromDate: new Date().toISOString().slice(0, 10), toDate: '' } },
+  'receipt-add': { title: 'Receipt Add', legacy: 'certificate_receipt_add.php' },
+  'internship-photo': { title: 'Photo Upload', legacy: 'student_internship_photo.php' },
+  'receipt-edit': { title: 'Edit Receipt', legacy: 'certificate_receipt_edit.php' },
+  'receipt-report': { title: 'Receipt Report', legacy: 'certificate_receipt_report.php' },
+};

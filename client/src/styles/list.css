@@ -1,0 +1,291 @@
+/* ── List / search pages — filter sidebar + result cards (red / pale yellow / light) ── */
+
+.cis-list-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.cis-list-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem 1.25rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--cis-card-radius);
+  background: linear-gradient(135deg, #fff 0%, var(--cis-accent-soft) 100%);
+  border: 1px solid var(--cis-border);
+  box-shadow: 0 4px 16px rgba(26, 26, 26, 0.04);
+}
+
+.cis-list-hero-title {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--cis-text);
+  margin: 0 0 0.25rem;
+}
+
+.cis-list-hero-subtitle {
+  font-size: 0.875rem;
+  color: var(--cis-text-muted);
+  margin: 0;
+}
+
+.cis-list-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cis-list-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.cis-list-filter {
+  position: sticky;
+  top: 0.5rem;
+  border: 1px solid var(--cis-border);
+  border-radius: var(--cis-card-radius);
+  background: var(--cis-surface);
+  box-shadow: 0 4px 16px rgba(26, 26, 26, 0.04);
+  overflow: hidden;
+}
+
+.cis-list-filter-head {
+  padding: 0.875rem 1.125rem;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--cis-text);
+  background: linear-gradient(135deg, var(--cis-primary-soft) 0%, var(--cis-accent-soft) 100%);
+  border-bottom: 1px solid var(--cis-border);
+}
+
+.cis-list-filter-body {
+  padding: 1.125rem;
+}
+
+.cis-list-filter-body .form-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cis-text-subtle);
+  margin-bottom: 0.5rem;
+}
+
+.cis-list-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.cis-list-radio {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--cis-border);
+  background: var(--cis-bg);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--cis-text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.cis-list-radio:has(input:checked) {
+  border-color: rgba(var(--cis-primary-rgb), 0.35);
+  background: var(--cis-primary-soft);
+  color: var(--cis-primary);
+}
+
+.cis-list-radio input {
+  accent-color: var(--cis-primary);
+}
+
+.cis-list-filter .form-control,
+.cis-list-filter .form-select {
+  border-radius: 10px;
+  font-size: 0.875rem;
+}
+
+.cis-list-filter .input-group .btn {
+  border-radius: 0 10px 10px 0;
+  font-weight: 700;
+  background: var(--cis-primary);
+  border-color: var(--cis-primary);
+  color: #fff;
+}
+
+.cis-list-filter .btn-search-full {
+  width: 100%;
+  margin-top: 0.25rem;
+  border-radius: 10px;
+  font-weight: 700;
+  background: var(--cis-primary);
+  border-color: var(--cis-primary);
+}
+
+.cis-list-results {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.cis-list-results-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.cis-list-results-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cis-text);
+  margin: 0;
+}
+
+.cis-list-results-count {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--cis-text-muted);
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  background: var(--cis-accent-soft);
+  border: 1px solid rgba(var(--cis-accent-rgb), 0.5);
+}
+
+.cis-list-status {
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+}
+
+.cis-list-status--loading {
+  background: var(--cis-accent-soft);
+  border: 1px solid rgba(var(--cis-accent-rgb), 0.5);
+  color: var(--cis-text);
+}
+
+.cis-list-status--empty {
+  background: var(--cis-bg-subtle);
+  border: 1px dashed var(--cis-border-strong);
+  color: var(--cis-text-muted);
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.cis-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.cis-list-result-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--cis-border);
+  border-radius: 14px;
+  background: var(--cis-surface);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 2px 10px rgba(26, 26, 26, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.cis-list-result-card:hover {
+  border-color: rgba(var(--cis-primary-rgb), 0.35);
+  box-shadow: 0 8px 20px rgba(26, 26, 26, 0.08);
+  transform: translateY(-1px);
+  color: inherit;
+}
+
+.cis-list-result-card.is-selected {
+  border-color: var(--cis-success);
+  background: linear-gradient(135deg, #fff 0%, #ecfdf5 100%);
+}
+
+.cis-list-result-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  background: var(--cis-accent-soft);
+  color: var(--cis-primary);
+}
+
+.cis-list-result-card.is-selected .cis-list-result-avatar {
+  background: #d1fae5;
+  color: var(--cis-success);
+}
+
+.cis-list-result-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cis-list-result-primary {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--cis-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cis-list-result-secondary {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--cis-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cis-list-result-arrow {
+  flex-shrink: 0;
+  color: var(--cis-text-subtle);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.cis-list-result-card:hover .cis-list-result-arrow {
+  color: var(--cis-primary);
+}
+
+.cis-list-footnote {
+  font-size: 0.75rem;
+  color: var(--cis-text-subtle);
+  margin: 0;
+}
+
+@media (max-width: 991.98px) {
+  .cis-list-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .cis-list-filter {
+    position: static;
+  }
+}

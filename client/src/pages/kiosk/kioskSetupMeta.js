@@ -1,0 +1,18 @@
+export const KIOSK_SCREEN_META = {
+  'machine-access': { title: 'Machine Access', legacy: 'machine_access.php' },
+  'machine-room-add': { title: 'Machine Room Add', legacy: 'machine_room_add.php' },
+  'machine-room-edit': { title: 'Machine Room Edit', legacy: 'machine_room_edit.php' },
+  'student-password': { title: 'Student Machine PIN', legacy: 'student_machine_password.php' },
+  'staff-password': { title: 'Staff Machine PIN', legacy: 'staff_machine_password.php' },
+  'machine-slider': { title: 'Machine Slider', legacy: 'slider_widget.php' },
+  'slider-widget': { title: 'Slider Widget Style', legacy: 'slider_widget_edit.php' },
+  'att-menu': { title: 'Attendance Menu', legacy: 'att_menu.php' },
+  'att-menu-access': { title: 'Attendance Menu Access', legacy: 'att_menu_access.php' },
+  'att-instruction': { title: 'Attendance Instruction', legacy: 'att_instruction.php' },
+  'staff-pin-reset': { title: 'Staff PIN Reset', legacy: 'staff_mpassword_reset.php' },
+  'student-pin-reset': { title: 'Student PIN Reset', legacy: 'student_mpassword_reset.php' },
+  'att-statement': { title: 'Attendance Statement', legacy: 'm_att_statement.php' },
+  'announcement-add': { title: 'Add Announcement', legacy: 'announcement_add.php' },
+  'announcement-edit': { title: 'Edit Announcement', legacy: 'announcement_edit.php' },
+  'receipt-setup': { title: 'Receipt Setup', legacy: 'm_recepit_setup.php' },
+};

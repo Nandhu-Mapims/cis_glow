@@ -1,0 +1,348 @@
+/* CSS Document */
+body{ padding:0px; margin:0px;}
+.container{
+width:794px; 
+height:1122px; 
+padding:0px 60px 0px 100px; 
+margin:0px; 
+page-break-after:always; 
+z-index:2;
+/* background: url(../progress_card.jpg); 
+background-size:100% 100%; */
+}
+.pheader{
+width:100%; 
+height:90px; 
+margin:0px; 
+clear:both; 
+padding:0px; 
+}
+.pbody{
+	width: 100%;
+	height: 680px;
+	margin: 0px;
+	clear: both;
+	padding: 0px 30px;
+	border-bottom: dashed 1px #333;
+}
+.pfooter{
+
+	width:100%;  
+	margin:0px; 
+	clear:both; 
+	padding:0px; 
+	boeder:solid 1px #000;
+
+}
+.title_div {
+	float: right;
+	height: 80px;
+	width: 240px;
+	padding: 20px 0 0;
+	text-align: center;
+	color: #000;
+	z-index:3;
+}
+.pfooter .title_div {
+	float: left;
+	padding: 75px 0px 0px;
+}
+.top_heading {
+	color: #000000;	
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 20px;
+	font-weight:bold;
+	text-align: center;
+	margin: 0px;
+	padding: 0px 5px;
+	text-transform:uppercase;
+	white-space:nowrap;
+}
+.top_content{
+    font-family: Arial, Helvetica, sans-serif;
+	padding: 0px;
+	margin: 0px;
+    font-weight: bold;
+	color: #000;
+	font-size: 14px;
+}
+.student_name {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 20px;
+        font-weight:bold;
+	color: #000;
+	text-align: left;
+	margin: 0px;
+	padding-top: 4px;
+	padding-right: 0px;
+	padding-bottom: 1px;
+	padding-left: 3px;
+}
+.class_name {
+	font-family: Arial, Helvetica, sans-serif;
+	color:#000;
+	font-size:14px;
+	margin: 0px;
+	padding-top: 2px;
+	padding-right: 0px;
+	padding-bottom: 2px;
+	padding-left: 0px;
+}
+
+.att_message {
+	font-family: Arial, Helvetica, sans-serif;
+	color:#000;
+	font-size:14px;
+	margin: 0px;
+	padding-top: 10px;
+	padding-right: 0px;
+	padding-bottom: 5px;
+	padding-left: 0px;
+}
+
+.student_address {
+	font-family: Arial, Helvetica, sans-serif;
+	color:#000;
+	font-size:0.9em;
+	margin: 0px;
+	padding-top: 2px;
+	padding-right: 40px;
+	padding-bottom: 2px;
+	padding-left: 80px;
+}
+.roll_no {
+	font-family: Arial, Helvetica, sans-serif;
+	color:#000000;
+	font-size:0.8em;
+	padding-top: 0px;
+	padding-right: 0px;
+	padding-bottom: 3px;
+	padding-left: 2px;
+	margin-top: 0px;
+	margin-right: 8px;
+	margin-bottom: 3px;
+	margin-left: 8px;
+	line-height: 1.5em;
+}
+.border_left{
+	border-left-width: 1px;
+	border-left-style: solid;
+	border-left-color: #000;
+}
+.border_top{
+	border-top-width: 1px;
+	border-top-style: solid;
+	border-top-color: #000;
+}
+.border_right{
+	border-right-width: 1px;
+	border-right-style: solid;
+	border-right-color: #000;
+}
+.border_bottom{
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	border-bottom-color: #000;
+}
+.marks_details {
+
+	font-family: Arial, Helvetica, sans-serif;
+	color:#333333;
+	font-size:0.85em;
+	padding: 0px 10px 3px;
+}
+.footer_company{
+
+	font-family: Arial, Helvetica, sans-serif;
+	color:#000000;
+	font-size:0.8em;
+	padding: 1px 10px;
+}
+.footer_message{
+	font-family: Arial, Helvetica, sans-serif;
+	color:#333;
+	font-size:0.7em;
+	padding: 1px 10px;
+}
+
+.psubject_name {
+
+	font-family: Arial, Helvetica, sans-serif;
+	color:#333333;
+	font-size:0.8em;
+	padding: 0px;
+}
+.subtitle1 {
+
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 1.3em;
+	color: #000000;
+	margin:  5px 10px;
+	padding: 0px;
+	font-weight:bold;
+}
+.subtitle2 {
+
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 1.2em;
+	color: #000000;
+	margin: 3px 5px;
+	padding: 0px;
+	font-weight:bold;
+	
+}
+.subtitle3 {
+position: relative;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 0.9em;
+	color: #000000;
+	margin:3px 5px;
+	padding: 0px;
+	font-weight:bold;
+	z-index:10;
+	}
+.subtitle6 {
+position: relative;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 0.7em;
+	color: #000000;
+	margin:3px 5px;
+	padding: 0px;
+	font-weight:bold;
+	z-index:10;
+	}	
+.student_image{
+	overflow: hidden;
+	position: relative;
+	height: 180px;
+	width: 135px;
+	z-index:2;
+	float: right;
+	margin-top: -173px;
+}
+.notetitle {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 0.7em;
+	color: #000000;
+	margin:3px 5px;
+	padding: 0px;
+	font-weight:bold;
+	}
+.notecontent{
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 0.6em;
+	color: #000000;
+	padding: 1px 3px;
+	margin: 0px;
+	}	
+
+
+
+table {border-collapse: collapse; border-spacing: 0; font-family: Arial, Helvetica, sans-serif;}
+.table-bordered > thead > tr > th, .table-bordered > tbody > tr > th, .table-bordered > tfoot > tr > th {
+    border: 1px solid #666;  vertical-align:middle; font-size: 16px;  font-weight:bold;
+}
+.table-bordered > thead > tr > td, .table-bordered > tbody > tr > td, .table-bordered > tfoot > tr > td {
+    border: 1px solid #666;  vertical-align:top; font-size: 12px;
+}
+ 
+td .event { font-size:26px; line-height:16px; padding: 3px 0px; margin:-15px 0px 0px; text-align:center; color:#333; }
+td .event_name{ font-size:11px; line-height:12px; padding: 3px 0px 0px; margin:0px;  }
+td .day-number{ font-size:12px; line-height:12px;color:#999; padding:  3px 0px; margin:0px; }
+td.calendar-day{ padding:4px 0 0 4px!important; }
+.total_leave td{ font-size:16px; }
+.note_content{ font-size:12px; line-height:14px; color:#333;   margin:5px 0px; }
+.att_title, .att_tvalue{  font-size:16px!important; line-height:30px; color:#333; padding:5px;  margin:0px; }
+.att_tvalue{  font-size:20px!important;  color:#333; background:#F4F4F4; padding:5px 10px 0 0;  margin:0px; text-align: right; }
+
+.intern-att-statement-form .intern-att-generating {
+  padding: 1rem 1.1rem;
+  border: 1px solid #f1d4d8;
+  border-radius: 0.375rem;
+  background: #fff8f8;
+}
+
+.intern-att-statement-form .intern-att-generating .progress-striped {
+  height: 25px;
+  margin-bottom: 0;
+}
+
+.intern-att-statement-form .intern-att-cards {
+  margin-top: 1rem;
+  background: #ececec;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.intern-att-statement-form .intern-att-cards .intern-att-card.container {
+  width: 794px;
+  min-height: 1122px;
+  height: auto;
+  margin: 0 auto 1.5rem;
+  background: #fff;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.intern-att-statement-form .intern-att-cards .intern-att-card .pbody {
+  height: auto;
+  min-height: 680px;
+  overflow: visible;
+}
+
+.intern-att-statement-form .intern-att-cards .intern-att-card .pfooter {
+  clear: both;
+  padding-top: 0.5rem;
+}
+
+.intern-att-statement-form .intern-att-cards .intern-att-card .pheader::after,
+.intern-att-statement-form .intern-att-cards .intern-att-card .pbody::after {
+  content: '';
+  display: table;
+  clear: both;
+}
+
+.intern-att-statement-form .intern-att-cards .intern-att-calendar {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.intern-att-statement-form .intern-att-cards .intern-att-calendar th,
+.intern-att-statement-form .intern-att-cards .intern-att-calendar td {
+  white-space: normal;
+  word-break: break-word;
+  vertical-align: top;
+}
+
+.intern-att-statement-form .intern-att-cards .calendar-day-inner {
+  position: relative;
+  min-height: 50px;
+  text-align: center;
+}
+
+.intern-att-statement-form .intern-att-cards td .event {
+  margin: -8px 0 0;
+  line-height: 20px;
+}
+
+.intern-att-statement-form .intern-att-cards td .event_name {
+  text-align: center;
+  margin: 0;
+  padding: 2px 1px 0;
+  line-height: 11px;
+  font-size: 10px;
+}
+
+.intern-att-statement-form .intern-att-cards td .event_name span {
+  font-size: 10px !important;
+  line-height: 11px;
+}
+
+.intern-att-statement-form .intern-att-cards .total_leave {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.intern-att-statement-form .intern-att-cards .student_address {
+  text-align: left;
+}

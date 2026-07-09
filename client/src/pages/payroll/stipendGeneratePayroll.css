@@ -1,0 +1,25 @@
+.stipend-generate-root .progress-striped {
+  height: 25px;
+  margin-bottom: 3px;
+}
+
+.stipend-generate-root .att-report-span {
+  overflow-x: auto;
+}
+
+.stipend-generate-root .att-report-span table {
+  background: #fff;
+  font-size: 0.875rem;
+}
+
+.stipend-generate-root .att-report-span th {
+  white-space: nowrap;
+}
+
+.stipend-generate-root .form-horizontal .col-form-label {
+  font-weight: 500;
+}
+
+.stipend-generate-root .month-option-generated {
+  background-color: #96cd6d;
+}

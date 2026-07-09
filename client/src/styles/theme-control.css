@@ -1,0 +1,293 @@
+/* Theme master control — header dropdown */
+
+.cis-theme-control {
+  position: relative;
+}
+
+.cis-theme-control-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--cis-border);
+  border-radius: 999px;
+  background: var(--cis-surface);
+  color: var(--cis-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cis-theme-control-trigger:hover,
+.cis-theme-control-trigger[aria-expanded='true'] {
+  border-color: var(--cis-primary);
+  color: var(--cis-primary);
+  box-shadow: 0 0 0 3px rgba(var(--cis-primary-rgb), 0.1);
+}
+
+.cis-theme-control-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 1080;
+  width: min(22rem, calc(100vw - 1.5rem));
+  max-height: min(32rem, calc(100vh - 5rem));
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1rem 0.875rem;
+  border-radius: var(--cis-radius);
+  border: 1px solid var(--cis-border);
+  background: var(--cis-surface);
+  box-shadow: var(--cis-shadow-lg);
+}
+
+.cis-theme-control-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  margin: 0 -0.25rem;
+  padding: 0 0.25rem;
+}
+
+.cis-theme-control-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.875rem;
+}
+
+.cis-theme-control-title {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--cis-text);
+}
+
+.cis-theme-control-sub {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: var(--cis-text-muted);
+}
+
+.cis-theme-control-section {
+  margin-bottom: 0.875rem;
+}
+
+.cis-theme-control-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cis-text-muted);
+  margin: 0 0 0.5rem;
+}
+
+.cis-theme-preset-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cis-theme-custom-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--cis-border);
+  border-radius: 10px;
+  background: var(--cis-bg);
+  color: var(--cis-text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cis-theme-custom-toggle:hover {
+  border-color: var(--cis-primary);
+  color: var(--cis-primary);
+}
+
+.cis-theme-custom-panel {
+  margin-top: 0.625rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  border: 1px dashed var(--cis-border-strong);
+  background: var(--cis-bg-subtle);
+}
+
+.cis-theme-custom-note {
+  margin: 0 0 0.625rem;
+  font-size: 0.6875rem;
+  color: var(--cis-text-muted);
+  line-height: 1.45;
+}
+
+.cis-theme-custom-preview {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.cis-theme-custom-preview span {
+  flex: 1;
+  height: 1.5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.cis-theme-color-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-bottom: 0.75rem;
+}
+
+.cis-theme-color-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.cis-theme-color-field-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.cis-theme-color-field-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--cis-text);
+}
+
+.cis-theme-color-field-hint {
+  font-size: 0.625rem;
+  color: var(--cis-text-muted);
+}
+
+.cis-theme-color-field-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cis-theme-color-picker {
+  width: 2.25rem;
+  height: 2rem;
+  padding: 0.15rem;
+  border: 1px solid var(--cis-border);
+  border-radius: 8px;
+  background: var(--cis-surface);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.cis-theme-color-hex {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+}
+
+.cis-theme-preset {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--cis-border);
+  border-radius: 12px;
+  background: var(--cis-bg);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cis-theme-preset:hover {
+  border-color: var(--cis-border-strong);
+  background: var(--cis-surface);
+}
+
+.cis-theme-preset.is-active {
+  border-color: var(--cis-primary);
+  background: var(--cis-primary-soft);
+  box-shadow: 0 0 0 1px rgba(var(--cis-primary-rgb), 0.15);
+}
+
+.cis-theme-preset-swatches {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.cis-theme-swatch {
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+.cis-theme-preset-name {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--cis-text);
+}
+
+.cis-theme-preset-desc {
+  font-size: 0.6875rem;
+  color: var(--cis-text-muted);
+  line-height: 1.35;
+}
+
+.cis-theme-preset-check {
+  position: absolute;
+  top: 0.625rem;
+  right: 0.625rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cis-primary);
+  color: #fff;
+  font-size: 0.625rem;
+}
+
+.cis-theme-toggle-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.cis-theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--cis-border);
+  border-radius: 10px;
+  background: var(--cis-bg);
+  color: var(--cis-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cis-theme-toggle-btn.is-active {
+  border-color: var(--cis-primary);
+  background: var(--cis-primary-soft);
+  color: var(--cis-primary);
+}
+
+.cis-theme-control-foot {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--cis-border);
+  display: flex;
+  justify-content: flex-end;
+}

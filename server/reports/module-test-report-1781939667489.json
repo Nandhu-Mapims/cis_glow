@@ -1,0 +1,2918 @@
+{
+  "generatedAt": "2026-06-20T07:14:27.485Z",
+  "thresholds": {
+    "warnMs": 2000,
+    "slowMs": 5000
+  },
+  "summary": {
+    "total": 421,
+    "passed": 415,
+    "failed": 4,
+    "warnings": 2,
+    "skipped": 0,
+    "latency": {
+      "min": 0,
+      "p50": 12,
+      "p95": 632,
+      "p99": 7242,
+      "max": 68475,
+      "avg": 569
+    }
+  },
+  "modules": {
+    "student": {
+      "ok": 18,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 367
+    },
+    "staff-setup": {
+      "ok": 9,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 83
+    },
+    "staff": {
+      "ok": 19,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 611
+    },
+    "staff-att-setup": {
+      "ok": 4,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 34
+    },
+    "staff-att": {
+      "ok": 20,
+      "fail": 0,
+      "warn": 2,
+      "skip": 0,
+      "slow": 3,
+      "p95": 61026
+    },
+    "student-att": {
+      "ok": 23,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 16
+    },
+    "fees": {
+      "ok": 14,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 92
+    },
+    "academic": {
+      "ok": 30,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 187
+    },
+    "exam": {
+      "ok": 30,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 204
+    },
+    "elearning": {
+      "ok": 4,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 12
+    },
+    "payroll": {
+      "ok": 24,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 413
+    },
+    "stipend": {
+      "ok": 6,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 601
+    },
+    "hostel": {
+      "ok": 15,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 3593
+    },
+    "library": {
+      "ok": 18,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 3021
+    },
+    "admin": {
+      "ok": 12,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 209
+    },
+    "settings": {
+      "ok": 14,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 26
+    },
+    "sms": {
+      "ok": 9,
+      "fail": 1,
+      "warn": 0,
+      "skip": 0,
+      "slow": 1,
+      "p95": 7242
+    },
+    "web": {
+      "ok": 17,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 44
+    },
+    "tv": {
+      "ok": 10,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 24
+    },
+    "kiosk": {
+      "ok": 15,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 60
+    },
+    "committee": {
+      "ok": 30,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 39
+    },
+    "certificate": {
+      "ok": 16,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 580
+    },
+    "naac": {
+      "ok": 1,
+      "fail": 2,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 19
+    },
+    "admin-office": {
+      "ok": 11,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 46
+    },
+    "circular": {
+      "ok": 9,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 95
+    },
+    "dashboard": {
+      "ok": 7,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 1,
+      "p95": 28803
+    },
+    "portfolio": {
+      "ok": 3,
+      "fail": 0,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 380
+    },
+    "http": {
+      "ok": 27,
+      "fail": 1,
+      "warn": 0,
+      "skip": 0,
+      "slow": 0,
+      "p95": 1386
+    }
+  },
+  "slowest": [
+    {
+      "module": "staff-att",
+      "name": "att-chart-modified",
+      "ms": 68475,
+      "status": "slow"
+    },
+    {
+      "module": "staff-att",
+      "name": "att-chart-combined",
+      "ms": 61026,
+      "status": "slow"
+    },
+    {
+      "module": "dashboard",
+      "name": "widgets-all",
+      "ms": 28803,
+      "status": "slow"
+    },
+    {
+      "module": "staff-att",
+      "name": "att-chart",
+      "ms": 20297,
+      "status": "slow"
+    },
+    {
+      "module": "sms",
+      "name": "sms-history",
+      "ms": 7242,
+      "status": "slow"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/hostel/setup/dashboard/load",
+      "ms": 4029,
+      "status": "warn-latency"
+    },
+    {
+      "module": "hostel",
+      "name": "dashboard",
+      "ms": 3593,
+      "status": "warn-latency"
+    },
+    {
+      "module": "dashboard",
+      "name": "staff-unit-2",
+      "ms": 3427,
+      "status": "warn-latency"
+    },
+    {
+      "module": "staff-att",
+      "name": "staff-report",
+      "ms": 3304,
+      "status": "warn"
+    },
+    {
+      "module": "dashboard",
+      "name": "staff-unit-1",
+      "ms": 3299,
+      "status": "warn-latency"
+    },
+    {
+      "module": "staff-att",
+      "name": "available-leave",
+      "ms": 3245,
+      "status": "warn-latency"
+    },
+    {
+      "module": "library",
+      "name": "att-report",
+      "ms": 3021,
+      "status": "warn-latency"
+    },
+    {
+      "module": "library",
+      "name": "attendance",
+      "ms": 2796,
+      "status": "warn-latency"
+    },
+    {
+      "module": "payroll",
+      "name": "salary-report",
+      "ms": 2751,
+      "status": "warn-latency"
+    },
+    {
+      "module": "library",
+      "name": "entry-report",
+      "ms": 2389,
+      "status": "warn-latency"
+    }
+  ],
+  "failures": [
+    {
+      "module": "sms",
+      "name": "sms-template",
+      "ms": 6,
+      "error": "\nInvalid `prisma.sms_template_tb.findMany()` invocation:\n\n\nValue out of range for the type: The column `updated_dt` contained an invalid datetime value with either day or month set to zero."
+    },
+    {
+      "module": "naac",
+      "name": "quan",
+      "ms": 11,
+      "error": "\nInvalid `prisma.naac_quan_main.findMany()` invocation:\n\n\nValue out of range for the type: The column `updated_dt` contained an invalid datetime value with either day or month set to zero."
+    },
+    {
+      "module": "naac",
+      "name": "quan-report",
+      "ms": 9,
+      "error": "\nInvalid `prisma.naac_quan_main.findMany()` invocation:\n\n\nValue out of range for the type: The column `updated_dt` contained an invalid datetime value with either day or month set to zero."
+    },
+    {
+      "module": "http",
+      "name": "POST /api/certificate/setup/setup/load",
+      "ms": 14,
+      "error": "HTTP 404"
+    }
+  ],
+  "warnings": [
+    {
+      "module": "staff-att",
+      "name": "calendar",
+      "ms": 8,
+      "error": "Staff member not found"
+    },
+    {
+      "module": "staff-att",
+      "name": "staff-report",
+      "ms": 3304,
+      "error": "\nInvalid `prisma.$queryRawUnsafe()` invocation:\n\n\nRaw query failed. Code: `N/A`. Message: `Value out of range error. The column `quarters_date` contained an invalid datetime value with either day or month set to zero.`"
+    }
+  ],
+  "results": [
+    {
+      "module": "student",
+      "name": "temp-admission-add",
+      "ms": 367,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "temp-admission-edit",
+      "ms": 27,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "temp-affidavit",
+      "ms": 28,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "academic-promotion",
+      "ms": 27,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "attachments-upload",
+      "ms": 2,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "attachments-view",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "attachments-report",
+      "ms": 25,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "id-card",
+      "ms": 21,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "photo-empty",
+      "ms": 22,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "photo-upload",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "promote",
+      "ms": 27,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "address-label",
+      "ms": 18,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "alumni-registration",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "alumni-edit",
+      "ms": 4,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "alumni-report",
+      "ms": 19,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "alumni-id-card",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "collage-generate",
+      "ms": 17,
+      "status": "ok"
+    },
+    {
+      "module": "student",
+      "name": "collage-image",
+      "ms": 10,
+      "status": "ok"
+    },
+    {
+      "module": "staff-setup",
+      "name": "designation-edit",
+      "ms": 15,
+      "status": "ok"
+    },
+    {
+      "module": "staff-setup",
+      "name": "attachment-category",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "staff-setup",
+      "name": "attachment-scategory",
+      "ms": 9,
+      "status": "ok"
+    },
+    {
+      "module": "staff-setup",
+      "name": "attachment-setup",
+      "ms": 70,
+      "status": "ok"
+    },
+    {
+      "module": "staff-setup",
+      "name": "org-chart-config",
+      "ms": 83,
+      "status": "ok"
+    },
+    {
+      "module": "staff-setup",
+      "name": "inspection-config",
+      "ms": 8,
+      "status": "ok"
+    },
+    {
+      "module": "staff-setup",
+      "name": "inspection-name",
+      "ms": 2,
+      "status": "ok"
+    },
+    {
+      "module": "staff-setup",
+      "name": "transport-setup",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "staff-setup",
+      "name": "login-help",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "appoint-order",
+      "ms": 42,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "salary-note",
+      "ms": 37,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "id-card",
+      "ms": 48,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "photo-empty",
+      "ms": 36,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "photo-upload",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "org-structure",
+      "ms": 20,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "transport",
+      "ms": 155,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "certificates",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "photos",
+      "ms": 611,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "inspection-details",
+      "ms": 8,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "inspection-attn-sheet",
+      "ms": 4,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "inspection-attn-cert",
+      "ms": 50,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "dci-report",
+      "ms": 72,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "tnmgr-report",
+      "ms": 67,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "affidavit-dci",
+      "ms": 44,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "affidavit-tnmgrmu",
+      "ms": 42,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "attach-print",
+      "ms": 45,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "publication-dci",
+      "ms": 75,
+      "status": "ok"
+    },
+    {
+      "module": "staff",
+      "name": "publication-tnmgrmu",
+      "ms": 68,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att-setup",
+      "name": "calendar-add",
+      "ms": 26,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att-setup",
+      "name": "calendar-edit",
+      "ms": 34,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att-setup",
+      "name": "working-day",
+      "ms": 12,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att-setup",
+      "name": "att-time",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "clear-icache",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "daily-attendance",
+      "ms": 1180,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "biometric-report",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "smr-acknowledge",
+      "ms": 93,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "smr-leave-approve",
+      "ms": 88,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "smr-permission-approve",
+      "ms": 4,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "smr-defaulter-approve",
+      "ms": 29,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "smr-lpd-report",
+      "ms": 73,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "holiday-roster",
+      "ms": 35,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "compensation",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "attendance-report",
+      "ms": 1019,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "teaching-month-report",
+      "ms": 37,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "yearly-report",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "att-chart",
+      "ms": 20297,
+      "status": "slow"
+    },
+    {
+      "module": "staff-att",
+      "name": "att-chart-modified",
+      "ms": 68475,
+      "status": "slow"
+    },
+    {
+      "module": "staff-att",
+      "name": "att-chart-combined",
+      "ms": 61026,
+      "status": "slow"
+    },
+    {
+      "module": "staff-att",
+      "name": "att-time-report",
+      "ms": 73,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "available-cl",
+      "ms": 125,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "att-transport",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "staff-att",
+      "name": "available-leave",
+      "ms": 3245,
+      "status": "warn-latency"
+    },
+    {
+      "module": "staff-att",
+      "name": "calendar",
+      "warnOnly": true,
+      "ms": 8,
+      "status": "warn",
+      "error": "Staff member not found"
+    },
+    {
+      "module": "staff-att",
+      "name": "staff-report",
+      "warnOnly": true,
+      "ms": 3304,
+      "status": "warn",
+      "error": "\nInvalid `prisma.$queryRawUnsafe()` invocation:\n\n\nRaw query failed. Code: `N/A`. Message: `Value out of range error. The column `quarters_date` contained an invalid datetime value with either day or month set to zero.`"
+    },
+    {
+      "module": "student-att",
+      "name": "biometric-report",
+      "ms": 33,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "holiday-report",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "smr-leave-request",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "smr-dept-leave",
+      "ms": 10,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "smr-permission",
+      "ms": 4,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "smr-defaulter",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "smr-lpd-report",
+      "ms": 16,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "smr-setup",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "pg-att-setup",
+      "ms": 9,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "pg-holiday-roster-add",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "pg-holiday-roster-edit",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "pg-manual-att",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "pg-reports-att",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "pg-punch-entry",
+      "ms": 2,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "pg-punch",
+      "ms": 1,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "year-incharge",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "ug-att-report",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "intern-att-setup",
+      "ms": 15,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "intern-holiday-roster-add",
+      "ms": 8,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "intern-holiday-roster-edit",
+      "ms": 2,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "intern-manual-att",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "intern-reports-att",
+      "ms": 8,
+      "status": "ok"
+    },
+    {
+      "module": "student-att",
+      "name": "intern-att-statement",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "fees",
+      "name": "filters",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "fees",
+      "name": "delete-requests",
+      "ms": 4,
+      "status": "ok"
+    },
+    {
+      "module": "fees",
+      "name": "delete-approvals",
+      "ms": 4,
+      "status": "ok"
+    },
+    {
+      "module": "fees",
+      "name": "pending-sms-classes",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "fees",
+      "name": "pending-letter-form",
+      "ms": 12,
+      "status": "ok"
+    },
+    {
+      "module": "fees",
+      "name": "scholarship-setup",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "fees",
+      "name": "dme-setup",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "fees",
+      "name": "acmec-scholarship-setup",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "fees",
+      "name": "acmec-config",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "fees",
+      "name": "setup-label",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "fees",
+      "name": "setup-type",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "fees",
+      "name": "setup-bank",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "fees",
+      "name": "setup-fine",
+      "ms": 4,
+      "status": "ok"
+    },
+    {
+      "module": "fees",
+      "name": "setup-name",
+      "ms": 92,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "subject-master",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "academic-years",
+      "ms": 23,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "master-setup",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "subject-setup",
+      "ms": 58,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "subject-batch",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "subject-unit",
+      "ms": 4,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "subject-schedule",
+      "ms": 8,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "tt-config",
+      "ms": 9,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "subject-report",
+      "ms": 8,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "timetable-report",
+      "ms": 1,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "batch-timetable-report",
+      "ms": 187,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "batch-color",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "feedback-topics",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "period-setup",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "internship-schedule",
+      "ms": 23,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "feedback-config-ug",
+      "ms": 11,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "feedback-config-pg",
+      "ms": 9,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "tt-config-v3",
+      "ms": 12,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "subject-dashboard",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "subject-schedule-report",
+      "ms": 10,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "subject-timing",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "feedback-dashboard",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "class-timetable",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "class-timetable-v3",
+      "ms": 10,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "feedback-report-ug",
+      "ms": 13,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "feedback-report-pg",
+      "ms": 13,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "subject-handle",
+      "ms": 8,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "staff-period-completed",
+      "ms": 786,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "department-period-completed",
+      "ms": 13,
+      "status": "ok"
+    },
+    {
+      "module": "academic",
+      "name": "subject-handle-grid",
+      "ms": 13,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "exam-names",
+      "ms": 10,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "exam-setup",
+      "ms": 19,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "exam-nodue",
+      "ms": 33,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "exam-schedule",
+      "ms": 35,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "exam-batch",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "mark-sheet",
+      "ms": 36,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "exam-examiners",
+      "ms": 25,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "exam-attendance-certificate",
+      "ms": 19,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "examiner-setup",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "camp-activity-add",
+      "ms": 14,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "camp-activity-edit",
+      "ms": 19,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "camp-activity-type",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "mark-entry",
+      "ms": 37,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "attendance-entry",
+      "ms": 46,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "attendance-report",
+      "ms": 25,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "marks-upload",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "sheets-upload",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "sheets-status",
+      "ms": 22,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "mark-sheet-status",
+      "ms": 32,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "mark-sheet-received",
+      "ms": 25,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "term-statement",
+      "ms": 143,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "term-report",
+      "ms": 126,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "report-analysis",
+      "ms": 132,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "report-analysis-v1",
+      "ms": 181,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "progress-card",
+      "ms": 118,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "exam-sms",
+      "ms": 22,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "schedule-print",
+      "ms": 104,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "invigilator-print",
+      "ms": 204,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "omr-config",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "elearning",
+      "name": "elearn-dashboard",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "elearning",
+      "name": "elearn-setup",
+      "ms": 9,
+      "status": "ok"
+    },
+    {
+      "module": "elearning",
+      "name": "elearn-report",
+      "ms": 12,
+      "status": "ok"
+    },
+    {
+      "module": "exam",
+      "name": "dashboard",
+      "warnOnly": true,
+      "ms": 280,
+      "status": "ok"
+    },
+    {
+      "module": "elearning",
+      "name": "dashboard",
+      "ms": 4,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "individual-setup",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "cron-setup",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "stipend-amount-setup",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "stipend-deduction-add",
+      "ms": 15,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "stipend-payroll-close",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "payroll-config",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "pf-esi-setup",
+      "ms": 11,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "salary-add",
+      "ms": 12,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "salary-report",
+      "ms": 2751,
+      "status": "warn-latency"
+    },
+    {
+      "module": "payroll",
+      "name": "salary-advance-add",
+      "ms": 209,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "salary-advance-close",
+      "ms": 186,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "salary-arrear-add",
+      "ms": 2,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "salary-arrear-release",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "other-deduction",
+      "ms": 236,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "lop-deduction",
+      "ms": 268,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "tds-add",
+      "ms": 264,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "cheque-payment",
+      "ms": 277,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "security-deposit-add",
+      "ms": 213,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "security-deposit-close",
+      "ms": 246,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "payroll-close",
+      "ms": 48,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "report:generate-payroll",
+      "ms": 413,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "report:att-report",
+      "ms": 131,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "report:monthly-report",
+      "ms": 132,
+      "status": "ok"
+    },
+    {
+      "module": "payroll",
+      "name": "report:tax-report",
+      "ms": 38,
+      "status": "ok"
+    },
+    {
+      "module": "stipend",
+      "name": "generate-payroll",
+      "ms": 601,
+      "status": "ok"
+    },
+    {
+      "module": "stipend",
+      "name": "att-report",
+      "ms": 15,
+      "status": "ok"
+    },
+    {
+      "module": "stipend",
+      "name": "payroll-report",
+      "ms": 13,
+      "status": "ok"
+    },
+    {
+      "module": "stipend",
+      "name": "statement",
+      "ms": 13,
+      "status": "ok"
+    },
+    {
+      "module": "stipend",
+      "name": "individual-report",
+      "ms": 19,
+      "status": "ok"
+    },
+    {
+      "module": "stipend",
+      "name": "individual-pdf",
+      "warnOnly": true,
+      "ms": 10,
+      "status": "ok"
+    },
+    {
+      "module": "hostel",
+      "name": "dashboard",
+      "ms": 3593,
+      "status": "warn-latency"
+    },
+    {
+      "module": "hostel",
+      "name": "block-setup",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "hostel",
+      "name": "room-setup-add",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "hostel",
+      "name": "room-setup-edit",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "hostel",
+      "name": "room-rental-setup",
+      "ms": 2,
+      "status": "ok"
+    },
+    {
+      "module": "hostel",
+      "name": "transport-add",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "hostel",
+      "name": "transport-edit",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "hostel",
+      "name": "transport-stopping-setup",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "hostel",
+      "name": "transport-fee-config",
+      "ms": 8,
+      "status": "ok"
+    },
+    {
+      "module": "hostel",
+      "name": "student-hostel",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "hostel",
+      "name": "att-setup",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "hostel",
+      "name": "attendance-report",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "hostel",
+      "name": "pass-approval",
+      "ms": 504,
+      "status": "ok"
+    },
+    {
+      "module": "hostel",
+      "name": "pass-report",
+      "ms": 47,
+      "status": "ok"
+    },
+    {
+      "module": "hostel",
+      "name": "staff-rental",
+      "ms": 60,
+      "status": "ok"
+    },
+    {
+      "module": "library",
+      "name": "dashboard",
+      "ms": 1416,
+      "status": "ok"
+    },
+    {
+      "module": "library",
+      "name": "book-category",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "library",
+      "name": "book-add",
+      "ms": 8,
+      "status": "ok"
+    },
+    {
+      "module": "library",
+      "name": "book-edit",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "library",
+      "name": "book-report",
+      "ms": 28,
+      "status": "ok"
+    },
+    {
+      "module": "library",
+      "name": "transaction-issue",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "library",
+      "name": "transaction-return",
+      "ms": 4,
+      "status": "ok"
+    },
+    {
+      "module": "library",
+      "name": "transaction-setup",
+      "ms": 4,
+      "status": "ok"
+    },
+    {
+      "module": "library",
+      "name": "transaction-report",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "library",
+      "name": "entry-report",
+      "ms": 2389,
+      "status": "warn-latency"
+    },
+    {
+      "module": "library",
+      "name": "attendance",
+      "ms": 2796,
+      "status": "warn-latency"
+    },
+    {
+      "module": "library",
+      "name": "att-entry",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "library",
+      "name": "att-report",
+      "ms": 3021,
+      "status": "warn-latency"
+    },
+    {
+      "module": "library",
+      "name": "supplier-add",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "library",
+      "name": "supplier-edit",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "library",
+      "name": "resources-report",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "library",
+      "name": "resources-barcode",
+      "ms": 4,
+      "status": "ok"
+    },
+    {
+      "module": "library",
+      "name": "resource-transfer",
+      "ms": 2,
+      "status": "ok"
+    },
+    {
+      "module": "admin",
+      "name": "account-add",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "admin",
+      "name": "account-edit",
+      "ms": 15,
+      "status": "ok"
+    },
+    {
+      "module": "admin",
+      "name": "access-restriction",
+      "ms": 12,
+      "status": "ok"
+    },
+    {
+      "module": "admin",
+      "name": "dept-auth",
+      "ms": 35,
+      "status": "ok"
+    },
+    {
+      "module": "admin",
+      "name": "dept-auth-v1",
+      "ms": 167,
+      "status": "ok"
+    },
+    {
+      "module": "admin",
+      "name": "menu-auth",
+      "ms": 209,
+      "status": "ok"
+    },
+    {
+      "module": "admin",
+      "name": "dashboard-access",
+      "ms": 14,
+      "status": "ok"
+    },
+    {
+      "module": "admin",
+      "name": "change-password",
+      "ms": 8,
+      "status": "ok"
+    },
+    {
+      "module": "admin",
+      "name": "otp-reset",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "admin",
+      "name": "committee-access",
+      "ms": 14,
+      "status": "ok"
+    },
+    {
+      "module": "admin",
+      "name": "staff-auth-hod",
+      "ms": 16,
+      "status": "ok"
+    },
+    {
+      "module": "admin",
+      "name": "staff-auth-page",
+      "ms": 33,
+      "status": "ok"
+    },
+    {
+      "module": "settings",
+      "name": "designation",
+      "ms": 4,
+      "status": "ok"
+    },
+    {
+      "module": "settings",
+      "name": "d-order",
+      "ms": 25,
+      "status": "ok"
+    },
+    {
+      "module": "settings",
+      "name": "staff-master",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "settings",
+      "name": "staff-edu-master",
+      "ms": 13,
+      "status": "ok"
+    },
+    {
+      "module": "settings",
+      "name": "approval",
+      "ms": 9,
+      "status": "ok"
+    },
+    {
+      "module": "settings",
+      "name": "college",
+      "ms": 19,
+      "status": "ok"
+    },
+    {
+      "module": "settings",
+      "name": "hospital",
+      "ms": 20,
+      "status": "ok"
+    },
+    {
+      "module": "settings",
+      "name": "budget",
+      "ms": 8,
+      "status": "ok"
+    },
+    {
+      "module": "settings",
+      "name": "print-setup",
+      "ms": 8,
+      "status": "ok"
+    },
+    {
+      "module": "settings",
+      "name": "print-style",
+      "ms": 26,
+      "status": "ok"
+    },
+    {
+      "module": "settings",
+      "name": "lesson-plan",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "settings",
+      "name": "signature",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "settings",
+      "name": "payroll-emailer",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "settings",
+      "name": "sms-cron",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "sms",
+      "name": "student-sms",
+      "ms": 15,
+      "status": "ok"
+    },
+    {
+      "module": "sms",
+      "name": "staff-sms",
+      "ms": 9,
+      "status": "ok"
+    },
+    {
+      "module": "sms",
+      "name": "group-sms",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "sms",
+      "name": "parent-meeting-sms",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "sms",
+      "name": "sms-history",
+      "ms": 7242,
+      "status": "slow"
+    },
+    {
+      "module": "sms",
+      "name": "sms-template",
+      "ms": 6,
+      "status": "fail",
+      "error": "\nInvalid `prisma.sms_template_tb.findMany()` invocation:\n\n\nValue out of range for the type: The column `updated_dt` contained an invalid datetime value with either day or month set to zero."
+    },
+    {
+      "module": "sms",
+      "name": "sms-template-add",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "sms",
+      "name": "sms-template-edit",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "sms",
+      "name": "group-add",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "sms",
+      "name": "group-edit",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "about-us",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "departments",
+      "ms": 1,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "lms",
+      "ms": 1,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "journal",
+      "ms": 2,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "facilities",
+      "ms": 1,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "aaadar",
+      "ms": 2,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "research",
+      "ms": 2,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "academic",
+      "ms": 2,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "iqac",
+      "ms": 2,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "outreach",
+      "ms": 1,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "slider-animation",
+      "ms": 23,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "staff-display-order",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "photos-add",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "photos-edit",
+      "ms": 2,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "doc-upload",
+      "ms": 44,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "research-program-add",
+      "ms": 38,
+      "status": "ok"
+    },
+    {
+      "module": "web",
+      "name": "research-program-edit",
+      "ms": 5,
+      "status": "ok"
+    },
+    {
+      "module": "tv",
+      "name": "slider-widget",
+      "ms": 19,
+      "status": "ok"
+    },
+    {
+      "module": "tv",
+      "name": "slider-config",
+      "ms": 11,
+      "status": "ok"
+    },
+    {
+      "module": "tv",
+      "name": "dashboard-access",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "tv",
+      "name": "slider-access",
+      "ms": 4,
+      "status": "ok"
+    },
+    {
+      "module": "tv",
+      "name": "photo-gallery",
+      "ms": 24,
+      "status": "ok"
+    },
+    {
+      "module": "tv",
+      "name": "video-gallery",
+      "ms": 11,
+      "status": "ok"
+    },
+    {
+      "module": "tv",
+      "name": "api-gallery",
+      "ms": 10,
+      "status": "ok"
+    },
+    {
+      "module": "tv",
+      "name": "youtube-gallery",
+      "ms": 4,
+      "status": "ok"
+    },
+    {
+      "module": "tv",
+      "name": "live-video",
+      "ms": 8,
+      "status": "ok"
+    },
+    {
+      "module": "tv",
+      "name": "print-style",
+      "ms": 11,
+      "status": "ok"
+    },
+    {
+      "module": "kiosk",
+      "name": "machine-access",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "kiosk",
+      "name": "machine-room",
+      "ms": 8,
+      "status": "ok"
+    },
+    {
+      "module": "kiosk",
+      "name": "student-password",
+      "ms": 15,
+      "status": "ok"
+    },
+    {
+      "module": "kiosk",
+      "name": "staff-password",
+      "ms": 4,
+      "status": "ok"
+    },
+    {
+      "module": "kiosk",
+      "name": "machine-slider",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "kiosk",
+      "name": "slider-widget",
+      "ms": 2,
+      "status": "ok"
+    },
+    {
+      "module": "kiosk",
+      "name": "att-menu",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "kiosk",
+      "name": "att-menu-access",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "kiosk",
+      "name": "att-instruction",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "kiosk",
+      "name": "staff-pin-reset",
+      "ms": 23,
+      "status": "ok"
+    },
+    {
+      "module": "kiosk",
+      "name": "student-pin-reset",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "kiosk",
+      "name": "att-statement",
+      "ms": 22,
+      "status": "ok"
+    },
+    {
+      "module": "kiosk",
+      "name": "announcement-add",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "kiosk",
+      "name": "announcement-edit",
+      "ms": 24,
+      "status": "ok"
+    },
+    {
+      "module": "kiosk",
+      "name": "receipt-setup",
+      "ms": 60,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "dashboard",
+      "ms": 88,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "committee-report",
+      "ms": 34,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "committee-add",
+      "ms": 24,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "committee-edit",
+      "ms": 25,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "committee-member",
+      "ms": 39,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "designation",
+      "ms": 12,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "event-type",
+      "ms": 11,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "task-category",
+      "ms": 32,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "client-add",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "client-edit",
+      "ms": 12,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "task-colour",
+      "ms": 8,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "task-type",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "task-wtype",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "task-participator",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "task-misc",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "task-doc-type",
+      "ms": 9,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "task-time-sheet",
+      "ms": 19,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "task-budget-expenses",
+      "ms": 12,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "task-event-org",
+      "ms": 16,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "task-dashboard",
+      "ms": 18,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "task-allocation",
+      "ms": 19,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "task-allocation-v2",
+      "ms": 14,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "task-manage-report",
+      "ms": 13,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "task-document",
+      "ms": 16,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "task-budget-approved",
+      "ms": 24,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "approve-event",
+      "ms": 30,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "approve-event-report",
+      "ms": 25,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "approve-reschedule",
+      "ms": 17,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "tv-academic-event",
+      "ms": 19,
+      "status": "ok"
+    },
+    {
+      "module": "committee",
+      "name": "tv-academic-print",
+      "ms": 32,
+      "status": "ok"
+    },
+    {
+      "module": "certificate",
+      "name": "setup",
+      "ms": 22,
+      "status": "ok"
+    },
+    {
+      "module": "certificate",
+      "name": "approve",
+      "ms": 580,
+      "status": "ok"
+    },
+    {
+      "module": "certificate",
+      "name": "generate",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "certificate",
+      "name": "receipt-add",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "certificate",
+      "name": "receipt-edit",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "certificate",
+      "name": "receipt-report",
+      "ms": 80,
+      "status": "ok"
+    },
+    {
+      "module": "certificate",
+      "name": "cert-request",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "certificate",
+      "name": "tc-details",
+      "ms": 9,
+      "status": "ok"
+    },
+    {
+      "module": "certificate",
+      "name": "tc-request-add",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "certificate",
+      "name": "tc-request-edit",
+      "ms": 18,
+      "status": "ok"
+    },
+    {
+      "module": "certificate",
+      "name": "tc-generate",
+      "ms": 1,
+      "status": "ok"
+    },
+    {
+      "module": "certificate",
+      "name": "internship-schedule",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "certificate",
+      "name": "internship-generate",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "certificate",
+      "name": "internship-photo",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "certificate",
+      "name": "implant-cert",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "certificate",
+      "name": "laser-cert",
+      "ms": 2,
+      "status": "ok"
+    },
+    {
+      "module": "naac",
+      "name": "qual",
+      "ms": 19,
+      "status": "ok"
+    },
+    {
+      "module": "naac",
+      "name": "quan",
+      "ms": 11,
+      "status": "fail",
+      "error": "\nInvalid `prisma.naac_quan_main.findMany()` invocation:\n\n\nValue out of range for the type: The column `updated_dt` contained an invalid datetime value with either day or month set to zero."
+    },
+    {
+      "module": "naac",
+      "name": "quan-report",
+      "ms": 9,
+      "status": "fail",
+      "error": "\nInvalid `prisma.naac_quan_main.findMany()` invocation:\n\n\nValue out of range for the type: The column `updated_dt` contained an invalid datetime value with either day or month set to zero."
+    },
+    {
+      "module": "admin-office",
+      "name": "student-activities-add",
+      "ms": 44,
+      "status": "ok"
+    },
+    {
+      "module": "admin-office",
+      "name": "student-activities-edit",
+      "ms": 13,
+      "status": "ok"
+    },
+    {
+      "module": "admin-office",
+      "name": "staff-activities-add",
+      "ms": 15,
+      "status": "ok"
+    },
+    {
+      "module": "admin-office",
+      "name": "staff-activities-edit",
+      "ms": 10,
+      "status": "ok"
+    },
+    {
+      "module": "admin-office",
+      "name": "courier-add",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "admin-office",
+      "name": "courier-edit",
+      "ms": 46,
+      "status": "ok"
+    },
+    {
+      "module": "admin-office",
+      "name": "courier-report",
+      "ms": 14,
+      "status": "ok"
+    },
+    {
+      "module": "admin-office",
+      "name": "incident-add",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "admin-office",
+      "name": "incident-edit",
+      "ms": 25,
+      "status": "ok"
+    },
+    {
+      "module": "admin-office",
+      "name": "incident-report",
+      "ms": 9,
+      "status": "ok"
+    },
+    {
+      "module": "admin-office",
+      "name": "events-group-add",
+      "ms": 0,
+      "status": "ok"
+    },
+    {
+      "module": "circular",
+      "name": "dashboard",
+      "ms": 95,
+      "status": "ok"
+    },
+    {
+      "module": "circular",
+      "name": "add",
+      "ms": 24,
+      "status": "ok"
+    },
+    {
+      "module": "circular",
+      "name": "edit",
+      "ms": 45,
+      "status": "ok"
+    },
+    {
+      "module": "circular",
+      "name": "approve",
+      "ms": 20,
+      "status": "ok"
+    },
+    {
+      "module": "circular",
+      "name": "report",
+      "ms": 14,
+      "status": "ok"
+    },
+    {
+      "module": "circular",
+      "name": "print-student",
+      "ms": 17,
+      "status": "ok"
+    },
+    {
+      "module": "circular",
+      "name": "print-staff",
+      "ms": 28,
+      "status": "ok"
+    },
+    {
+      "module": "circular",
+      "name": "print-department",
+      "ms": 7,
+      "status": "ok"
+    },
+    {
+      "module": "circular",
+      "name": "setup",
+      "ms": 3,
+      "status": "ok"
+    },
+    {
+      "module": "dashboard",
+      "name": "widgets-all",
+      "ms": 28803,
+      "status": "slow"
+    },
+    {
+      "module": "dashboard",
+      "name": "student-dashboard-shell",
+      "ms": 21,
+      "status": "ok"
+    },
+    {
+      "module": "dashboard",
+      "name": "staff-pattern-shell",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "dashboard",
+      "name": "overall-strength",
+      "ms": 73,
+      "status": "ok"
+    },
+    {
+      "module": "dashboard",
+      "name": "community-strength",
+      "ms": 313,
+      "status": "ok"
+    },
+    {
+      "module": "dashboard",
+      "name": "staff-unit-1",
+      "ms": 3299,
+      "status": "warn-latency"
+    },
+    {
+      "module": "dashboard",
+      "name": "staff-unit-2",
+      "ms": 3427,
+      "status": "warn-latency"
+    },
+    {
+      "module": "portfolio",
+      "name": "dashboard",
+      "ms": 380,
+      "status": "ok"
+    },
+    {
+      "module": "portfolio",
+      "name": "individual-report-init",
+      "ms": 6,
+      "status": "ok"
+    },
+    {
+      "module": "portfolio",
+      "name": "individual-report-batch",
+      "ms": 17,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "GET /api/auth/me",
+      "ms": 287,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "GET /api/dashboard",
+      "ms": 872,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "GET /api/menu",
+      "ms": 68,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "GET /api/settings/basic",
+      "ms": 23,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "GET /api/fees/filters",
+      "ms": 81,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "GET /api/exam/dashboard",
+      "ms": 632,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/students/screens/temp-admission-add/load",
+      "ms": 65,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/staff/setup/designation-edit/load",
+      "ms": 58,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/fees/setup/label/load",
+      "ms": 20,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/academic/setup/subject-master/load",
+      "ms": 12,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/exam/setup/exam-names/load",
+      "ms": 16,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/payroll/setup/payroll-config/load",
+      "ms": 29,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/hostel/setup/dashboard/load",
+      "ms": 4029,
+      "status": "warn-latency"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/library/setup/dashboard/load",
+      "ms": 1386,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/admin/setup/menu-auth/load",
+      "ms": 151,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/settings/setup/designation/load",
+      "ms": 45,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/sms/setup/student-sms/load",
+      "ms": 28,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/elearning/setup/elearn-setup/load",
+      "ms": 31,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/circular/setup/dashboard/load",
+      "ms": 54,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/certificate/setup/setup/load",
+      "ms": 14,
+      "status": "fail",
+      "error": "HTTP 404"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/committee/setup/dashboard/load",
+      "ms": 46,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/naac/setup/qual/load",
+      "ms": 27,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/admin-office/setup/courier-add/load",
+      "ms": 32,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/web/setup/about-us/load",
+      "ms": 30,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/tv/setup/slider-widget/load",
+      "ms": 36,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/kiosk/setup/machine-access/load",
+      "ms": 26,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/attendance/staff/setup/calendar-add/load",
+      "ms": 38,
+      "status": "ok"
+    },
+    {
+      "module": "http",
+      "name": "POST /api/attendance/students/biometric-report/load",
+      "ms": 57,
+      "status": "ok"
+    }
+  ]
+}

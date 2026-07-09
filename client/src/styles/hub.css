@@ -1,0 +1,276 @@
+/* ── Module hub pages — Operations Assistant style (red / pale yellow / light) ── */
+
+.cis-hub-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.cis-hub-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  padding: 1.375rem 1.5rem;
+  border-radius: var(--cis-card-radius);
+  background: linear-gradient(135deg, var(--cis-primary-soft) 0%, var(--cis-accent-soft) 70%, #fff 100%);
+  border: 1px solid rgba(var(--cis-accent-rgb), 0.45);
+}
+
+.cis-hub-hero-copy {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.cis-hub-hero-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--cis-text);
+  margin: 0 0 0.375rem;
+  line-height: 1.2;
+}
+
+.cis-hub-hero-subtitle {
+  font-size: 0.875rem;
+  color: var(--cis-text-muted);
+  margin: 0;
+  line-height: 1.55;
+  max-width: 40rem;
+}
+
+.cis-hub-hero-aside {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.cis-hub-hero-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid var(--cis-border);
+  box-shadow: 0 4px 14px rgba(26, 26, 26, 0.05);
+}
+
+.cis-hub-hero-stat strong {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--cis-primary);
+  line-height: 1;
+}
+
+.cis-hub-hero-stat span {
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cis-text-subtle);
+}
+
+.cis-hub-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.cis-hub-section-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cis-text);
+  margin: 0;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid var(--cis-border);
+}
+
+.cis-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.875rem;
+}
+
+.cis-hub-tile {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-height: 88px;
+  padding: 1rem;
+  border: 1px solid var(--cis-border);
+  border-radius: 14px;
+  background: var(--cis-surface);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 2px 10px rgba(26, 26, 26, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, background 0.15s ease;
+}
+
+.cis-hub-tile:hover {
+  border-color: rgba(var(--cis-accent-rgb), 0.8);
+  background: linear-gradient(135deg, #fff 0%, var(--cis-accent-soft) 100%);
+  box-shadow: 0 8px 20px rgba(26, 26, 26, 0.08);
+  transform: translateY(-2px);
+  color: inherit;
+}
+
+.cis-hub-tile-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1rem;
+  background: var(--cis-accent-soft);
+  color: var(--cis-primary);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cis-hub-tile:hover .cis-hub-tile-icon {
+  background: var(--cis-primary);
+  color: #fff;
+}
+
+.cis-hub-tile-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cis-hub-tile-title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--cis-text);
+  line-height: 1.3;
+  margin-bottom: 0.25rem;
+}
+
+.cis-hub-tile-desc {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--cis-text-muted);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cis-hub-tile-arrow {
+  flex-shrink: 0;
+  align-self: center;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--cis-text-subtle);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, color 0.15s ease;
+}
+
+.cis-hub-tile:hover .cis-hub-tile-arrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--cis-primary);
+}
+
+/* Legacy vertical hub card — kept for any direct usage */
+.cis-hub-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.25rem;
+  border: 1px solid var(--cis-border);
+  border-radius: var(--cis-card-radius);
+  background: var(--cis-surface);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 4px 16px rgba(26, 26, 26, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.cis-hub-card:hover {
+  border-color: rgba(var(--cis-accent-rgb), 0.75);
+  box-shadow: 0 8px 24px rgba(26, 26, 26, 0.08);
+  transform: translateY(-2px);
+  color: inherit;
+}
+
+.cis-hub-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--cis-accent-soft);
+  color: var(--cis-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  margin-bottom: 0.875rem;
+}
+
+.cis-hub-card-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0 0 0.375rem;
+  color: var(--cis-text);
+}
+
+.cis-hub-card-desc {
+  font-size: 0.8125rem;
+  color: var(--cis-text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.cis-hub-card-arrow {
+  margin-top: auto;
+  padding-top: 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--cis-primary);
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 1399.98px) {
+  .cis-hub-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 991.98px) {
+  .cis-hub-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cis-hub-hero {
+    padding: 1.125rem 1.25rem;
+  }
+
+  .cis-hub-hero-title {
+    font-size: 1.3125rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .cis-hub-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cis-hub-tile {
+    min-height: 0;
+  }
+}

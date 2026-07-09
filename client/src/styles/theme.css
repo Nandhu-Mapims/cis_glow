@@ -1,0 +1,88 @@
+/**
+ * CIS design tokens — Red & pale yellow (light content + dark sidebar)
+ */
+:root {
+  /* Brand */
+  --cis-primary: #a61a1a;
+  --cis-primary-hover: #8b1515;
+  --cis-primary-soft: #fff0ee;
+  --cis-primary-rgb: 166, 26, 26;
+  --cis-accent: #f5d15f;
+  --cis-accent-hover: #e6bc3a;
+  --cis-accent-soft: #fffbeb;
+  --cis-accent-rgb: 245, 209, 95;
+  --cis-peach-soft: #fff5f2;
+
+  /* Surfaces — light warm shell */
+  --cis-bg: #fafaf8;
+  --cis-bg-subtle: #fffbeb;
+  --cis-surface: #ffffff;
+  --cis-surface-elevated: #ffffff;
+  --cis-border: #e8e4dc;
+  --cis-border-strong: #d6d0c4;
+
+  /* Text */
+  --cis-text: #1a1a1a;
+  --cis-text-muted: #6b6560;
+  --cis-text-subtle: #9c958c;
+
+  /* Chrome — header light */
+  --cis-header-bg: #ffffff;
+  --cis-header-text: #1a1a1a;
+  --cis-header-border: #e8e4dc;
+
+  /* Chrome — dark sidebar */
+  --cis-sidebar-bg: #1f1616;
+  --cis-sidebar-bg-elevated: #2a1e1e;
+  --cis-sidebar-text: rgba(255, 255, 255, 0.78);
+  --cis-sidebar-text-muted: rgba(255, 255, 255, 0.48);
+  --cis-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --cis-sidebar-active-bg: var(--cis-primary);
+  --cis-sidebar-active: #ffffff;
+  --cis-sidebar-border: rgba(255, 255, 255, 0.08);
+  --cis-sidebar-label: rgba(255, 255, 255, 0.42);
+
+  /* Semantic */
+  --cis-danger: #b71c1c;
+  --cis-warning: #d97706;
+  --cis-success: #059669;
+  --cis-info: #0284c7;
+
+  /* Typography */
+  --font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Plus Jakarta Sans', var(--font-sans);
+
+  /* Spacing & shape */
+  --cis-radius-sm: 8px;
+  --cis-radius: 14px;
+  --cis-radius-lg: 18px;
+  --cis-shadow-sm: 0 1px 2px rgba(26, 26, 26, 0.04);
+  --cis-shadow: 0 8px 24px rgba(26, 26, 26, 0.08);
+  --cis-shadow-lg: 0 16px 48px rgba(26, 26, 26, 0.12);
+  --cis-shadow-header: 0 1px 0 var(--cis-header-border), 0 4px 16px rgba(26, 26, 26, 0.04);
+  --cis-shadow-sidebar: 4px 0 24px rgba(0, 0, 0, 0.12);
+
+  /* Layout */
+  --cis-header-height: 64px;
+  --cis-sidebar-width: 220px;
+  --cis-page-max: 1440px;
+  --cis-shell-bg: #f0efec;
+  --cis-canvas-radius: 24px;
+  --cis-content-gap: 1rem;
+  --cis-content-padding: 1.5rem;
+  --cis-card-radius: 18px;
+  --cis-dash-hero-radius: 20px;
+
+  /* Bootstrap bridge */
+  --bs-primary: var(--cis-primary);
+  --bs-primary-rgb: 166, 26, 26;
+  --bs-body-font-family: var(--font-sans);
+  --bs-body-color: var(--cis-text);
+  --bs-body-bg: var(--cis-bg);
+  --bs-border-color: var(--cis-border);
+  --bs-link-color: var(--cis-primary);
+  --bs-link-hover-color: var(--cis-primary-hover);
+  --bs-border-radius: var(--cis-radius-sm);
+  --bs-border-radius-sm: 6px;
+  --bs-border-radius-lg: var(--cis-radius);
+}

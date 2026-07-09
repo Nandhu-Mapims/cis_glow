@@ -1,0 +1,245 @@
+.payroll-report-root.att_report_span {
+  overflow-x: auto;
+  width: 100%;
+  background: #fff;
+}
+
+.payroll-report-root table#payroll {
+  background: #fff;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.payroll-report-root .att_vtext {
+  -webkit-transform-origin: 100% 100%;
+  -webkit-transform: rotate(270deg);
+  -moz-transform: rotate(270deg);
+  -o-transform: rotate(270deg);
+  transform: rotate(270deg);
+  width: 5px;
+  height: 7px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.payroll-report-root .valign_btm {
+  vertical-align: bottom;
+}
+
+.payroll-report-root .header1 {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 0.25rem;
+}
+
+.payroll-report-root .header2 {
+  font-size: 0.95rem;
+  margin-bottom: 0.15rem;
+}
+
+.payroll-report-root td,
+.payroll-report-root th {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.payroll-report-root td:nth-child(3),
+.payroll-report-root th:nth-child(3) {
+  text-align: left;
+}
+
+.payroll-report-root .text-right {
+  text-align: right;
+}
+
+.payroll-report-root .payroll-report-empty {
+  margin: 0.75rem 0 1rem;
+  padding: 0.75rem 1rem;
+  background: #fff3cd;
+  border: 1px solid #ffecb5;
+  border-radius: 0.375rem;
+  color: #664d03;
+  font-size: 0.9rem;
+  white-space: normal;
+}
+
+.payroll-report-root .signature_table,
+.payroll-report-root .signature_table_small,
+.payroll-individual-report-root .signature_table,
+.payroll-individual-report-root .signature_table_small {
+  margin-top: 80px;
+  border-top: 3px solid #17a2b8;
+  padding-top: 12px;
+}
+
+.payroll-report-root .footer_sign_name,
+.payroll-report-root .footer_sign_name_small,
+.payroll-individual-report-root .footer_sign_name,
+.payroll-individual-report-root .footer_sign_name_small {
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.3;
+  font-weight: 700;
+  text-align: center;
+}
+
+.payroll-report-root .footer_sign_desig,
+.payroll-report-root .footer_sign_desig_small,
+.payroll-individual-report-root .footer_sign_desig,
+.payroll-individual-report-root .footer_sign_desig_small {
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.payroll-report-panel {
+  position: relative;
+  min-height: 8rem;
+}
+
+.payroll-report-panel.is-loading .payroll-report-content {
+  opacity: 0.35;
+  pointer-events: none;
+  user-select: none;
+}
+
+.payroll-report-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: inherit;
+}
+
+.payroll-report-loading .loading-copy {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.08);
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.payroll-individual-report-root .pd_header,
+.payroll-report-root .pd_header {
+  color: #fff;
+  font-weight: 700;
+}
+
+.payroll-individual-report-root .pd_header_1,
+.payroll-report-root .pd_header_1 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.payroll-individual-report-root .pd_header_2,
+.payroll-report-root .pd_header_2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.payroll-individual-report-root .pd_content_1,
+.payroll-individual-report-root .pd_content_2,
+.payroll-report-root .pd_content_1,
+.payroll-report-root .pd_content_2 {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.payroll-individual-report-root .payroll-db-report table,
+.payroll-individual-report-root .payroll-db-report .table-bordered {
+  margin-bottom: 1rem;
+}
+
+.payroll-consolidated-report-root .payroll-consolidated-print-header {
+  margin-bottom: 0.75rem;
+}
+
+.payroll-consolidated-report-root .payroll-consolidated-print-header .header1 {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 0.25rem;
+}
+
+.payroll-consolidated-report-root .payroll-consolidated-print-header .header2 {
+  font-size: 0.95rem;
+  margin-bottom: 0.15rem;
+}
+
+.payroll-consolidated-report-root .payroll-consolidated-table th,
+.payroll-consolidated-report-root .payroll-consolidated-table td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.payroll-consolidated-report-root .payroll-consolidated-table td[style*="text-align: right"],
+.payroll-consolidated-report-root .payroll-consolidated-table th[style*="text-align: right"] {
+  text-align: right !important;
+}
+
+.payroll-consolidated-report-root .payroll-report-table-scroll,
+.payroll-report-root .payroll-report-table-scroll {
+  display: block;
+  overflow-x: auto;
+  overflow-y: visible;
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  background: #fff;
+  -webkit-overflow-scrolling: touch;
+}
+
+.payroll-consolidated-report-root .payroll-report-table-scroll table,
+.payroll-report-root .payroll-report-table-scroll table,
+.payroll-consolidated-report-root .payroll-consolidated-table,
+.payroll-report-root .payroll-consolidated-table {
+  width: max-content !important;
+  min-width: 960px;
+  margin-bottom: 0;
+  white-space: nowrap;
+  table-layout: auto;
+}
+
+.payroll-consolidated-report-root .payroll-consolidated-table th,
+.payroll-consolidated-report-root .payroll-consolidated-table td {
+  white-space: nowrap;
+}
+
+.payroll-consolidated-report-root .signature_table,
+.payroll-consolidated-report-root .signature_table_small {
+  margin-top: 80px;
+  border-top: 3px solid #17a2b8;
+  padding-top: 12px;
+}
+
+.payroll-consolidated-report-root .footer_sign_name,
+.payroll-consolidated-report-root .footer_sign_name_small {
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.3;
+  font-weight: 700;
+  text-align: center;
+}
+
+.payroll-consolidated-report-root .footer_sign_desig,
+.payroll-consolidated-report-root .footer_sign_desig_small {
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
+}

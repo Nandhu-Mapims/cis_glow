@@ -1,0 +1,134 @@
+import { useEffect, useState } from 'react';
+import api from '../../api/client';
+import { useTransientNotice } from '../../hooks/useTransientNotice';
+import { useShellData } from '../../hooks/useShellData';
+import ReceiptDetailCard from './ReceiptDetailCard';
+import { FEE_SCREEN_META } from './feeModuleMeta';
+import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
+
+const META = FEE_SCREEN_META['delete-approve'];
+
+export default function FeeDeleteApprove() {
+  const { settings, menu, loading: shellLoading, error: shellError, reload } = useShellData();
+  const [dataLoading, setDataLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState([]);
+  const [selected, setSelected] = useState('');
+  const [detail, setDetail] = useState(null);
+  const [error, setError] = useState(null);
+  const [message, setMessage] = useTransientNotice(4000);
+
+  const loadPending = async () => {
+    const res = await api.get('/api/fees/delete/requests/pending');
+    setPending(res.data.requests || []);
+  };
+
+  useEffect(() => {
+    if (shellLoading) return;
+    const init = async () => {
+      try {
+        await loadPending();
+      } finally {
+        setDataLoading(false);
+      }
+    };
+    init();
+  }, [shellLoading]);
+
+  const loadDetail = async (receiptNo) => {
+    setSelected(receiptNo);
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api.get(`/api/fees/delete/approve/${encodeURIComponent(receiptNo)}`);
+      setDetail(res.data);
+    } catch (err) {
+      setDetail(null);
+      setError(err.response?.data?.message || 'Unable to load receipt');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const approve = async () => {
+    if (!selected) return;
+    if (!window.confirm(`Delete receipt ${selected} from student_fee?`)) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api.post('/api/fees/delete/approve', { receiptNo: selected });
+      setMessage(res.data.message || 'Deleted');
+      setSelected('');
+      setDetail(null);
+      await loadPending();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Approve failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <FeePageShell
+      settings={settings}
+      menu={menu}
+      loading={shellLoading || dataLoading}
+      error={shellError}
+      onRetry={reload}
+      breadcrumbs={feeScreenBreadcrumbs('delete-approve')}
+      title={META.title}
+      legacy={META.legacy}
+      actions={feeBackAction('/fees/delete')}
+    >
+      {error && <div className="alert alert-danger">{error}</div>}
+      {message && <div className="alert alert-success">{message}</div>}
+
+      <div className="row g-3">
+        <div className="col-md-4">
+          <div className="card shadow-sm cis-fee-delete-card h-100">
+            <div className="card-header py-2 d-flex justify-content-between align-items-center">
+              <span>Pending queue</span>
+              <span className="badge cis-fee-status-badge cis-fee-status-badge--pending">{pending.length}</span>
+            </div>
+            <div className="list-group list-group-flush cis-fee-delete-queue">
+              {pending.map((r) => (
+                <button
+                  key={r.receiptNo}
+                  type="button"
+                  className={`list-group-item list-group-item-action ${selected === r.receiptNo ? 'active' : ''}`}
+                  onClick={() => loadDetail(r.receiptNo)}
+                >
+                  <div className="fw-semibold">{r.receiptNo}</div>
+                  <div className="small opacity-75">{r.createdBy} · {r.createdAt}</div>
+                </button>
+              ))}
+              {!pending.length && <div className="list-group-item text-muted">No pending requests</div>}
+            </div>
+          </div>
+        </div>
+        <div className="col-md-8">
+          {detail ? (
+            <div className="card shadow-sm cis-fee-delete-card">
+              <div className="card-header py-2">Receipt review</div>
+              <div className="card-body">
+                <div className="cis-fee-receipt-detail-wrap mb-3">
+                  <ReceiptDetailCard receipt={detail.receipt} remarks={detail.remarks} />
+                </div>
+                <button type="button" className="btn btn-danger" disabled={busy} onClick={approve}>
+                  Delete Receipt
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="card shadow-sm cis-fee-empty-state">
+              <div className="card-body">
+                <i className="fa fa-hand-pointer-o" aria-hidden="true" />
+                <p className="mb-0">Select a pending request to review.</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </FeePageShell>
+  );
+}

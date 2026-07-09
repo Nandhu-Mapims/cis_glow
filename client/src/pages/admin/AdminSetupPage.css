@@ -1,0 +1,25 @@
+.admin-setup-root .table {
+  font-size: 0.9rem;
+}
+
+.admin-setup-card {
+  overflow-x: auto;
+}
+
+.admin-setup-root .modal {
+  position: fixed;
+}
+
+.kiosk-machine-room .card-header {
+  background: var(--cis-bg);
+}
+
+.kiosk-room-list {
+  max-height: 28rem;
+  overflow-y: auto;
+}
+
+.kiosk-room-list .list-group-item.active {
+  background: var(--cis-primary);
+  border-color: var(--cis-primary);
+}

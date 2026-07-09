@@ -1,0 +1,68 @@
+.stipend-payroll-report-root .stipend-payroll-report-filters .col-form-label {
+  font-weight: 500;
+}
+
+.stipend-payroll-report-root .stipend-report-type-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.stipend-payroll-report-root .stipend-report-type-group-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #6c757d;
+  margin-bottom: 0.35rem;
+}
+
+.stipend-payroll-report-root .stipend-report-type-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.stipend-payroll-report-root .stipend-report-type-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.stipend-payroll-report-root .stipend-report-type-option:has(input:checked) {
+  border-color: #0d6efd;
+  background: #f0f6ff;
+}
+
+.stipend-payroll-report-root .stipend-payroll-report-table {
+  overflow-x: auto;
+}
+
+.stipend-payroll-report-root .stipend-payroll-report-table table.table-bordered {
+  min-width: 520px;
+  background: #fff;
+  font-size: 0.85rem;
+}
+
+.stipend-payroll-report-root .stipend-payroll-report-table td.text-right,
+.stipend-payroll-report-root .stipend-payroll-report-table th.text-right {
+  text-align: right !important;
+}
+
+.stipend-payroll-report-root .stipend-payroll-report-table td:nth-child(3),
+.stipend-payroll-report-root .stipend-payroll-report-table th:nth-child(3) {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.stipend-payroll-report-root .stipend-payroll-report-table .signature_table,
+.stipend-payroll-report-root .stipend-payroll-report-table .signature_table_small {
+  margin-top: 2.5rem;
+}
