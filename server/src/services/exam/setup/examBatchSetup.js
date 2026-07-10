@@ -1,50 +1,18 @@
 import { prisma } from '../../../config/prisma.js';
 import { escapeSql } from '../../../utils/sqlSafe.js';
 import { convertNYear } from '../../fees/feeHelpers.js';
-import {
-  buildCourseYearOptions,
-  loadAcademicConfig,
-  parseCourseYearKey,
-} from '../../shared/ciaSetupHelpers.js';
 import { auditFields, logExamSetup } from './setupAudit.js';
 import {
   batchLetters,
+  buildCourseIdYearOptions,
   buildPrintHeader,
   getMaxBatchCount,
   loadActiveStudentsForBatch,
   loadBatchAssignments,
+  parseCourseIdYearKey,
 } from './examSetupShared.js';
 
 const PAGE = 'exam_batch.php';
-
-function parseCourseProgramKey(key) {
-  const parts = String(key || '').split('___');
-  if (parts.length !== 2) return null;
-  const courseId = Number(parts[0]);
-  const semester = Number(parts[1]);
-  if (!courseId || !semester) return null;
-  return { courseId, semester };
-}
-
-function courseProgramKey(courseId, semester) {
-  return `${courseId}___${semester}`;
-}
-
-async function loadCoursePrograms(courseName) {
-  const rows = await prisma.$queryRawUnsafe(
-    `SELECT id, degree_name, department_short_name, course_duration, total_semester, course_name
-     FROM basic_setup_course_tb
-     WHERE del=1 AND course_name='${escapeSql(courseName)}'
-     ORDER BY c_order ASC`,
-  );
-  return rows.map((row) => ({
-    courseId: Number(row.id),
-    degreeName: row.degree_name || '',
-    departmentShortName: row.department_short_name || '',
-    courseDuration: Number(row.course_duration) || Number(row.total_semester) || 0,
-    courseName: row.course_name || '',
-  }));
-}
 
 function buildBatchPrintHtml(selection, semester, totalBatch, students, assignments, letters) {
   const batches = [];
@@ -72,34 +40,23 @@ function buildBatchPrintHtml(selection, semester, totalBatch, students, assignme
 }
 
 export async function loadExamBatch(memberId, fields = {}, audit = {}) {
-  const academicYearArray = await loadAcademicConfig();
-  const courseYearOptions = await buildCourseYearOptions(academicYearArray);
-  const courseYearKey = String(fields.course_name || '').trim();
-  const yearSelection = parseCourseYearKey(courseYearKey);
-  const courseProgramKeyValue = String(fields.course_program || '').trim();
-  const programSelection = parseCourseProgramKey(courseProgramKeyValue);
-
-  let coursePrograms = [];
-  let selection = null;
-  let semester = 0;
-
-  if (yearSelection) {
-    coursePrograms = await loadCoursePrograms(yearSelection.courseName);
-    if (programSelection) {
-      const program = coursePrograms.find((p) => p.courseId === programSelection.courseId);
-      semester = programSelection.semester;
-      selection = {
-        courseId: programSelection.courseId,
-        courseName: yearSelection.courseName,
-        academicYear: yearSelection.academicYear,
-        academicType: yearSelection.academicType,
-        courseDuration: program?.courseDuration || 0,
-        degreeName: program?.degreeName || '',
-        departmentShortName: program?.departmentShortName || '',
-      };
+  const courseYearOptions = await buildCourseIdYearOptions();
+  const courseKey = String(fields.course_name || '').trim();
+  const option = courseYearOptions.find((opt) => opt.value === courseKey);
+  const parsed = parseCourseIdYearKey(courseKey);
+  const selection = parsed && option
+    ? {
+      ...parsed,
+      courseName: option.courseName,
+      courseDuration: option.courseDuration,
+      totalSemester: option.totalSemester,
+      degreeName: option.degreeName || '',
+      departmentShortName: option.departmentShortName || '',
+      academicYear: option.academicYear,
+      academicType: option.academicType,
     }
-  }
-
+    : parsed;
+  const semester = Number(fields.semester_name) || 0;
   let totalBatch = Number(fields.total_batch) || 0;
   let students = [];
   let assignments = {};
@@ -124,16 +81,10 @@ export async function loadExamBatch(memberId, fields = {}, audit = {}) {
     }
   }
 
-  await logExamSetup(PAGE, 'View', 'Successful', courseYearKey, memberId, audit);
+  await logExamSetup(PAGE, 'View', 'Successful', courseKey, memberId, audit);
   return {
     courseYearOptions,
-    courseYearKey,
-    courseProgramKey: courseProgramKeyValue,
-    yearSelection,
-    coursePrograms: coursePrograms.map((program) => ({
-      ...program,
-      academicYear: yearSelection?.academicYear || '',
-    })),
+    courseKey,
     selection,
     semester,
     totalBatch: totalBatch || '',
@@ -145,19 +96,12 @@ export async function loadExamBatch(memberId, fields = {}, audit = {}) {
 }
 
 export async function saveExamBatch(payload, memberId, audit = {}) {
-  const yearSelection = parseCourseYearKey(payload.courseYearKey);
-  const programSelection = parseCourseProgramKey(payload.courseProgramKey);
-  const semester = programSelection?.semester || Number(payload.semester);
+  const selection = parseCourseIdYearKey(payload.courseKey);
+  const semester = Number(payload.semester);
   const totalBatch = Number(payload.totalBatch);
-  if (!yearSelection || !programSelection || !semester || !totalBatch) {
+  if (!selection || !semester || !totalBatch) {
     return { success: false, message: 'Course, year and batch count are required' };
   }
-
-  const selection = {
-    courseId: programSelection.courseId,
-    academicYear: yearSelection.academicYear,
-    academicType: yearSelection.academicType,
-  };
 
   const { update, create } = auditFields(memberId, audit);
   const courseId = String(selection.courseId);
@@ -219,13 +163,10 @@ export async function saveExamBatch(payload, memberId, audit = {}) {
     success: true,
     message: 'Your details are added...',
     ...(await loadExamBatch(memberId, {
-      course_name: payload.courseYearKey,
-      course_program: payload.courseProgramKey,
+      course_name: payload.courseKey,
       semester_name: semester,
       total_batch: totalBatch,
       action: 'go',
     }, { ...audit, skipLog: true })),
   };
 }
-
-export { courseProgramKey, parseCourseProgramKey };

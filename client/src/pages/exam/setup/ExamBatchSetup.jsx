@@ -1,67 +1,45 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import ReportPrintBar from '../../../components/ReportPrintBar';
-import { ExamSetupShell } from './ExamSelectors';
+import { CourseYearSelector, ExamSetupShell } from './ExamSelectors';
 import { useExamSetupApi } from './useExamSetupApi';
-
-function groupOptions(options) {
-  const groups = new Map();
-  for (const opt of options || []) {
-    const g = opt.group || 'Courses';
-    if (!groups.has(g)) groups.set(g, []);
-    groups.get(g).push(opt);
-  }
-  return [...groups.entries()];
-}
 
 export default function ExamBatchSetup() {
   const { data, busy, error, notice, load, save } = useExamSetupApi('exam-batch');
-  const [courseYearKey, setCourseYearKey] = useState('');
-  const [courseProgramKey, setCourseProgramKey] = useState('');
+  const [courseKey, setCourseKey] = useState('');
+  const [semester, setSemester] = useState(0);
   const [totalBatch, setTotalBatch] = useState('');
   const [assignments, setAssignments] = useState({});
 
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    if (data?.courseYearKey) setCourseYearKey(data.courseYearKey);
-    if (data?.courseProgramKey) setCourseProgramKey(data.courseProgramKey);
+    if (data?.courseKey) setCourseKey(data.courseKey);
+    if (data?.semester) setSemester(data.semester);
     if (data?.totalBatch) setTotalBatch(String(data.totalBatch));
     if (data?.assignments) setAssignments(data.assignments);
   }, [data]);
 
-  const groupedCourseOptions = useMemo(
-    () => groupOptions(data?.courseYearOptions),
-    [data?.courseYearOptions],
-  );
-
   const reload = (patch) => load({
-    course_name: patch.courseYearKey ?? courseYearKey,
-    course_program: patch.courseProgramKey ?? courseProgramKey,
+    course_name: patch.courseKey ?? courseKey,
+    semester_name: patch.semester ?? semester,
     total_batch: patch.totalBatch ?? totalBatch,
     ...patch,
   });
 
-  const onCourseYearChange = async (value) => {
-    setCourseYearKey(value);
-    setCourseProgramKey('');
+  const onCourseChange = async (value) => {
+    setCourseKey(value);
+    setSemester(0);
     setTotalBatch('');
     setAssignments({});
-    await reload({
-      course_name: value,
-      course_program: '',
-      semester_name: '',
-      total_batch: '',
-    });
+    await reload({ course_name: value, semester_name: '', total_batch: '' });
   };
 
-  const onProgramChange = async (value) => {
-    setCourseProgramKey(value);
+  const onSemesterChange = async (value) => {
+    const sem = Number(value);
+    setSemester(sem);
     setTotalBatch('');
     setAssignments({});
-    await reload({
-      course_program: value,
-      total_batch: '',
-    });
+    await reload({ semester_name: sem, total_batch: '' });
   };
 
   const onGo = async () => {
@@ -88,72 +66,49 @@ export default function ExamBatchSetup() {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    await save({
-      courseYearKey,
-      courseProgramKey,
-      semester: data?.semester,
-      totalBatch: Number(totalBatch),
-      assignments,
-    });
+    await save({ courseKey, semester, totalBatch: Number(totalBatch), assignments });
   };
 
   const letters = data?.batchLetters || {};
+  const duration = data?.selection?.courseDuration || 0;
+  const yearHeader = data?.selection
+    ? `${data.selection.degreeName || ''}${data.selection.departmentShortName ? ` | ${data.selection.departmentShortName}` : ''} | ${data.selection.academicYear || ''}`
+    : '';
 
   return (
     <ExamSetupShell notice={notice} error={error} busy={busy}>
-      <div className="mb-3 row g-2">
-        <label className="col-sm-2 col-form-label">Course &amp; Academic year</label>
-        <div className="col-sm-5">
-          <select
-            className="form-select"
-            value={courseYearKey}
-            onChange={(e) => onCourseYearChange(e.target.value)}
-            disabled={busy}
-          >
-            <option value="">--Select Course--</option>
-            {groupedCourseOptions.map(([group, opts]) => (
-              <optgroup key={group} label={group}>
-                {opts.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </div>
-      </div>
+      <CourseYearSelector
+        wide
+        options={data?.courseYearOptions}
+        value={courseKey}
+        onChange={onCourseChange}
+        disabled={busy}
+      />
 
-      {data?.yearSelection && data?.coursePrograms?.length ? (
-        <div className="mb-3">
-          {data.coursePrograms.map((program) => (
-            <div key={program.courseId} className="row g-2 mb-2 align-items-center">
-              <label className="col-sm-3 col-form-label">
-                {program.degreeName}
-                {program.departmentShortName ? ` | ${program.departmentShortName}` : ''}
-                {program.academicYear ? ` | ${program.academicYear}` : ''}
-              </label>
-              <div className="col-sm-9 d-flex flex-wrap gap-3">
-                {Array.from({ length: program.courseDuration }, (_, i) => i + 1).map((yr) => {
-                  const value = `${program.courseId}___${yr}`;
-                  return (
-                    <label key={value}>
-                      <input
-                        type="radio"
-                        name="course_program"
-                        value={value}
-                        checked={courseProgramKey === value}
-                        onChange={() => onProgramChange(value)}
-                      />
-                      {' '}{yr}
-                    </label>
-                  );
-                })}
-              </div>
+      {data?.selection && duration ? (
+        <div className="mb-3 row g-2">
+          <label className="col-sm-2 col-form-label">Year</label>
+          <div className="col-sm-10">
+            {yearHeader ? <div className="text-muted small mb-2">{yearHeader}</div> : null}
+            <div className="d-flex flex-wrap gap-3">
+              {Array.from({ length: duration }, (_, i) => i + 1).map((yr) => (
+                <label key={yr}>
+                  <input
+                    type="radio"
+                    name="semester"
+                    value={yr}
+                    checked={semester === yr}
+                    onChange={() => onSemesterChange(yr)}
+                  />
+                  {' '}{yr}
+                </label>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       ) : null}
 
-      {data?.selection && data?.semester ? (
+      {semester ? (
         <div className="mb-3 row g-2 align-items-center">
           <label className="col-sm-2 col-form-label">Batch</label>
           <div className="col-sm-1">
