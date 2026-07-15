@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import { useTransientNotice } from '../../hooks/useTransientNotice';
-import { useShellData } from '../../hooks/useShellData';
 import ReceiptDetailCard from './ReceiptDetailCard';
 import { FeeDeleteStatusBadge } from './feeDeleteUi';
 import { FEE_SCREEN_META } from './feeModuleMeta';
@@ -10,7 +10,7 @@ import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShel
 const META = FEE_SCREEN_META['delete-request'];
 
 export default function FeeDeleteRequest() {
-  const { settings, menu, loading: shellLoading, error: shellError, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [dataLoading, setDataLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [receiptNo, setReceiptNo] = useState('');
@@ -27,7 +27,6 @@ export default function FeeDeleteRequest() {
   };
 
   useEffect(() => {
-    if (shellLoading) return;
     const init = async () => {
       try {
         await loadMine();
@@ -36,7 +35,7 @@ export default function FeeDeleteRequest() {
       }
     };
     init();
-  }, [shellLoading]);
+  }, []);
 
   const searchReceipt = async () => {
     const roll = receiptNo.trim();
@@ -84,9 +83,8 @@ export default function FeeDeleteRequest() {
     <FeePageShell
       settings={settings}
       menu={menu}
-      loading={shellLoading || dataLoading}
-      error={shellError}
-      onRetry={reload}
+      loading={dataLoading}
+      error={null}
       breadcrumbs={feeScreenBreadcrumbs('delete-request')}
       title={META.title}
       legacy={META.legacy}

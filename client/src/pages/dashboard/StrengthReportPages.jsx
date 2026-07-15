@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Breadcrumbs, PageLoading } from '../../components/PageShell';
 import { printReportHtml } from '../../utils/printReport';
 
-function StrengthReportPage({ apiPath, title, legacy, widgetClass = 'strength-report' }) {
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+function StrengthReportPage({ apiPath, title, widgetClass = 'strength-report' }) {
+  const { settings, menu } = useOutletContext();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -14,13 +14,7 @@ function StrengthReportPage({ apiPath, title, legacy, widgetClass = 'strength-re
   useEffect(() => {
     const load = async () => {
       try {
-        const [settingsRes, menuRes, reportRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-          api.get(apiPath),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
+        const reportRes = await api.get(apiPath);
         setData(reportRes.data);
       } catch (err) {
         setError(err.response?.data?.message || 'Unable to load report');
@@ -42,13 +36,9 @@ function StrengthReportPage({ apiPath, title, legacy, widgetClass = 'strength-re
           <div className="cis-dash-hero-copy">
             <h1 className="cis-dash-hero-title">{title}</h1>
             <p className="cis-dash-hero-subtitle">
-              Legacy:
-              {' '}
-              <code>{legacy}</code>
               {data?.referenceYear && (
                 <>
-                  {' '}
-                  · Reference year
+                  Reference year
                   {' '}
                   <strong>{data.referenceYear}</strong>
                 </>
@@ -115,7 +105,6 @@ export function OverallStrengthPage() {
     <StrengthReportPage
       apiPath="/api/dashboard/overall-strength"
       title="Overall Strength"
-      legacy="student_strength_overall.php"
       widgetClass="overall-strength"
     />
   );
@@ -126,7 +115,6 @@ export function CommunityStrengthPage() {
     <StrengthReportPage
       apiPath="/api/dashboard/community-strength"
       title="Community Strength"
-      legacy="student_community_strength.php"
       widgetClass="community-strength"
     />
   );

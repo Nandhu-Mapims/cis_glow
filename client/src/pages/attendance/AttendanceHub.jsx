@@ -1,5 +1,5 @@
+import { useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 
 const LINKS = [
   { to: '/attendance/staff/hub', title: 'Staff Attendance Hub', desc: 'All 26 staff attendance screens (calendar, SMR, reports, setup)', icon: 'fa fa-users' },
@@ -13,7 +13,7 @@ const LINKS = [
 ];
 
 export default function AttendanceHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
 
   return (
     <ModuleHub
@@ -24,9 +24,8 @@ export default function AttendanceHub() {
       dashboardTitle="Attendance"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
     />
   );
 }

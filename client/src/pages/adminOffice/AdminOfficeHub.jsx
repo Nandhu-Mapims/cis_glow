@@ -1,9 +1,9 @@
+import { useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 import { ADMIN_OFFICE_HUB_LINKS } from './adminOfficeSetupMeta';
 
 export default function AdminOfficeHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
 
   return (
     <ModuleHub
@@ -14,9 +14,8 @@ export default function AdminOfficeHub() {
       dashboardTitle="Admin Office"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
     />
   );
 }

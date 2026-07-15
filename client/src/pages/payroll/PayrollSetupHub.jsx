@@ -1,6 +1,5 @@
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 
 const LINKS = [
   { to: '/payroll/setup/individual-setup', title: 'Cover Page Images', desc: 'Payslip cover page banner images', icon: 'fa fa-image' },
@@ -23,7 +22,7 @@ const LINKS = [
 ];
 
 export default function PayrollSetupHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
 
   return (
     <ModuleHub
@@ -37,9 +36,8 @@ export default function PayrollSetupHub() {
       dashboardTitle="Payroll Setup"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
       actions={<Link to="/payroll" className="btn btn-outline-secondary btn-sm">Back</Link>}
     />
   );

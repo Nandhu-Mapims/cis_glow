@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { serializeLegacyForm } from '../../utils/legacyFormSerialize';
@@ -23,8 +23,7 @@ export default function StipendAjaxReportPage({
   const printStyleRef = useRef(null);
   const ajaxActiveRef = useRef(false);
 
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -57,12 +56,6 @@ export default function StipendAjaxReportPage({
     const init = async () => {
       try {
         await loadPayrollAssets();
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
         await loadForm();
       } catch (err) {
         setError(err.message || `Unable to initialize ${title.toLowerCase()}`);
@@ -163,7 +156,6 @@ export default function StipendAjaxReportPage({
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
           <h3 className="dashboard-title mb-0">{title}</h3>
-          <p className="text-muted small mb-0">Legacy: {legacyFile}</p>
         </div>
         <div className="d-flex flex-wrap gap-2">
           {showPrint && html && (

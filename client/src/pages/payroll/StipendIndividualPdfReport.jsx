@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import '../exam/ExamSetupPage.css';
@@ -7,8 +7,7 @@ import '../exam/ExamSetupPage.css';
 const PDF_GENERATE_TIMEOUT_MS = 120000;
 
 export default function StipendIndividualPdfReport() {
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -51,13 +50,7 @@ export default function StipendIndividualPdfReport() {
   useEffect(() => {
     const init = async () => {
       try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-          loadReport(),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
+        await loadReport();
       } catch (err) {
         setError(err.message || 'Unable to initialize stipend PDF report');
       } finally {

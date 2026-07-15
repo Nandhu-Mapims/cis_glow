@@ -67,7 +67,7 @@ async function loadStudentDetail(studentId) {
   const student = rows[0];
   const courseRows = await prisma.$queryRawUnsafe(
     `SELECT degree_name, department_name, course_duration
-     FROM basic_setup_course_tb WHERE del = 1 AND id = '${String(student.course_id).replace(/'/g, "''")}' LIMIT 1`,
+     FROM basic_setup_course_tb WHERE del = 1 AND id = '${escapeSql(String(student.course_id))}' LIMIT 1`,
   );
   const course = courseRows[0] || {};
   const photoUrl = await studentIdCardPhotoUrl(student.register_no);
@@ -76,7 +76,7 @@ async function loadStudentDetail(studentId) {
     `SELECT category, ntype, attend_conduct, s_name, s_location, s_from_date, s_to_date,
             p_download_link, p_download_link_1, p_download_link_2
      FROM student_seminar_tb
-     WHERE del = 1 AND student_id = '${String(studentId).replace(/'/g, "''")}'
+     WHERE del = 1 AND student_id = '${escapeSql(String(studentId))}'
      ORDER BY s_from_date ASC`,
   );
 
@@ -85,7 +85,7 @@ async function loadStudentDetail(studentId) {
             p_volume, p_main, p_points, p_abstract, p_download_link, p_download_link_1,
             p_download_link_2, p_page, p_attachment, p_category, p_authorship
      FROM student_publication_tb
-     WHERE del = 1 AND student_id = '${String(studentId).replace(/'/g, "''")}'
+     WHERE del = 1 AND student_id = '${escapeSql(String(studentId))}'
      ORDER BY p_year ASC, p_month ASC`,
   );
 

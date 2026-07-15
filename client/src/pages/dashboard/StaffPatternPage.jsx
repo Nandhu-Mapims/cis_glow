@@ -5,7 +5,6 @@ export default function StaffPatternPage() {
     <DashboardWidgetShell
       shellPath="/api/dashboard/staff-pattern"
       title="Staff Pattern"
-      legacy="dashboard_v5.php"
       breadcrumbLabel="Staff Pattern"
     />
   );

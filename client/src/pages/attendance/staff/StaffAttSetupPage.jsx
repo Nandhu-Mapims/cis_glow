@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import DashboardLayout from '../../../layouts/DashboardLayout';
-import { useShellData } from '../../../hooks/useShellData';
+import { useOutletContext, useParams } from 'react-router-dom';
+import { SetupPageShell } from '../../../components/PageShell';
+import SetupAlerts from '../../../components/SetupAlerts';
 import { STAFF_ATT_SETUP_META } from './staffAttSetupMeta';
 import { useStaffAttSetupApi } from './useStaffAttSetupApi';
 import CalendarAddSetup from './setup/CalendarAddSetup';
@@ -20,7 +20,7 @@ export default function StaffAttSetupPage() {
   const { screen } = useParams();
   const meta = STAFF_ATT_SETUP_META[screen];
   const { data, busy, error, notice, load, save } = useStaffAttSetupApi(screen);
-  const { settings, menu, loading, error: shellError } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -29,32 +29,46 @@ export default function StaffAttSetupPage() {
   }, [meta, load]);
 
   if (!meta) {
-    return <div className="p-4"><p className="text-danger">Unknown staff attendance setup screen.</p><Link to="/attendance/staff/hub">Back</Link></div>;
+    return (
+      <SetupPageShell
+        settings={settings}
+        menu={menu}
+        title="Staff attendance"
+        breadcrumbs={[
+          { label: 'Home', to: '/dashboard' },
+          { label: 'Attendance', to: '/attendance' },
+          { label: 'Staff Att', to: '/attendance/staff/hub' },
+          { label: 'Unknown' },
+        ]}
+        backTo="/attendance/staff/hub"
+      >
+        <p className="text-danger mb-0">Unknown staff attendance setup screen.</p>
+      </SetupPageShell>
+    );
   }
-  if (loading || !ready) return <div className="p-4 text-muted">Loading...</div>;
 
   const SetupComponent = SETUP_COMPONENTS[screen];
 
   return (
-    <DashboardLayout settings={settings} dashboard={{ title: meta.title }} menu={menu}>
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb">
-          <li className="breadcrumb-item"><Link to="/dashboard">Home</Link></li>
-          <li className="breadcrumb-item"><Link to="/attendance">Attendance</Link></li>
-          <li className="breadcrumb-item"><Link to="/attendance/staff/hub">Staff Att</Link></li>
-          <li className="breadcrumb-item active">{meta.title}</li>
-        </ol>
-      </nav>
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div><h3 className="dashboard-title mb-0">{meta.title}</h3><p className="text-muted small mb-0">Legacy: {meta.legacy}</p></div>
-        <Link to="/attendance/staff/hub" className="btn btn-outline-secondary btn-sm">Back</Link>
-      </div>
-      {shellError && <div className="alert alert-warning">{shellError}</div>}
-      {notice && <div className="alert alert-success">{notice}</div>}
-      {error && <div className="alert alert-danger">{error}</div>}
-      <div className="card shadow-sm"><div className="card-body">
-        {SetupComponent ? <SetupComponent data={data} busy={busy} onLoad={load} onSave={save} /> : <p className="text-muted">Form not available.</p>}
-      </div></div>
-    </DashboardLayout>
+    <SetupPageShell
+      settings={settings}
+      menu={menu}
+      title={meta.title}
+      breadcrumbs={[
+        { label: 'Home', to: '/dashboard' },
+        { label: 'Attendance', to: '/attendance' },
+        { label: 'Staff Att', to: '/attendance/staff/hub' },
+        { label: meta.title },
+      ]}
+      backTo="/attendance/staff/hub"
+      loading={!ready}
+      alerts={<SetupAlerts notice={notice} error={error} busy={busy} />}
+    >
+      {SetupComponent ? (
+        <SetupComponent data={data} busy={busy} onLoad={load} onSave={save} />
+      ) : (
+        <p className="text-muted mb-0">Form not available.</p>
+      )}
+    </SetupPageShell>
   );
 }

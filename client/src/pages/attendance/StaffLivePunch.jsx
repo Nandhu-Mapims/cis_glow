@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
 
@@ -10,8 +10,7 @@ function resolvePhotoUrl(path) {
 }
 
 export default function StaffLivePunch() {
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [punching, setPunching] = useState(false);
   const [staffId, setStaffId] = useState('');
@@ -20,19 +19,7 @@ export default function StaffLivePunch() {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -88,7 +75,7 @@ export default function StaffLivePunch() {
       </div>
 
       <p className="text-muted small">
-        Scan or type a staff ID and press Enter to record an in/out punch (legacy staff_live_attendance.php).
+        Scan or type a staff ID and press Enter to record an in/out punch.
       </p>
 
       {error && <div className="alert alert-danger">{error}</div>}

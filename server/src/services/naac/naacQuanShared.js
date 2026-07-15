@@ -1,4 +1,5 @@
 import { prisma } from '../../config/prisma.js';
+import { escapeSql } from '../../utils/sqlSafe.js';
 
 /** Avoid Prisma choking on legacy 0000-00-00 datetime columns. */
 export const SAFE_UPDATED_DT = `IF(CAST(updated_dt AS CHAR) LIKE '0000-00-00%', NULL, updated_dt) AS updated_dt`;
@@ -25,7 +26,7 @@ export async function loadNaacQuanItems(deptId) {
 export async function loadNaacQuanItemsFiltered({ deptRef = '', docType = '' } = {}) {
   const conditions = ['del = 1'];
   if (deptRef) conditions.push(`d_id = ${Number(deptRef)}`);
-  if (docType) conditions.push(`doc_type = '${String(docType).replace(/'/g, "''")}'`);
+  if (docType) conditions.push(`doc_type = '${escapeSql(String(docType))}'`);
   return prisma.$queryRawUnsafe(`
     SELECT id, name, d_order, doc_number, doc_type, attachment, attachment_size, d_id, ${SAFE_UPDATED_DT}
     FROM naac_quan_sub
@@ -39,7 +40,7 @@ const SAFE_CREATED_DT = `IF(CAST(created_dt AS CHAR) LIKE '0000-00-00%', NULL, c
 export async function loadNaacQuanItemsDetailed({ deptRef = '', docType = '' } = {}) {
   const conditions = ['del = 1'];
   if (deptRef) conditions.push(`d_id = ${Number(deptRef)}`);
-  if (docType) conditions.push(`doc_type = '${String(docType).replace(/'/g, "''")}'`);
+  if (docType) conditions.push(`doc_type = '${escapeSql(String(docType))}'`);
   return prisma.$queryRawUnsafe(`
     SELECT id, name, d_order, doc_number, doc_type, attachment, attachment_size, d_id,
       created_by, ${SAFE_CREATED_DT}, updated_by, ${SAFE_UPDATED_DT}

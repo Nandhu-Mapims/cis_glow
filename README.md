@@ -10,7 +10,7 @@ Screen-by-screen migration of the legacy PHP CIS application to **React + Node.j
 
 **Phase 3 (in progress):** Student search, profile view, limited edit at `/students`.
 
-See [docs/phase-1.md](docs/phase-1.md), [docs/phase-2.md](docs/phase-2.md), and [docs/phase-3.md](docs/phase-3.md).
+See [ARCHITECTURE.md](ARCHITECTURE.md) for system architecture and [CLAUDE.md](CLAUDE.md) for deep agent/onboarding context (conventions, screen wiring, pitfalls). Also see [docs/phase-1.md](docs/phase-1.md), [docs/phase-2.md](docs/phase-2.md), and [docs/phase-3.md](docs/phase-3.md).
 
 **Note:** Widget data uses a PHP CLI bridge to legacy `dashboard_more.php` for exact SQL/HTML parity. Requires PHP 7.4+ and `LEGACY_CIS_PATH` (default `/home/mapims/cis/cis`).
 

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
-import DashboardLayout from '../../layouts/DashboardLayout';
+import StaffPageShell, { STAFF_BREADCRUMB_HUB } from './StaffPageShell';
+import { FormActionBar, FormSection, FormSectionNav, useScrollSpy } from '../../components/FormShell';
 import {
   buildRecordsForm,
   EducationTab,
@@ -11,16 +12,21 @@ import {
   SkillsTab,
 } from './StaffProfileSections';
 
-function Section({ title, children, className = 'col-md-4' }) {
-  return (
-    <div className={className}>
-      <div className="card shadow-sm h-100">
-        <div className="card-header fw-semibold">{title}</div>
-        <div className="card-body row g-3">{children}</div>
-      </div>
-    </div>
-  );
-}
+// Section order mirrors the form + drives the scroll-spy jump nav (matches StudentAdmission.jsx).
+const SECTIONS = [
+  { id: 'staff', title: 'Staff Details' },
+  { id: 'personal', title: 'Personal Details' },
+  { id: 'contact', title: 'Contact' },
+  { id: 'job', title: 'Job Details' },
+  { id: 'registration', title: 'Council Registration' },
+  { id: 'address', title: 'Permanent Address' },
+  { id: 'education', title: 'Education' },
+  { id: 'experience', title: 'Experience' },
+  { id: 'activities', title: 'Activities & Skills' },
+  { id: 'bank', title: 'Bank Details' },
+];
+
+const FIELD_COL = 'col-md-4';
 
 const initialForm = () => ({
   staffId: '',
@@ -67,8 +73,8 @@ const initialForm = () => ({
 });
 
 export default function StaffAdmission() {
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const navigate = useNavigate();
+  const { settings, menu } = useOutletContext();
   const [options, setOptions] = useState(null);
   const [designations, setDesignations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,16 +85,12 @@ export default function StaffAdmission() {
   const [form, setForm] = useState(initialForm);
   const [records, setRecords] = useState(() => buildRecordsForm({}));
 
+  const activeSection = useScrollSpy(SECTIONS.map((s) => s.id), !loading);
+
   useEffect(() => {
     const load = async () => {
       try {
-        const [settingsRes, menuRes, optionsRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-          api.get('/api/staff/admission/options'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
+        const optionsRes = await api.get('/api/staff/admission/options');
         setOptions(optionsRes.data);
         const titles = optionsRes.data?.titles || [];
         if (titles.length) {
@@ -182,40 +184,44 @@ export default function StaffAdmission() {
     name: r.name,
   }));
 
-  if (loading) {
-    return <div className="d-flex justify-content-center align-items-center vh-100 text-muted">Loading...</div>;
-  }
-
   return (
-    <DashboardLayout settings={settings} dashboard={{ title: 'New Staff' }} menu={menu}>
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb">
-          <li className="breadcrumb-item"><Link to="/dashboard">Home</Link></li>
-          <li className="breadcrumb-item"><Link to="/staff">Staff</Link></li>
-          <li className="breadcrumb-item active">New Profile</li>
-        </ol>
-      </nav>
-
-      <h3 className="dashboard-title mb-4">Staff Registration</h3>
-      {error && <div className="alert alert-danger">{error}</div>}
-      {createdCreds && (
-        <div className="alert alert-success">
-          Staff <strong>{createdCreds.staffId}</strong> created successfully.
-          {' '}Temp password: <strong>{createdCreds.tempPassword}</strong>
-          {' '}· PIN: <strong>{createdCreds.tempPin}</strong>
-          <div className="mt-2">
-            <Link to={`/staff/${createdCreds.profileId}`} className="btn btn-sm btn-primary">Open profile</Link>
-          </div>
-        </div>
+    <StaffPageShell
+      settings={settings}
+      menu={menu}
+      loading={loading}
+      dashboardTitle="New Staff"
+      breadcrumbs={[
+        { label: 'Home', to: '/dashboard' },
+        STAFF_BREADCRUMB_HUB,
+        { label: 'New Profile' },
+      ]}
+      title="Staff Registration"
+      actions={<Link to="/staff/hub" className="btn btn-outline-secondary btn-sm">Module Hub</Link>}
+      notice={(
+        <>
+          {error && <div className="alert alert-danger mb-0">{error}</div>}
+          {createdCreds && (
+            <div className="alert alert-success mb-0">
+              Staff <strong>{createdCreds.staffId}</strong> created successfully.
+              {' '}Temp password: <strong>{createdCreds.tempPassword}</strong>
+              {' '}· PIN: <strong>{createdCreds.tempPin}</strong>
+              <div className="mt-2">
+                <Link to={`/staff/${createdCreds.profileId}`} className="btn btn-sm btn-primary">Open profile</Link>
+              </div>
+            </div>
+          )}
+        </>
       )}
-
-      <form onSubmit={handleSubmit}>
-        <div className="row g-3 mb-3">
-          <Section title="Staff Details">
-            <div className="col-12">
-              <label className="form-label small">Staff ID <span className="text-danger">*</span></label>
+    >
+      <form onSubmit={handleSubmit} className="cis-form-layout">
+        <FormSectionNav sections={SECTIONS} activeId={activeSection} />
+        <div className="cis-form-main">
+          <FormSection id="staff" title="Staff Details">
+            <div className={FIELD_COL}>
+              <label className="form-label" htmlFor="staffId">Staff ID <span className="text-danger">*</span></label>
               <input
-                className="form-control form-control-sm"
+                id="staffId"
+                className="form-control"
                 value={form.staffId}
                 maxLength={7}
                 required
@@ -223,7 +229,7 @@ export default function StaffAdmission() {
                 onBlur={checkStaffId}
               />
               {options?.lastStaffId && (
-                <div className="small text-muted mt-1">
+                <div className="cis-searchbar-hint mb-0 mt-1">
                   Last Staff ID is <strong>{options.lastStaffId}</strong>
                 </div>
               )}
@@ -233,26 +239,27 @@ export default function StaffAdmission() {
               {idStatus === 'available' && <div className="small text-success">Available</div>}
               {idStatus === 'taken' && <div className="small text-danger">Not available</div>}
             </div>
-            <div className="col-12">
-              <label className="form-label small">Title <span className="text-danger">*</span></label>
-              <div className="d-flex flex-wrap gap-3">
+            <div className={FIELD_COL}>
+              <label className="form-label">Title <span className="text-danger">*</span></label>
+              <div className="d-flex flex-wrap gap-3 pt-1">
                 {(options?.titles || ['Dr', 'Mr', 'Mrs', 'Ms']).map((title) => (
-                  <label key={title} className="small">
+                  <label key={title} className="d-inline-flex align-items-center gap-2">
                     <input
                       type="radio"
                       name="staffTitle"
                       checked={form.staffTitle === title}
                       onChange={() => setForm((f) => ({ ...f, staffTitle: title }))}
                     />
-                    {' '}{title}
+                    {title}
                   </label>
                 ))}
               </div>
             </div>
-            <div className="col-12">
-              <label className="form-label small">Staff name <span className="text-danger">*</span></label>
+            <div className={FIELD_COL}>
+              <label className="form-label" htmlFor="staffName">Staff Name <span className="text-danger">*</span></label>
               <input
-                className="form-control form-control-sm"
+                id="staffName"
+                className="form-control"
                 value={form.staffName}
                 required
                 maxLength={155}
@@ -263,170 +270,147 @@ export default function StaffAdmission() {
               label="Initial"
               value={form.staffInitial}
               onChange={(v) => setForm((f) => ({ ...f, staffInitial: v }))}
-              className="col-12"
+              className={FIELD_COL}
             />
-          </Section>
+          </FormSection>
 
-          <Section title="Personal 1">
+          <FormSection id="personal" title="Personal Details">
             <div className="col-12">
-              <label className="form-label small">Gender <span className="text-danger">*</span></label>
-              <div className="d-flex flex-wrap gap-3">
+              <label className="form-label">Gender <span className="text-danger">*</span></label>
+              <div className="d-flex flex-wrap gap-3 pt-1">
                 {['Male', 'Female', 'Transgender'].map((g) => (
-                  <label key={g} className="small">
+                  <label key={g} className="d-inline-flex align-items-center gap-2">
                     <input
                       type="radio"
                       name="gender"
                       checked={form.gender === g}
                       onChange={() => setForm((f) => ({ ...f, gender: g }))}
                     />
-                    {' '}{g === 'Transgender' ? 'Trans' : g}
+                    {g}
                   </label>
                 ))}
               </div>
             </div>
-            <FormInput label="DOB" value={form.dateOfBirth} onChange={(v) => setForm((f) => ({ ...f, dateOfBirth: v }))} type="date" className="col-12" />
-            <FormSelect label="Blood group" value={form.bloodGroup} onChange={(v) => setForm((f) => ({ ...f, bloodGroup: v }))} options={options?.bloodGroups} className="col-12" />
-            <FormSelect label="Religion" value={form.religion} onChange={(v) => setForm((f) => ({ ...f, religion: v }))} options={options?.religions} className="col-12" />
-            <FormSelect label="Community" value={form.community} onChange={(v) => setForm((f) => ({ ...f, community: v }))} options={options?.communities} className="col-12" />
-            <FormInput label="Caste" value={form.caste} onChange={(v) => setForm((f) => ({ ...f, caste: v }))} className="col-12" />
-            <div className="col-12">
-              <label className="form-label small">Marital status</label>
-              <div className="d-flex gap-3">
+            <FormInput label="Date of Birth" value={form.dateOfBirth} onChange={(v) => setForm((f) => ({ ...f, dateOfBirth: v }))} type="date" className={FIELD_COL} />
+            <FormSelect label="Blood Group" value={form.bloodGroup} onChange={(v) => setForm((f) => ({ ...f, bloodGroup: v }))} options={options?.bloodGroups} className={FIELD_COL} />
+            <FormSelect label="Religion" value={form.religion} onChange={(v) => setForm((f) => ({ ...f, religion: v }))} options={options?.religions} className={FIELD_COL} />
+            <FormSelect label="Community" value={form.community} onChange={(v) => setForm((f) => ({ ...f, community: v }))} options={options?.communities} className={FIELD_COL} />
+            <FormInput label="Caste" value={form.caste} onChange={(v) => setForm((f) => ({ ...f, caste: v }))} className={FIELD_COL} />
+            <div className={FIELD_COL}>
+              <label className="form-label">Marital Status</label>
+              <div className="d-flex flex-wrap gap-3 pt-1">
                 {['Unmarried', 'Married'].map((m) => (
-                  <label key={m} className="small">
+                  <label key={m} className="d-inline-flex align-items-center gap-2">
                     <input
                       type="radio"
                       name="maritalStatus"
                       checked={form.maritalStatus === m}
                       onChange={() => setForm((f) => ({ ...f, maritalStatus: m }))}
                     />
-                    {' '}{m}
+                    {m}
                   </label>
                 ))}
               </div>
             </div>
-          </Section>
+          </FormSection>
 
-          <Section title="Personal 2">
-            <FormInput label={fatherLabel} value={form.fatherName} onChange={(v) => setForm((f) => ({ ...f, fatherName: v }))} className="col-12" />
-            <FormInput label="Mobile 1" value={form.mobile1} onChange={(v) => setForm((f) => ({ ...f, mobile1: v }))} className="col-12" />
-            <FormInput label="Mobile 2" value={form.mobile2} onChange={(v) => setForm((f) => ({ ...f, mobile2: v }))} className="col-12" />
-            <FormInput label="Email" value={form.emailId} onChange={(v) => setForm((f) => ({ ...f, emailId: v }))} className="col-12" />
-          </Section>
-        </div>
+          <FormSection id="contact" title="Contact">
+            <FormInput label={fatherLabel} value={form.fatherName} onChange={(v) => setForm((f) => ({ ...f, fatherName: v }))} className={FIELD_COL} />
+            <FormInput label="Mobile 1" value={form.mobile1} onChange={(v) => setForm((f) => ({ ...f, mobile1: v }))} className={FIELD_COL} />
+            <FormInput label="Mobile 2" value={form.mobile2} onChange={(v) => setForm((f) => ({ ...f, mobile2: v }))} className={FIELD_COL} />
+            <FormInput label="Email" value={form.emailId} onChange={(v) => setForm((f) => ({ ...f, emailId: v }))} className={FIELD_COL} />
+          </FormSection>
 
-        <div className="row g-3 mb-3">
-          <Section title="Job Details">
-            <FormInput label="Date of joining" value={form.joinedDate} onChange={(v) => setForm((f) => ({ ...f, joinedDate: v }))} type="date" className="col-12" />
-            <FormSelect label="Category" value={form.jobCategory} onChange={(v) => setForm((f) => ({ ...f, jobCategory: v }))} options={options?.categories} className="col-12" />
+          <FormSection id="job" title="Job Details">
+            <FormInput label="Date of Joining" value={form.joinedDate} onChange={(v) => setForm((f) => ({ ...f, joinedDate: v }))} type="date" className={FIELD_COL} />
+            <FormSelect label="Category" value={form.jobCategory} onChange={(v) => setForm((f) => ({ ...f, jobCategory: v }))} options={options?.categories} className={FIELD_COL} />
             <FormSelect
               label="Department"
               value={form.departmentId}
               onChange={(v) => setForm((f) => ({ ...f, departmentId: v, designationId: '' }))}
               options={options?.departments}
-              className="col-12"
+              className={FIELD_COL}
             />
             <FormSelect
               label="Designation"
               value={form.designationId}
               onChange={(v) => setForm((f) => ({ ...f, designationId: v }))}
               options={designations.map((d) => ({ id: String(d.id), name: d.name }))}
-              className="col-12"
+              className={FIELD_COL}
             />
             <div className="col-12">
-              <label className="form-label small">Levels</label>
+              <label className="form-label">Levels</label>
               <div className="d-flex flex-wrap gap-2">
                 {(options?.levels || []).map((level) => (
-                  <label key={level} className="small border rounded px-2 py-1">
+                  <label key={level} className="d-inline-flex align-items-center gap-2 border rounded-pill px-3 py-1">
                     <input
                       type="checkbox"
                       checked={form.classTypes.includes(level)}
                       onChange={() => toggleLevel(level)}
                     />
-                    {' '}{level}
+                    {level}
                   </label>
                 ))}
               </div>
             </div>
-          </Section>
+          </FormSection>
 
-          <Section title="Dental Council Registration Details">
-            <FormInput label="Reg. no." value={form.regNo} onChange={(v) => setForm((f) => ({ ...f, regNo: v }))} className="col-12" />
-            <FormInput label="Reg. date" value={form.regDate} onChange={(v) => setForm((f) => ({ ...f, regDate: v }))} type="date" className="col-12" />
-            <FormSelect label="State dental council" value={form.dentalCouncil} onChange={(v) => setForm((f) => ({ ...f, dentalCouncil: v }))} options={regCouncils} className="col-12" />
-            <FormInput label="Aadhar no" value={form.aadharNo} onChange={(v) => setForm((f) => ({ ...f, aadharNo: v }))} className="col-12" />
-            <FormInput label="PAN no." value={form.panNo} onChange={(v) => setForm((f) => ({ ...f, panNo: v }))} className="col-12" />
-          </Section>
+          <FormSection id="registration" title="Dental Council Registration">
+            <FormInput label="Reg. No." value={form.regNo} onChange={(v) => setForm((f) => ({ ...f, regNo: v }))} className={FIELD_COL} />
+            <FormInput label="Reg. Date" value={form.regDate} onChange={(v) => setForm((f) => ({ ...f, regDate: v }))} type="date" className={FIELD_COL} />
+            <FormSelect label="State Dental Council" value={form.dentalCouncil} onChange={(v) => setForm((f) => ({ ...f, dentalCouncil: v }))} options={regCouncils} className={FIELD_COL} />
+            <FormInput label="Aadhar No" value={form.aadharNo} onChange={(v) => setForm((f) => ({ ...f, aadharNo: v }))} className={FIELD_COL} />
+            <FormInput label="PAN No." value={form.panNo} onChange={(v) => setForm((f) => ({ ...f, panNo: v }))} className={FIELD_COL} />
+          </FormSection>
 
-          <Section title="Permanent Address">
-            <FormInput label="Door no." value={form.doorNo} onChange={(v) => setForm((f) => ({ ...f, doorNo: v }))} className="col-12" />
-            <FormInput label="Street" value={form.street} onChange={(v) => setForm((f) => ({ ...f, street: v }))} className="col-12" />
-            <FormInput label="Post" value={form.post} onChange={(v) => setForm((f) => ({ ...f, post: v }))} className="col-12" />
-            <FormInput label="Taluk" value={form.taluk} onChange={(v) => setForm((f) => ({ ...f, taluk: v }))} className="col-12" />
-            <FormInput label="District" value={form.district} onChange={(v) => setForm((f) => ({ ...f, district: v }))} className="col-12" />
-            <FormSelect label="State" value={form.state} onChange={(v) => setForm((f) => ({ ...f, state: v }))} options={(options?.states || []).map((s) => ({ id: s, name: s }))} className="col-12" />
-            <FormInput label="Pincode" value={form.pincode} onChange={(v) => setForm((f) => ({ ...f, pincode: v }))} className="col-12" />
-          </Section>
-        </div>
+          <FormSection id="address" title="Permanent Address">
+            <FormInput label="Door No." value={form.doorNo} onChange={(v) => setForm((f) => ({ ...f, doorNo: v }))} className={FIELD_COL} />
+            <FormInput label="Street" value={form.street} onChange={(v) => setForm((f) => ({ ...f, street: v }))} className={FIELD_COL} />
+            <FormInput label="Post" value={form.post} onChange={(v) => setForm((f) => ({ ...f, post: v }))} className={FIELD_COL} />
+            <FormInput label="Taluk" value={form.taluk} onChange={(v) => setForm((f) => ({ ...f, taluk: v }))} className={FIELD_COL} />
+            <FormInput label="District" value={form.district} onChange={(v) => setForm((f) => ({ ...f, district: v }))} className={FIELD_COL} />
+            <FormSelect label="State" value={form.state} onChange={(v) => setForm((f) => ({ ...f, state: v }))} options={(options?.states || []).map((s) => ({ id: s, name: s }))} className={FIELD_COL} />
+            <FormInput label="Pincode" value={form.pincode} onChange={(v) => setForm((f) => ({ ...f, pincode: v }))} className={FIELD_COL} />
+          </FormSection>
 
-        <div className="mb-3">
-          <div className="card shadow-sm">
-            <div className="card-header fw-semibold">Educational Qualification</div>
+          <FormSection id="education" title="Educational Qualification" grid={false}>
             <EducationTab records={records} setRecords={setRecords} options={options} variant="admission" embedded />
-          </div>
-        </div>
+          </FormSection>
 
-        <div className="mb-3">
-          <div className="card shadow-sm">
-            <div className="card-header fw-semibold">Work Experience</div>
+          <FormSection id="experience" title="Work Experience" grid={false}>
             <ExperienceTab records={records} setRecords={setRecords} options={options} variant="admission" embedded />
-          </div>
-        </div>
+          </FormSection>
 
-        <div className="row g-3 mb-3">
-          <div className="col-md-4">
-            <div className="card shadow-sm h-100">
-              <div className="card-header fw-semibold">Extension Activities</div>
-              <SkillsTab
-                records={records}
-                setRecords={setRecords}
-                options={options}
-                groupKeys={['extra_curricular']}
-                showLanguages={false}
-                embedded
-              />
+          <FormSection id="activities" title="Activities & Skills">
+            <div className="col-md-6">
+              <h3 className="cis-formsection-title mb-2" style={{ fontSize: '0.8125rem' }}>Extension Activities</h3>
+              <SkillsTab records={records} setRecords={setRecords} options={options} groupKeys={['extra_curricular']} showLanguages={false} embedded />
             </div>
-          </div>
-          <div className="col-md-4">
-            <div className="card shadow-sm h-100">
-              <div className="card-header fw-semibold">Add-on Skill Sets</div>
-              <SkillsTab
-                records={records}
-                setRecords={setRecords}
-                options={options}
-                groupKeys={['extra_skills']}
-                showLanguages={false}
-                embedded
-              />
+            <div className="col-md-6">
+              <h3 className="cis-formsection-title mb-2" style={{ fontSize: '0.8125rem' }}>Add-on Skill Sets</h3>
+              <SkillsTab records={records} setRecords={setRecords} options={options} groupKeys={['extra_skills']} showLanguages={false} embedded />
             </div>
-          </div>
-          <Section title="Bank Details" className="col-md-4">
-            <FormInput label="A/c no." value={form.bankAcNo} onChange={(v) => setForm((f) => ({ ...f, bankAcNo: v }))} className="col-12" />
-            <FormInput label="A/c name" value={form.bankAcName} onChange={(v) => setForm((f) => ({ ...f, bankAcName: v }))} className="col-12" />
-            <FormSelect label="Bank name" value={form.bankName} onChange={(v) => setForm((f) => ({ ...f, bankName: v }))} options={options?.banks} className="col-12" />
-            <FormInput label="Branch" value={form.bankBranch} onChange={(v) => setForm((f) => ({ ...f, bankBranch: v }))} className="col-12" />
-            <FormInput label="IFSC code" value={form.bankIfsc} onChange={(v) => setForm((f) => ({ ...f, bankIfsc: v }))} className="col-12" />
-            <FormInput label="PF acc. no." value={form.pfAcNo} onChange={(v) => setForm((f) => ({ ...f, pfAcNo: v }))} className="col-12" />
-          </Section>
-        </div>
+          </FormSection>
 
-        <div className="d-flex gap-2 mb-4">
-          <button type="submit" className="btn btn-danger btn-lg" disabled={saving || idStatus === 'taken' || !!createdCreds}>
-            {saving ? 'Saving...' : 'Create New Profile'}
-          </button>
-          <Link to="/staff" className="btn btn-outline-secondary">Cancel</Link>
+          <FormSection id="bank" title="Bank Details">
+            <FormInput label="A/c No." value={form.bankAcNo} onChange={(v) => setForm((f) => ({ ...f, bankAcNo: v }))} className={FIELD_COL} />
+            <FormInput label="A/c Name" value={form.bankAcName} onChange={(v) => setForm((f) => ({ ...f, bankAcName: v }))} className={FIELD_COL} />
+            <FormSelect label="Bank Name" value={form.bankName} onChange={(v) => setForm((f) => ({ ...f, bankName: v }))} options={options?.banks} className={FIELD_COL} />
+            <FormInput label="Branch" value={form.bankBranch} onChange={(v) => setForm((f) => ({ ...f, bankBranch: v }))} className={FIELD_COL} />
+            <FormInput label="IFSC Code" value={form.bankIfsc} onChange={(v) => setForm((f) => ({ ...f, bankIfsc: v }))} className={FIELD_COL} />
+            <FormInput label="PF A/c No." value={form.pfAcNo} onChange={(v) => setForm((f) => ({ ...f, pfAcNo: v }))} className={FIELD_COL} />
+          </FormSection>
+
+          <FormActionBar note={<span>Fields marked <span className="text-danger">*</span> are required.</span>}>
+            <button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/staff')} disabled={saving}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={saving || idStatus === 'taken' || !!createdCreds}>
+              {saving ? 'Saving…' : 'Create New Profile'}
+            </button>
+          </FormActionBar>
         </div>
       </form>
-    </DashboardLayout>
+    </StaffPageShell>
   );
 }

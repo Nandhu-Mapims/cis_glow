@@ -5,15 +5,15 @@ export const DEFAULT_THEME_ID = 'campus-red';
 export const DEFAULT_SIDEBAR_MODE = 'dark';
 
 const SIDEBAR_DARK = {
-  '--cis-sidebar-bg': '#1f1616',
-  '--cis-sidebar-bg-elevated': '#2a1e1e',
-  '--cis-sidebar-text': 'rgba(255, 255, 255, 0.78)',
-  '--cis-sidebar-text-muted': 'rgba(255, 255, 255, 0.48)',
+  '--cis-sidebar-bg': '#141014',
+  '--cis-sidebar-bg-elevated': '#1f1718',
+  '--cis-sidebar-text': 'rgba(255, 255, 255, 0.86)',
+  '--cis-sidebar-text-muted': 'rgba(255, 255, 255, 0.52)',
   '--cis-sidebar-hover': 'rgba(255, 255, 255, 0.08)',
   '--cis-sidebar-active-bg': 'var(--cis-primary)',
   '--cis-sidebar-active': '#ffffff',
   '--cis-sidebar-border': 'rgba(255, 255, 255, 0.08)',
-  '--cis-sidebar-label': 'rgba(255, 255, 255, 0.42)',
+  '--cis-sidebar-label': 'rgba(255, 255, 255, 0.38)',
 };
 
 const SIDEBAR_LIGHT = {

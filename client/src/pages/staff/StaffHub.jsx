@@ -1,9 +1,9 @@
+import { useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 import { STAFF_HUB_LINKS } from './staffModuleMeta';
 
 export default function StaffHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   return (
     <ModuleHub
       title="Staff"
@@ -13,9 +13,8 @@ export default function StaffHub() {
       dashboardTitle="Staff Module"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
     />
   );
 }

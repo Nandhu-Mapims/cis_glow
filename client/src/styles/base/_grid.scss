@@ -1,0 +1,95 @@
+// Bootstrap-compatible 12-column flex grid — faithful/invisible infrastructure so the
+// ~250 pages already built against `row`/`col-md-*` keep their exact responsive behavior.
+// Reads --bs-gutter-x/--bs-gutter-y (never declares a default value for them) so the
+// existing per-page gutter overrides (ExamSetupPage.css, printReport.js) keep working.
+@use 'sass:math';
+@use 'sass:map';
+
+$grid-columns: 12;
+$breakpoints: (
+  sm: 576px,
+  md: 768px,
+  lg: 992px,
+  xl: 1200px,
+);
+$container-max-widths: (
+  sm: 540px,
+  md: 720px,
+  lg: 960px,
+  xl: 1140px,
+);
+
+.container {
+  width: 100%;
+  padding-right: 0.75rem;
+  padding-left: 0.75rem;
+  margin-right: auto;
+  margin-left: auto;
+
+  @each $name, $max in $container-max-widths {
+    @media (min-width: map.get($breakpoints, $name)) {
+      max-width: $max;
+    }
+  }
+}
+
+.container-fluid {
+  width: 100%;
+  padding-right: 0.75rem;
+  padding-left: 0.75rem;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: calc(var(--bs-gutter-y, 0rem) * -1);
+  margin-right: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
+  margin-left: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
+
+  > * {
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 100%;
+    margin-top: var(--bs-gutter-y, 0rem);
+    padding-right: calc(var(--bs-gutter-x, 1.5rem) * 0.5);
+    padding-left: calc(var(--bs-gutter-x, 1.5rem) * 0.5);
+  }
+}
+
+.col {
+  flex: 1 0 0%;
+}
+
+.col-auto {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+@for $i from 1 through $grid-columns {
+  .col-#{$i} {
+    flex: 0 0 auto;
+    width: math.percentage(math.div($i, $grid-columns));
+  }
+}
+
+@each $name, $bp in $breakpoints {
+  @media (min-width: $bp) {
+    .col-#{$name} {
+      flex: 1 0 0%;
+    }
+
+    .col-#{$name}-auto {
+      flex: 0 0 auto;
+      width: auto;
+    }
+
+    @for $i from 1 through $grid-columns {
+      .col-#{$name}-#{$i} {
+        flex: 0 0 auto;
+        width: math.percentage(math.div($i, $grid-columns));
+      }
+    }
+  }
+}

@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import api from '../../api/client';
 import FeePaymentModeFields, { DEFAULT_FEE_PAYMENT } from '../../components/FeePaymentModeFields';
 import ReportPrintBar from '../../components/ReportPrintBar';
 import { useTransientNotice } from '../../hooks/useTransientNotice';
-import { useShellData } from '../../hooks/useShellData';
 import { FEE_SCREEN_META } from './feeModuleMeta';
 import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
 import { formatIndianMoney, formatIndianMoneyDisplay } from './feeUiHelpers';
@@ -20,7 +19,7 @@ function toDisplayDate(iso) {
 export default function FeeSlipApprove() {
   const { groupId } = useParams();
   const navigate = useNavigate();
-  const { settings, menu, loading: shellLoading, error: shellError, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [sheetLoading, setSheetLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -35,7 +34,6 @@ export default function FeeSlipApprove() {
   const [receiptHtml, setReceiptHtml] = useState('');
 
   useEffect(() => {
-    if (shellLoading) return;
     const load = async () => {
       try {
         const sheetRes = await api.post('/api/fees/slips/approve/load', { groupId });
@@ -51,7 +49,7 @@ export default function FeeSlipApprove() {
       }
     };
     load();
-  }, [groupId, shellLoading]);
+  }, [groupId]);
 
   const total = useMemo(
     () => entries.reduce((sum, e) => sum + (Number(e.feeAmount) || 0), 0),
@@ -94,9 +92,8 @@ export default function FeeSlipApprove() {
     <FeePageShell
       settings={settings}
       menu={menu}
-      loading={shellLoading || sheetLoading}
-      error={shellError}
-      onRetry={reload}
+      loading={sheetLoading}
+      error={null}
       breadcrumbs={feeScreenBreadcrumbs('slip-approve')}
       title={META.title}
       legacy={META.legacy}

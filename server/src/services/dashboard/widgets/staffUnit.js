@@ -5,18 +5,8 @@ function num(val) {
   return Number(val) || 0;
 }
 
-function vacantBgStyle(value) {
-  if (value > 0.5) {
-    return "style='text-align:center; padding-right:15px;background-color:#ff1800;border-right: 15px solid;'";
-  }
-  return "style='text-align:center; padding-right:15px;border-right: 15px solid;'";
-}
-
-function vacantBgStyleLast(value) {
-  if (value > 0.5) {
-    return "style='text-align:center; padding-right:15px;background-color:#ff1800;'";
-  }
-  return "style='text-align:center; padding-right:15px;'";
+function vacantCellClass(value) {
+  return value > 0.5 ? ' class="cis-dept-num cis-flag-deficit"' : ' class="cis-dept-num"';
 }
 
 /** Zero vacant → em dash in a muted chip; surplus stays negative number. */
@@ -54,43 +44,33 @@ export async function renderStaffUnit({ academicDate }) {
   const readerSql = "(C.name LIKE '%Reader%' OR C.name LIKE '%Associate%')";
   const lecturerSql = "(C.name LIKE '%Lect%' OR C.name LIKE '%Senior%')";
 
-  let finalInfoTemp = `<table cellpadding='5' cellspacing='0' class='table table-bordered'>
+  let finalInfoTemp = `<table class="table table-bordered cis-dept-table">
   <thead>
-  <tr bgcolor='#CCCCCC'>
-  <th style='text-align: center;vertical-align: middle;' width='300' rowspan='2' nowrap height='30' align='center'>Department</th>
-  <th style='text-align: center;vertical-align: middle;' width='150' colspan='3' nowrap height='30' align='left'>Professor</th>
-  <th style='text-align: center;vertical-align: middle;' width='150' colspan='3' nowrap height='30' align='left'>Reader</th>
-  <th style='text-align: center;vertical-align: middle;' width='150' colspan='3' nowrap height='30' align='left'>Lecturer</th>
+  <tr>
+  <th rowspan="2">Department</th>
+  <th colspan="3">Professor</th>
+  <th colspan="3">Reader</th>
+  <th colspan="3">Lecturer</th>
   </tr>
-  <tr bgcolor='#CCCCCC'>
-  
-  <th style='text-align: center;vertical-align: middle;' width='50' nowrap height='30' align='left'>Norms</th>
-  <th style='text-align: center;vertical-align: middle;' width='50' nowrap height='30' align='left'>Avai.</th>
-  <th style='text-align: center;vertical-align: middle;' width='50' nowrap height='30' align='left'>Vacant</th>
-   <th style='text-align: center;vertical-align: middle;' width='50' nowrap height='30' align='left'>Norms</th>
-  <th style='text-align: center;vertical-align: middle;' width='50' nowrap height='30' align='left'>Avai.</th>
-  <th style='text-align: center;vertical-align: middle;' width='50' nowrap height='30' align='left'>Vacant</th>
-   <th style='text-align: center;vertical-align: middle;' width='50' nowrap height='30' align='left'>Norms</th>
-  <th style='text-align: center;vertical-align: middle;' width='50' nowrap height='30' align='left'>Avai.</th>
-  <th style='text-align: center;vertical-align: middle;' width='50' nowrap height='30' align='left'>Vacant</th>
+  <tr>
+  <th>Norms</th><th>Avai.</th><th>Vacant</th>
+  <th>Norms</th><th>Avai.</th><th>Vacant</th>
+  <th>Norms</th><th>Avai.</th><th>Vacant</th>
   </tr>
-  </thead><tfoot>
-    <tr >
-      <th nowrap valign='top' colspan='${colspan}' height='30' class='border_none' > </th>
-    </tr>
-    </tfoot><tbody>`;
+  </thead><tbody>`;
 
   const departments = await prisma.$queryRawUnsafe(
     `SELECT id, name FROM staff_dept_master
      WHERE del = 1 AND d_dept = 1 ORDER BY d_order ASC`,
   );
 
+  const chartRows = [];
+
   for (const dept of departments) {
     const cId = dept.id;
     const categoryName = dept.name ?? '';
 
-    finalInfoTemp += `<tr bgcolor='#F4F4F4'>
-                  <td nowrap valign='top' colspan='${colspan}'><strong style='font-size: 18px;'>${categoryName}</strong></td></tr>`;
+    finalInfoTemp += `<tr class="cis-dept-group-row"><td colspan="${colspan}">${categoryName}</td></tr>`;
 
     const units = await prisma.$queryRawUnsafe(
       `SELECT d_id, name, profess_hod, reader_assoc, lecturer_assist
@@ -98,6 +78,9 @@ export async function renderStaffUnit({ academicDate }) {
        WHERE del = 1 AND d_id = '${escapeSql(String(cId))}'
        ORDER BY id ASC`,
     );
+
+    let deptSanctioned = 0;
+    let deptAvailable = 0;
 
     for (const unit of units) {
       const gName = unit.name ?? '';
@@ -120,44 +103,50 @@ export async function renderStaffUnit({ academicDate }) {
         vRead = vRead + vProf;
       }
 
-      const bgColor1 = vacantBgStyle(vProf);
-      const bgColor2 = vacantBgStyle(vRead);
-      const bgColor3 = vacantBgStyleLast(vLect);
+      const vacantClass1 = vacantCellClass(vProf);
+      const vacantClass2 = vacantCellClass(vRead);
+      const vacantClass3 = vacantCellClass(vLect);
 
-      finalInfoTemp += `<tr><td   style='text-align:center; padding-right:15px;border-right: 15px solid;'>
-  <p class='class_name cinfo' style='font-size: 18px;'>${gName}</p></td>
- <td   style='text-align:center; padding-right:15px;'>
-  <p class='class_name cinfo' style='font-size: 18px;'>${gProfessor}</p></td>
-  <td   style='text-align:center; padding-right:15px;'>
-  <p class='class_name cinfo' style='font-size: 18px;'>${aProfessor}</p></td>
-   <td   ${bgColor1}>
-  <p class='class_name cinfo' style='font-size: 18px;'>${formatVacant(vProf)}</p></td>
-   
-   <td   style='text-align:center; padding-right:15px;'>
-  <p class='class_name cinfo' style='font-size: 18px;'>${gReader}</p></td>
-  <td   style='text-align:center; padding-right:15px;'>
-  <p class='class_name cinfo' style='font-size: 18px;'> ${aReader}</p></td>
-   <td   ${bgColor2}>
-  <p class='class_name cinfo' style='font-size: 18px;'>${formatVacant(vRead)}</p></td>
-   <td   style='text-align:center; padding-right:15px;'>
-  <p class='class_name cinfo' style='font-size: 18px;'>${gLecturer}</p></td>
-  <td   style='text-align:center; padding-right:15px;'>
-  <p class='class_name cinfo' style='font-size: 18px;'>${aLecturer} </p></td>
-  <td   ${bgColor3}>
-  <p class='class_name cinfo' style='font-size: 18px;' >${formatVacant(vLect)}</p></td></tr>`;
+      finalInfoTemp += `<tr>
+  <td class="cis-dept-name">${gName}</td>
+  <td class="cis-dept-num">${gProfessor}</td>
+  <td class="cis-dept-num">${aProfessor}</td>
+  <td${vacantClass1}>${formatVacant(vProf)}</td>
+  <td class="cis-dept-num">${gReader}</td>
+  <td class="cis-dept-num">${aReader}</td>
+  <td${vacantClass2}>${formatVacant(vRead)}</td>
+  <td class="cis-dept-num">${gLecturer}</td>
+  <td class="cis-dept-num">${aLecturer}</td>
+  <td${vacantClass3}>${formatVacant(vLect)}</td>
+</tr>`;
+
+      deptSanctioned += gProfessor + gReader + gLecturer;
+      deptAvailable += aProfessor + aReader + aLecturer;
+    }
+
+    if (deptSanctioned > 0 || deptAvailable > 0) {
+      chartRows.push({
+        department: categoryName,
+        sanctioned: deptSanctioned,
+        available: deptAvailable,
+        vacant: Math.max(deptSanctioned - deptAvailable, 0),
+        surplus: Math.max(deptAvailable - deptSanctioned, 0),
+      });
     }
   }
 
-  return `
+  finalInfoTemp += '</tbody></table>';
+
+  const html = `
 <div class="col-sm-12 dashboard-container">
   <section class="panel">
   <div class="revenue-head">
       <span aria-hidden="true"><i class="icon-sitemap"></i></span>
       <h3>Faculty - DCI Norms</h3>
-      
   </div>
-<div class="dashboard-panel-unit"><table width="283" cellpadding="0" cellspacing="0" class="table table-bordered">
-
-        ${finalInfoTemp} </table></div></section>
+  <div class="dashboard-panel-unit">${finalInfoTemp}</div>
+  </section>
 </div>`;
+
+  return { html, chart: { type: 'dept-staffing', rows: chartRows } };
 }

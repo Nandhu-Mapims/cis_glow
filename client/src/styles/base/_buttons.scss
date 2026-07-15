@@ -1,0 +1,172 @@
+// Buttons — solid crimson primary, soft hover lift, restrained everywhere else.
+// Same visual language already proven on .cis-dash-btn / .login-submit.
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.4375rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: var(--cis-radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--cis-motion), border-color var(--cis-motion), color var(--cis-motion),
+    box-shadow var(--cis-motion), transform var(--cis-motion);
+
+  &:hover { text-decoration: none; }
+
+  &:disabled,
+  &.disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--cis-focus-ring);
+  }
+}
+
+.btn-sm {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  border-radius: 7px;
+}
+
+.btn-lg {
+  padding: 0.625rem 1.25rem;
+  font-size: 0.9375rem;
+  border-radius: 10px;
+}
+
+.btn-xs {
+  padding: 0.125rem 0.4rem;
+  font-size: 0.6875rem;
+  border-radius: 6px;
+}
+
+// Fade transition helper (used on the already React-state-driven .modal.fade.show)
+.fade {
+  transition: opacity 0.15s linear;
+}
+.fade:not(.show) {
+  opacity: 0;
+}
+
+.dropdown-toggle::after {
+  display: inline-block;
+  margin-left: 0.3em;
+  vertical-align: 0.15em;
+  content: '';
+  border-top: 0.32em solid;
+  border-right: 0.32em solid transparent;
+  border-bottom: 0;
+  border-left: 0.32em solid transparent;
+}
+
+.btn-group, .btn-toolbar {
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.btn-toolbar { flex-wrap: wrap; gap: 0.5rem; }
+
+.btn-group {
+  > .btn:not(:first-child) { margin-left: -1px; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+  > .btn:not(:last-child) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+}
+
+.btn-group-sm > .btn {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+}
+
+@mixin btn-solid($bg, $bg-hover, $fg: #fff) {
+  background: $bg;
+  border-color: $bg;
+  color: $fg;
+
+  &:hover:not(:disabled):not(.disabled) {
+    background: $bg-hover;
+    border-color: $bg-hover;
+    color: $fg;
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+}
+
+@mixin btn-outline($color) {
+  background: transparent;
+  border-color: var(--cis-border-strong);
+  color: var(--cis-text);
+
+  &:hover:not(:disabled):not(.disabled) {
+    background: var(--cis-bg-subtle);
+    border-color: $color;
+    color: $color;
+  }
+}
+
+.btn-primary { @include btn-solid(var(--cis-primary), var(--cis-primary-hover)); box-shadow: 0 4px 14px rgba(var(--cis-primary-rgb), 0.24); }
+.btn-secondary { @include btn-solid(#5f5953, #47423d); }
+.btn-success { @include btn-solid(var(--cis-success), #047a57); }
+.btn-danger { @include btn-solid(var(--cis-danger), #931515); }
+.btn-warning { @include btn-solid(var(--cis-warning), #b8630a, var(--cis-text)); }
+.btn-info { @include btn-solid(var(--cis-info), #026aa3); }
+.btn-light { @include btn-solid(var(--cis-bg-subtle), var(--cis-border), var(--cis-text)); }
+.btn-dark { @include btn-solid(#1f1718, #100c0d); }
+
+.btn-outline-primary { @include btn-outline(var(--cis-primary)); }
+.btn-outline-secondary { @include btn-outline(#5f5953); }
+.btn-outline-success { @include btn-outline(var(--cis-success)); }
+.btn-outline-danger { @include btn-outline(var(--cis-danger)); }
+.btn-outline-warning { @include btn-outline(var(--cis-warning)); }
+.btn-outline-info { @include btn-outline(var(--cis-info)); }
+.btn-outline-dark { @include btn-outline(#1f1718); }
+
+// Legacy BS3 alias still referenced by a couple of un-migrated screens
+.btn-default { @include btn-outline(var(--cis-text)); }
+
+.btn-link {
+  background: transparent;
+  border-color: transparent;
+  color: var(--cis-primary);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover:not(:disabled) {
+    color: var(--cis-primary-hover);
+    text-decoration: underline;
+  }
+}
+
+.btn-close {
+  width: 1.1rem;
+  height: 1.1rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23171513' d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3E%3C/svg%3E")
+    center / 0.7rem auto no-repeat;
+  opacity: 0.6;
+  cursor: pointer;
+
+  &:hover { opacity: 1; }
+  &:focus-visible { outline: none; box-shadow: var(--cis-focus-ring); }
+}
+
+.btn-close-white {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}

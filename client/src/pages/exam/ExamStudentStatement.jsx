@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { serializeLegacyForm } from '../../utils/legacyFormSerialize';
@@ -8,8 +8,7 @@ import './ExamSetupPage.css';
 
 export default function ExamStudentStatement() {
   const containerRef = useRef(null);
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -43,19 +42,7 @@ export default function ExamStudentStatement() {
   }, []);
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -92,10 +79,9 @@ export default function ExamStudentStatement() {
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
           <h3 className="dashboard-title mb-0">Student Exam Statement</h3>
-          <p className="text-muted small mb-0">
-            Legacy: student/exam_statement.php
-            {studentLabel ? ` — ${studentLabel}` : ''}
-          </p>
+          {studentLabel && (
+            <p className="text-muted small mb-0">{studentLabel}</p>
+          )}
         </div>
         <div className="d-flex gap-2">
           {html && (

@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import '../students/StudentReport.css';
 
 export default function StaffAttendanceCalendar() {
   const [searchParams] = useSearchParams();
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
@@ -15,19 +14,7 @@ export default function StaffAttendanceCalendar() {
   const [html, setHtml] = useState('');
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+    setLoading(false);
   }, []);
 
   useEffect(() => {

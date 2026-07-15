@@ -1,5 +1,5 @@
 import { useEffect, useState, Fragment } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import { Breadcrumbs, PageHeader, PageLoading } from '../../components/PageShell';
 import DashboardLayout from '../../layouts/DashboardLayout';
@@ -132,8 +132,7 @@ function StudentDetail({ detail }) {
 }
 
 export default function PortfolioIndividualReportPage() {
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -147,13 +146,7 @@ export default function PortfolioIndividualReportPage() {
   const load = async (payload = {}) => {
     setBusy(true);
     const nextFields = { ...fields, ...payload };
-    const [settingsRes, menuRes, reportRes] = await Promise.all([
-      api.get('/api/settings/basic'),
-      api.get('/api/menu'),
-      api.post('/api/portfolio/individual-report/load', { fields: nextFields }),
-    ]);
-    setSettings(settingsRes.data);
-    setMenu(menuRes.data.menu || []);
+    const reportRes = await api.post('/api/portfolio/individual-report/load', { fields: nextFields });
     setData(reportRes.data);
     setFields({
       searchBy: reportRes.data.searchBy,
@@ -194,7 +187,6 @@ export default function PortfolioIndividualReportPage() {
       ]} />
       <PageHeader
         title="Portfolia Report"
-        subtitle="Legacy: student_portfolia_individual_report.php"
         actions={<Link to="/portfolio" className="btn btn-outline-secondary btn-sm">Back</Link>}
       />
 

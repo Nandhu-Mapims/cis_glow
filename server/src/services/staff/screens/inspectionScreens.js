@@ -133,7 +133,7 @@ function formatCourseGroupLabel(course, academicYear = '') {
 }
 
 function sqlEscape(val) {
-  return String(val ?? '').replace(/'/g, "''");
+  return escapeSql(val);
 }
 
 function normalizeAcademicType(val) {

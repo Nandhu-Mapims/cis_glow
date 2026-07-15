@@ -241,3 +241,428 @@
   object-fit: contain;
 }
 
+
+.cis-address-label-filters .cis-student-filter-heading {
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.cis-address-label-print {
+  overflow-x: auto;
+}
+
+.cis-address-label-table {
+  width: 850px;
+  max-width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin-bottom: 1rem;
+}
+
+.cis-address-label-table td {
+  vertical-align: top;
+}
+
+@media print {
+  .cis-address-label-table {
+    page-break-after: always;
+  }
+}
+
+/* ── Student profile hero + tabs (redesign) ── */
+.cis-student-hero {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--cis-border);
+  border-left: 3px solid var(--cis-primary);
+  border-radius: var(--cis-card-radius);
+  background: var(--cis-bg-subtle);
+  box-shadow: var(--cis-shadow-sm);
+}
+
+.cis-student-hero-avatar {
+  width: 72px !important;
+  height: 72px !important;
+  flex-shrink: 0;
+}
+
+.cis-student-hero-body { min-width: 0; flex: 1; }
+
+.cis-student-hero-nameline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.6rem;
+}
+
+.cis-student-hero-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--cis-text);
+}
+
+.cis-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.cis-status-pill.is-active { background: var(--cis-success-soft); color: var(--cis-success); }
+.cis-status-pill.is-released { background: var(--cis-danger-soft); color: var(--cis-danger); }
+
+.cis-student-hero-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem 1.5rem;
+  margin: 0;
+}
+
+.cis-student-hero-facts dt {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cis-text-subtle);
+}
+
+.cis-student-hero-facts dd {
+  margin: 0.1rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cis-text);
+}
+
+/* Tab bar */
+.cis-tabbar {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  margin: 1rem 0;
+  border: 1px solid var(--cis-border);
+  border-radius: 999px;
+  background: var(--cis-surface);
+  box-shadow: var(--cis-shadow-sm);
+  overflow-x: auto;
+}
+
+.cis-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 1.1rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--cis-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.cis-tab:hover { color: var(--cis-primary); }
+
+.cis-tab.is-active {
+  background: var(--cis-primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(var(--cis-primary-rgb), 0.25);
+}
+
+.cis-tab-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cis-warning);
+}
+
+.cis-tab.is-active .cis-tab-dot { background: #fff; }
+
+/* Read-only view fields (overview) */
+.cis-view-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cis-text-subtle);
+  margin-bottom: 0.15rem;
+}
+
+.cis-view-value {
+  font-size: 0.9375rem;
+  color: var(--cis-text);
+  word-break: break-word;
+}
+
+@media (max-width: 767.98px) {
+  .cis-student-hero { flex-direction: column; align-items: flex-start; text-align: left; }
+  .cis-student-hero-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cis-tab { transition: none; }
+}
+
+/* ── Student report builder (redesign) ── */
+.cis-report-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.cis-report-search { margin-bottom: 0.75rem; }
+
+.cis-report-checklist {
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.cis-report-group { margin-bottom: 0.9rem; }
+
+.cis-report-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.25rem 0.1rem;
+  margin-bottom: 0.15rem;
+  border-bottom: 1px solid var(--cis-border);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cis-text-subtle);
+}
+
+.cis-report-check {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.3rem 0.35rem;
+  border-radius: var(--cis-radius-sm);
+  font-size: 0.875rem;
+  color: var(--cis-text);
+  cursor: pointer;
+}
+
+.cis-report-check:hover { background: var(--cis-bg-subtle); }
+.cis-report-check input { flex-shrink: 0; }
+
+.cis-report-order-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--cis-text);
+}
+
+.cis-report-custom {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.cis-report-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--cis-text-muted);
+  border: 1px dashed var(--cis-border-strong, var(--cis-border));
+  border-radius: var(--cis-radius-md);
+  background: var(--cis-bg-subtle);
+}
+
+.cis-report-empty-icon { font-size: 1.5rem; color: var(--cis-text-subtle); }
+
+.student-report-page .report-field-chip.is-picked {
+  background: var(--cis-success-soft);
+  border-color: var(--cis-success);
+  color: var(--cis-success);
+  cursor: default;
+}
+
+.student-report-page .report-selected-fields li {
+  gap: 0.6rem;
+}
+
+.report-selected-index {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--cis-primary-soft);
+  color: var(--cis-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.report-selected-name { flex: 1; min-width: 0; word-break: break-word; }
+
+@media (max-width: 991.98px) {
+  .cis-report-picker { grid-template-columns: 1fr; }
+}
+
+/* ── Student screen dispatcher (filters + inline tables) ── */
+.cis-screen-filters-head {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cis-text-subtle);
+  margin: 0 0 0.25rem;
+}
+
+.cis-dt-wrap {
+  border: 1px solid var(--cis-border);
+  border-radius: var(--cis-radius-md);
+  overflow: auto;
+  max-height: 60vh;
+}
+
+.cis-dt-wrap .cis-dt-table { margin-bottom: 0; }
+
+/* ── Server-rendered report tables (dangerouslySetInnerHTML) ── */
+/* These come back as a Bootstrap <table> inside .report-html with no height cap,
+   so long reports scroll the whole page. Cap the body and pin the header row. */
+.cis-student-report-output .report-html {
+  max-height: 68vh;
+  overflow: auto;
+  /* No padding on the scroll container: the sticky header pins to top:0 flush,
+     so outgoing rows are clipped exactly instead of peeking through a padding gap.
+     The padding lives on the inner .report-print (which scrolls) instead. */
+  padding: 0;
+}
+
+.cis-student-report-output .report-html > .report-print {
+  padding: 1.25rem;
+}
+
+.cis-student-report-output .report-html > .report-print > h4 {
+  margin-top: 0;
+}
+
+.cis-student-report-output .report-html table {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.cis-student-report-output .report-html thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  /* Opaque fill so rows scroll cleanly under the header; collapsed-border cells
+     don't paint borders while sticky, so draw the rules with insets. */
+  background: var(--cis-bg-subtle);
+  box-shadow:
+    inset 0 -2px 0 var(--cis-primary),
+    inset 0 1px 0 var(--cis-border);
+}
+
+/* ── Collage generate form (readable rewrite) ── */
+.cis-collage-section {
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--cis-border);
+}
+
+.cis-collage-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cis-text-subtle);
+  margin: 0 0 0.75rem;
+}
+
+.cis-collage-optional {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--cis-text-subtle);
+  background: var(--cis-bg-subtle);
+  border: 1px solid var(--cis-border);
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+}
+
+.cis-collage-field { margin-bottom: 0.85rem; }
+.cis-collage-field:last-child { margin-bottom: 0; }
+
+.cis-collage-field-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--cis-text);
+  margin-bottom: 0.3rem;
+}
+
+.cis-collage-inputs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.cis-collage-input { display: flex; flex-direction: column; gap: 0.2rem; margin: 0; }
+.cis-collage-input.is-wide { grid-column: span 3; }
+
+.cis-collage-cap {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--cis-text-subtle);
+}
+
+.cis-collage-color { position: relative; display: flex; align-items: center; }
+.cis-collage-color .form-control { padding-left: 1.9rem; }
+
+.cis-collage-swatch {
+  position: absolute;
+  left: 0.4rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 4px;
+  border: 1px solid var(--cis-border-strong, var(--cis-border));
+  background:
+    repeating-conic-gradient(#cbd2d9 0% 25%, #fff 0% 50%) 50% / 8px 8px;
+}
+
+.cis-collage-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--cis-text);
+  cursor: pointer;
+  margin: 0;
+}

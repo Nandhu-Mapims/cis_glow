@@ -1,5 +1,5 @@
+import { useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 
 const LINKS = [
   { to: '/academic/curriculum', title: 'Curriculum Module', desc: 'Periods, timetables, feedback, internship, and curriculum reports', icon: 'fa fa-book' },
@@ -12,7 +12,7 @@ const LINKS = [
 ];
 
 export default function AcademicHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
 
   return (
     <ModuleHub
@@ -22,9 +22,8 @@ export default function AcademicHub() {
       dashboardTitle="Academic"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
     />
   );
 }

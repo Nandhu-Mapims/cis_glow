@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Header from './Header';
 import TopNav from './TopNav';
-import Sidebar from './Sidebar';
 
 const ShellLayoutContext = createContext(0);
 
@@ -24,7 +23,7 @@ export default function DashboardLayout({
   children,
 }) {
   const shellDepth = useContext(ShellLayoutContext);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
 
   if (shellDepth > 0) {
     return children;
@@ -32,26 +31,27 @@ export default function DashboardLayout({
 
   return (
     <ShellLayoutContext.Provider value={shellDepth + 1}>
-      <div className="cis-app">
+      <div className="cis-app cis-app-topnav">
         <MainScrollReset />
-        <div className="cis-body d-flex">
-          <Sidebar
-            settings={settings}
-            menu={menu}
-            mobileOpen={sidebarOpen}
-            onMobileClose={() => setSidebarOpen(false)}
-          />
-          <div className="cis-main-column flex-grow-1 min-vw-0">
+        <div className="cis-body">
+          <div className="cis-main-column">
             <main className="cis-main">
               <div className="cis-content-shell">
                 <div className="cis-content-canvas">
-                  <Header
-                    settings={settings}
-                    lastLoginAt={dashboard?.lastLoginAt}
-                    onMenuToggle={() => setSidebarOpen((open) => !open)}
-                  />
+                  <div className="cis-chrome-sticky">
+                    <TopNav
+                      settings={settings}
+                      menu={menu}
+                      lastLoginAt={dashboard?.lastLoginAt}
+                      mobileOpen={navOpen}
+                      onMobileClose={() => setNavOpen(false)}
+                    />
+                    <Header
+                      settings={settings}
+                      onMenuToggle={() => setNavOpen((open) => !open)}
+                    />
+                  </div>
                   <div className="cis-content-body">
-                    <TopNav menu={menu} className="d-lg-none" />
                     {children}
                   </div>
                 </div>

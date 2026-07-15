@@ -1,30 +1,68 @@
+import { useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 
 const SCREENS = [
-  { to: '/dashboard', title: 'Attendance Dashboard', desc: 'Staff and student attendance widgets', icon: 'fa fa-dashboard' },
-  { to: '/dashboard/student', title: 'Student Dashboard', desc: 'Student-focused widget board with academic year filters', icon: 'fa fa-graduation-cap' },
-  { to: '/dashboard/overall-strength', title: 'Overall Strength', desc: 'Course strength by admission year', icon: 'fa fa-table' },
-  { to: '/dashboard/community-strength', title: 'Community Strength', desc: 'Course strength by community category', icon: 'fa fa-users' },
-  { to: '/dashboard/log', title: 'Log Dashboard', desc: 'Login statistics for admin, staff, and students', icon: 'fa fa-bar-chart' },
-  { to: '/dashboard/staff-pattern', title: 'Staff Pattern', desc: 'Faculty structure and unit rosters (DCI norms)', icon: 'fa fa-sitemap' },
+  {
+    to: '/dashboard',
+    title: 'Attendance dashboard',
+    desc: 'Home board — staff and student attendance widgets',
+    icon: 'fa fa-dashboard',
+    section: 'Boards',
+  },
+  {
+    to: '/dashboard/student',
+    title: 'Student dashboard',
+    desc: 'Student-focused widget board with academic year filters',
+    icon: 'fa fa-graduation-cap',
+    section: 'Boards',
+  },
+  {
+    to: '/dashboard/overall-strength',
+    title: 'Overall strength',
+    desc: 'Course strength by admission year',
+    icon: 'fa fa-table',
+    section: 'Strength',
+  },
+  {
+    to: '/dashboard/community-strength',
+    title: 'Community strength',
+    desc: 'Course strength by community category',
+    icon: 'fa fa-users',
+    section: 'Strength',
+  },
+  {
+    to: '/dashboard/log',
+    title: 'Log dashboard',
+    desc: 'Login statistics for admin, staff, and students',
+    icon: 'fa fa-bar-chart',
+    section: 'Audit',
+  },
+  {
+    to: '/dashboard/staff-pattern',
+    title: 'Staff pattern',
+    desc: 'Faculty structure and unit rosters (DCI norms)',
+    icon: 'fa fa-sitemap',
+    section: 'Faculty',
+  },
 ];
 
 export default function DashboardHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
 
   return (
     <ModuleHub
-      title="Dashboard"
-      subtitle="Attendance, strength reports, and faculty pattern screens"
-      breadcrumbs={[{ label: 'Home', to: '/dashboard' }, { label: 'All dashboards' }]}
+      title="All dashboards"
+      subtitle="Attendance boards, strength reports, login audit, and faculty pattern"
+      breadcrumbs={[
+        { label: 'Home', to: '/dashboard' },
+        { label: 'All dashboards' },
+      ]}
       links={SCREENS}
-      dashboardTitle="Dashboard"
+      dashboardTitle="All dashboards"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
     />
   );
 }

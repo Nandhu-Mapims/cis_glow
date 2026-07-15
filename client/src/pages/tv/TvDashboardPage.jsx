@@ -1,23 +1,17 @@
 import { useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import { Breadcrumbs, PageHeader, PageLoading } from '../../components/PageShell';
 import DashboardLayout from '../../layouts/DashboardLayout';
 
 export default function TvDashboardPage() {
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const [settingsRes, menuRes, dashRes] = await Promise.all([
-        api.get('/api/settings/basic'),
-        api.get('/api/menu'),
-        api.get('/api/tv/dashboard'),
-      ]);
-      setSettings(settingsRes.data);
-      setMenu(menuRes.data.menu || []);
+      const dashRes = await api.get('/api/tv/dashboard');
       setData(dashRes.data);
       setLoading(false);
     })();
@@ -28,7 +22,7 @@ export default function TvDashboardPage() {
   return (
     <DashboardLayout settings={settings} menu={menu}>
       <Breadcrumbs items={[{ label: 'Home', to: '/dashboard' }, { label: 'TV', to: '/tv' }, { label: 'Dashboard' }]} />
-      <PageHeader title="TV Dashboard" subtitle="Legacy: tv/dashboard.php" />
+      <PageHeader title="TV Dashboard" />
       <div className="row g-3 mb-4">
         <div className="col-md-4"><div className="card p-3"><strong>Widgets</strong><div className="fs-3">{data?.summary?.widgets ?? 0}</div></div></div>
         <div className="col-md-4"><div className="card p-3"><strong>Videos</strong><div className="fs-3">{data?.summary?.videos ?? 0}</div></div></div>

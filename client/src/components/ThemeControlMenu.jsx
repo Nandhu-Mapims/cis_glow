@@ -213,8 +213,8 @@ export default function ThemeControlMenu() {
             </section>
 
             <section className="cis-theme-control-section">
-              <h3 className="cis-theme-control-label">Sidebar</h3>
-              <div className="cis-theme-toggle-group" role="group" aria-label="Sidebar style">
+              <h3 className="cis-theme-control-label">Top nav</h3>
+              <div className="cis-theme-toggle-group" role="group" aria-label="Top nav style">
                 <button
                   type="button"
                   className={`cis-theme-toggle-btn${sidebarMode === 'dark' ? ' is-active' : ''}`}

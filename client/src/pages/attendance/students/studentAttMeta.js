@@ -1,3 +1,5 @@
+import { cleanLegacyKey } from '../../../utils/legacyRoutes';
+
 export const STUDENT_ATT_CORE_LINKS = [
   { to: '/attendance/students/daily', title: 'U.G Manual Attendance', desc: 'Daily UG attendance entry', icon: 'fa fa-check-square-o', legacy: 'student_mattendance.php' },
   { to: '/attendance/students/report', title: 'U.G Reports Att', desc: 'Subject-wise attendance report', icon: 'fa fa-bar-chart', legacy: 'attendance_report.php' },
@@ -54,7 +56,6 @@ export const STUDENT_ATT_SCREEN_META = {
 export const STUDENT_ATT_SCREEN_LINKS = Object.entries(STUDENT_ATT_SCREEN_META).map(([slug, meta]) => ({
   to: `/attendance/students/${slug}`,
   title: meta.title,
-  desc: `Legacy: ${meta.legacy}`,
   icon: 'fa fa-circle-o',
   legacy: meta.legacy,
 }));
@@ -68,16 +69,16 @@ export function isPgPunchScreenType(type) {
   return type === 'pg-punch' || type === 'pg-punch-entry';
 }
 
-/** Resolve slug from pathname and optional ?legacy= query (sidebar / shared routes). */
-export function resolveStudentAttScreenSlug(pathname, legacyQuery = '') {
+/** Resolve slug from pathname and optional ?view= query (sidebar / shared routes). */
+export function resolveStudentAttScreenSlug(pathname, viewQuery = '') {
   const pathSlug = String(pathname || '')
     .replace(/^\/attendance\/students\//, '')
     .replace(/\/$/, '')
     .split('?')[0];
   if (STUDENT_ATT_SCREEN_META[pathSlug]) return pathSlug;
 
-  const legacy = String(legacyQuery || '').replace(/^\//, '').split('?')[0];
-  if (!legacy) return null;
-  const match = Object.entries(STUDENT_ATT_SCREEN_META).find(([, meta]) => meta.legacy === legacy);
+  const view = String(viewQuery || '').replace(/^\//, '').split('?')[0];
+  if (!view) return null;
+  const match = Object.entries(STUDENT_ATT_SCREEN_META).find(([, meta]) => cleanLegacyKey(meta.legacy) === view);
   return match ? match[0] : null;
 }

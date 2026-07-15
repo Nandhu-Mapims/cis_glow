@@ -1,4 +1,4 @@
-import { runLegacyBridge } from '../legacy/phpBridge.js';
+import { computeFeeDashboardKpisNative } from './feeDashboardKpisNative.js';
 
 const kpiCache = new Map();
 const CACHE_TTL_MS = 300_000;
@@ -10,21 +10,7 @@ export async function loadLegacyDashboardKpis(attendanceDate) {
     return cached.data;
   }
 
-  const raw = await runLegacyBridge('fee_dashboard_kpis.php', {
-    memberId: 'CISADMIN',
-    attendanceDate,
-  });
-
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    throw new Error('Unable to parse legacy fee dashboard KPI response');
-  }
-
-  if (parsed.error) {
-    throw new Error(parsed.error);
-  }
+  const parsed = await computeFeeDashboardKpisNative();
 
   kpiCache.set(cacheKey, { at: Date.now(), data: parsed });
   return parsed;

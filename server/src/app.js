@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import compression from 'compression';
+import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { config } from './config/index.js';
@@ -36,7 +38,18 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-app.set('trust proxy', true);
+// Trust exactly one reverse-proxy hop (nginx/load balancer) - req.ip reflects
+// X-Forwarded-For only from that hop, so a client can't spoof it directly.
+app.set('trust proxy', 1);
+
+// CSP disabled: many screens render legacy-parity HTML (dashboard widgets, print
+// reports) via dangerouslySetInnerHTML with inline onclick handlers/styles - a
+// default CSP would silently break that behavior. Other protective headers stay on.
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
+app.use(compression());
 
 app.use(cors({
   origin(origin, callback) {

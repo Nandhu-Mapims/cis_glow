@@ -1,6 +1,5 @@
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 
 const LINKS = [
   { to: '/exam/reports/term-report', title: 'Term Report', desc: 'Class-wise term exam report', icon: 'fa fa-file-text-o' },
@@ -19,7 +18,7 @@ const LINKS = [
 ];
 
 export default function ExamReportsHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
 
   return (
     <ModuleHub
@@ -33,9 +32,8 @@ export default function ExamReportsHub() {
       dashboardTitle="Exam Reports"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
       actions={<Link to="/exam" className="btn btn-outline-secondary btn-sm">Back</Link>}
     />
   );

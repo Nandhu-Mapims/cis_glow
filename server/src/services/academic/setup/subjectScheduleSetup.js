@@ -315,7 +315,7 @@ export async function saveSubjectSchedule(payload, memberId, audit = {}) {
              '${escapeSql(scope.academicType)}', '${escapeSql(row.day)}',
              '${escapeSql(String(row.batch || ''))}', '${escapeSql(String(row.period))}',
              '${escapeSql(String(scope.subjectId))}', '${escapeSql(String(row.staffId))}',
-             '${escapeSql(String(row.pgId || ''))}', '${fromDate}', '${fromDate}',
+             '${escapeSql(String(row.pgId || ''))}', '${escapeSql(fromDate)}', '${escapeSql(fromDate)}',
              '${escapeSql(String(row.topicId || ''))}', 0, 1, 0, NOW(),
              '${escapeSql(audit.ip || '')}', '${escapeSql(memberId)}',
              NOW(), '${escapeSql(audit.ip || '')}', '${escapeSql(memberId)}', 1)`,

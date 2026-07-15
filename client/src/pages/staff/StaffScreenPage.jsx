@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useOutletContext, useParams } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { useShellData } from '../../hooks/useShellData';
 import { printReportHtml } from '../../utils/printReport';
 import { STAFF_SCREEN_META } from './staffModuleMeta';
 import { useStaffScreenApi } from './useStaffModuleApi';
@@ -442,7 +441,7 @@ export default function StaffScreenPage() {
   const screen = (paramScreen && STAFF_SCREEN_META[paramScreen]) ? paramScreen : (STAFF_SCREEN_META[pathSlug] ? pathSlug : paramScreen);
   const meta = STAFF_SCREEN_META[screen];
   const { data, busy, error, notice, clearNotice, load, save, searchMore } = useStaffScreenApi(screen);
-  const { settings, menu, loading, error: shellError } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -453,7 +452,7 @@ export default function StaffScreenPage() {
   if (!meta) {
     return <div className="p-4"><p className="text-danger">Unknown staff screen.</p><Link to="/staff/hub">Back</Link></div>;
   }
-  if (loading || !ready) return <div className="p-4 text-muted">Loading...</div>;
+  if (!ready) return <div className="p-4 text-muted">Loading...</div>;
 
   return (
     <DashboardLayout settings={settings} dashboard={{ title: meta.title }} menu={menu}>
@@ -465,7 +464,7 @@ export default function StaffScreenPage() {
         </ol>
       </nav>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <div><h3 className="dashboard-title mb-0">{meta.title}</h3><p className="text-muted small mb-0">Legacy: {meta.legacy}</p></div>
+        <div><h3 className="dashboard-title mb-0">{meta.title}</h3></div>
         <div className="d-flex gap-2">
           {data?.reportHtml && (
             <button
@@ -488,7 +487,6 @@ export default function StaffScreenPage() {
           <Link to="/staff/hub" className="btn btn-outline-secondary btn-sm">Back</Link>
         </div>
       </div>
-      {shellError && <div className="alert alert-warning">{shellError}</div>}
       {notice && (
         <div className="alert alert-success alert-dismissible fade show">
           {notice}

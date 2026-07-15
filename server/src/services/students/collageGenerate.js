@@ -1,5 +1,5 @@
 import { prisma } from '../../config/prisma.js';
-import { runLegacyBridge } from '../legacy/phpBridge.js';
+import { generateCollageImage as generateCollageImageNative } from './collageGenerateNative.js';
 
 export const COLLAGE_GENERATE_DEFAULTS = {
   row_count: '6',
@@ -39,11 +39,7 @@ export async function loadCollageTemplates() {
 }
 
 export async function generateCollageImage(memberId, fields) {
-  const raw = await runLegacyBridge('colage_generate_bridge.php', {
-    memberId,
-    fields: { ...fields, Search: 'Search' },
-  });
-  const result = JSON.parse(raw);
+  const result = await generateCollageImageNative(memberId, { ...fields, Search: 'Search' });
   if (result.error) {
     return { error: result.error };
   }

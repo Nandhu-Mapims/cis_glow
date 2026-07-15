@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import ReportPrintBar from '../../components/ReportPrintBar';
 import DashboardLayout from '../../layouts/DashboardLayout';
@@ -33,8 +33,7 @@ function mergeReportRows(html, rowsByFlag) {
 
 export default function StudentAttendanceReport({ variant = 'standard' }) {
   const isQuarterly = variant === 'quarterly';
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [academicYears, setAcademicYears] = useState([]);
   const [courseGroups, setCourseGroups] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -75,13 +74,7 @@ export default function StudentAttendanceReport({ variant = 'standard' }) {
   useEffect(() => {
     const load = async () => {
       try {
-        const [settingsRes, menuRes, yearsRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-          api.get('/api/attendance/students/report/years'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
+        const yearsRes = await api.get('/api/attendance/students/report/years');
         const year = yearsRes.data.defaultAcademicYear || yearsRes.data.academicYears?.[0] || '';
         setAcademicYears(yearsRes.data.academicYears || []);
         setAcademicYear(year);

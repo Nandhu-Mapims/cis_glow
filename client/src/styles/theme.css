@@ -1,11 +1,11 @@
 /**
- * CIS design tokens — Red & pale yellow (light content + dark sidebar)
+ * CIS design tokens — college crimson + pale gold (light content + dark sidebar)
  */
 :root {
   /* Brand */
   --cis-primary: #a61a1a;
   --cis-primary-hover: #8b1515;
-  --cis-primary-soft: #fff0ee;
+  --cis-primary-soft: #fff1ef;
   --cis-primary-rgb: 166, 26, 26;
   --cis-accent: #f5d15f;
   --cis-accent-hover: #e6bc3a;
@@ -13,44 +13,57 @@
   --cis-accent-rgb: 245, 209, 95;
   --cis-peach-soft: #fff5f2;
 
-  /* Surfaces — light warm shell */
-  --cis-bg: #fafaf8;
-  --cis-bg-subtle: #fffbeb;
+  /* Surfaces — warmer shell, clearer canvas */
+  --cis-bg: #f7f6f3;
+  --cis-bg-subtle: #fff8e8;
   --cis-surface: #ffffff;
   --cis-surface-elevated: #ffffff;
-  --cis-border: #e8e4dc;
-  --cis-border-strong: #d6d0c4;
+  --cis-border: #e5e1d8;
+  --cis-border-strong: #d0c9bb;
 
   /* Text */
-  --cis-text: #1a1a1a;
-  --cis-text-muted: #6b6560;
-  --cis-text-subtle: #9c958c;
+  --cis-text: #171513;
+  --cis-text-muted: #5f5953;
+  --cis-text-subtle: #918a80;
 
   /* Chrome — header light */
   --cis-header-bg: #ffffff;
-  --cis-header-text: #1a1a1a;
-  --cis-header-border: #e8e4dc;
+  --cis-header-text: #171513;
+  --cis-header-border: #e5e1d8;
 
   /* Chrome — dark sidebar */
-  --cis-sidebar-bg: #1f1616;
-  --cis-sidebar-bg-elevated: #2a1e1e;
-  --cis-sidebar-text: rgba(255, 255, 255, 0.78);
-  --cis-sidebar-text-muted: rgba(255, 255, 255, 0.48);
+  --cis-sidebar-bg: #141014;
+  --cis-sidebar-bg-elevated: #1f1718;
+  --cis-sidebar-text: rgba(255, 255, 255, 0.86);
+  --cis-sidebar-text-muted: rgba(255, 255, 255, 0.52);
   --cis-sidebar-hover: rgba(255, 255, 255, 0.08);
   --cis-sidebar-active-bg: var(--cis-primary);
   --cis-sidebar-active: #ffffff;
   --cis-sidebar-border: rgba(255, 255, 255, 0.08);
-  --cis-sidebar-label: rgba(255, 255, 255, 0.42);
+  --cis-sidebar-label: rgba(255, 255, 255, 0.38);
 
   /* Semantic */
   --cis-danger: #b71c1c;
+  --cis-danger-soft: #fdecec;
   --cis-warning: #d97706;
+  --cis-warning-soft: #fef3e2;
   --cis-success: #059669;
+  --cis-success-soft: #e8f8f1;
   --cis-info: #0284c7;
+  --cis-info-soft: #e7f4fc;
+
+  /* Focus */
+  --cis-focus-ring: 0 0 0 3px rgba(var(--cis-accent-rgb), 0.55);
+  --cis-focus-ring-primary: 0 0 0 3px rgba(var(--cis-primary-rgb), 0.22);
 
   /* Typography */
   --font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Plus Jakarta Sans', var(--font-sans);
+  --cis-text-title: 1.5rem;
+  --cis-text-section: 1.0625rem;
+  --cis-text-body: 0.9375rem;
+  --cis-text-meta: 0.8125rem;
+  --cis-text-caption: 0.75rem;
 
   /* Spacing & shape */
   --cis-radius-sm: 8px;
@@ -60,18 +73,19 @@
   --cis-shadow: 0 8px 24px rgba(26, 26, 26, 0.08);
   --cis-shadow-lg: 0 16px 48px rgba(26, 26, 26, 0.12);
   --cis-shadow-header: 0 1px 0 var(--cis-header-border), 0 4px 16px rgba(26, 26, 26, 0.04);
-  --cis-shadow-sidebar: 4px 0 24px rgba(0, 0, 0, 0.12);
+  --cis-shadow-sidebar: 8px 0 28px rgba(0, 0, 0, 0.18);
 
   /* Layout */
   --cis-header-height: 64px;
-  --cis-sidebar-width: 220px;
-  --cis-page-max: 1440px;
-  --cis-shell-bg: #f0efec;
+  --cis-sidebar-width: 248px;
+  --cis-page-max: 1570px;
+  --cis-shell-bg: #eae8e3;
   --cis-canvas-radius: 24px;
   --cis-content-gap: 1rem;
   --cis-content-padding: 1.5rem;
   --cis-card-radius: 18px;
   --cis-dash-hero-radius: 20px;
+  --cis-motion: 0.15s ease;
 
   /* Bootstrap bridge */
   --bs-primary: var(--cis-primary);

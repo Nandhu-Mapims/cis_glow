@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import '../students/StudentReport.css';
 
 export default function StaffReport() {
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [fieldGroups, setFieldGroups] = useState([]);
   const [filters, setFilters] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,14 +25,10 @@ export default function StaffReport() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [settingsRes, menuRes, fieldsRes, filtersRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
+        const [fieldsRes, filtersRes] = await Promise.all([
           api.get('/api/staff/reports/fields'),
           api.get('/api/staff/reports/filters'),
         ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
         setFieldGroups(fieldsRes.data.groups || []);
         setFilters(filtersRes.data);
       } catch (err) {

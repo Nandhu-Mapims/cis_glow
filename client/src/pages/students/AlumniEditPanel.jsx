@@ -145,7 +145,10 @@ export default function AlumniEditPanel({ data, busy, onLoad, onSave }) {
         )}
 
         {!form && !data?.notFound && (
-          <p className="text-muted mb-0">Search or select an alumni profile from the list.</p>
+          <div className="cis-report-empty">
+            <span className="cis-report-empty-icon" aria-hidden="true">🎓</span>
+            <p className="mb-0">Search or select an alumni profile from the list to begin editing.</p>
+          </div>
         )}
 
         {form && (

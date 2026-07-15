@@ -807,12 +807,22 @@ export async function loadPublicationDciScreen(memberId, fields = {}, audit = {}
   }
   const deptIds = Array.isArray(fields.search_category) ? fields.search_category.map(Number) : [Number(fields.search_category)];
   const staff = await loadDciStaffRows(deptIds.filter(Boolean));
+  const staffIds = staff.map((s) => Number(s.id)).filter((id) => Number.isInteger(id));
+  const allPubs = staffIds.length
+    ? await prisma.$queryRawUnsafe(
+      `SELECT staff_id, p_title_name, p_journal_name, p_year FROM staff_publication_tb
+       WHERE del = 1 AND staff_id IN (${staffIds.join(',')}) ORDER BY staff_id, p_year DESC`,
+    )
+    : [];
+  const pubsByStaffId = new Map();
+  for (const p of allPubs) {
+    const key = Number(p.staff_id);
+    if (!pubsByStaffId.has(key)) pubsByStaffId.set(key, []);
+    pubsByStaffId.get(key).push(p);
+  }
   const blocks = [];
   for (const s of staff) {
-    const pubs = await prisma.$queryRawUnsafe(
-      `SELECT p_title_name, p_journal_name, p_year FROM staff_publication_tb
-       WHERE del = 1 AND staff_id = '${escapeSql(String(s.id))}' ORDER BY p_year DESC`,
-    );
+    const pubs = pubsByStaffId.get(Number(s.id)) || [];
     if (!pubs.length) continue;
     const pubRows = pubs.map((p) => [
       escapeHtml(p.p_title_name),

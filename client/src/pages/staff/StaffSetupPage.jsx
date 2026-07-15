@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
-import DashboardLayout from '../../layouts/DashboardLayout';
-import { useShellData } from '../../hooks/useShellData';
+import { useLocation, useOutletContext, useParams } from 'react-router-dom';
+import { SetupPageShell } from '../../components/PageShell';
+import SetupAlerts from '../../components/SetupAlerts';
 import { STAFF_SETUP_META } from './staffModuleMeta';
 import { useStaffSetupApi } from './useStaffModuleApi';
 
@@ -878,7 +878,7 @@ export default function StaffSetupPage() {
   const screen = paramScreen || (location.pathname.endsWith('/login-help') ? 'login-help' : paramScreen);
   const meta = STAFF_SETUP_META[screen];
   const { data, busy, error, notice, clearNotice, load, save, searchMore } = useStaffSetupApi(screen);
-  const { settings, menu, loading, error: shellError } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -889,34 +889,45 @@ export default function StaffSetupPage() {
   }, [meta, load, location.state?.staffId]);
 
   if (!meta) {
-    return <div className="p-4"><p className="text-danger">Unknown staff setup screen.</p><Link to="/staff/hub">Back</Link></div>;
+    return (
+      <SetupPageShell
+        settings={settings}
+        menu={menu}
+        title="Staff"
+        breadcrumbs={[
+          { label: 'Home', to: '/dashboard' },
+          { label: 'Staff', to: '/staff/hub' },
+          { label: 'Unknown' },
+        ]}
+        backTo="/staff/hub"
+      >
+        <p className="text-danger mb-0">Unknown staff setup screen.</p>
+      </SetupPageShell>
+    );
   }
-  if (loading || !ready) return <div className="p-4 text-muted">Loading...</div>;
 
   return (
-    <DashboardLayout settings={settings} dashboard={{ title: meta.title }} menu={menu}>
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb">
-          <li className="breadcrumb-item"><Link to="/dashboard">Home</Link></li>
-          <li className="breadcrumb-item"><Link to="/staff/hub">Staff</Link></li>
-          <li className="breadcrumb-item active">{meta.title}</li>
-        </ol>
-      </nav>
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div><h3 className="dashboard-title mb-0">{meta.title}</h3><p className="text-muted small mb-0">Legacy: {meta.legacy}</p></div>
-        <Link to="/staff/hub" className="btn btn-outline-secondary btn-sm">Back</Link>
-      </div>
-      {shellError && <div className="alert alert-warning">{shellError}</div>}
-      {notice && (
-        <div className="alert alert-success alert-dismissible fade show">
-          {notice}
-          <button type="button" className="btn-close" aria-label="Close" onClick={clearNotice} />
-        </div>
+    <SetupPageShell
+      settings={settings}
+      menu={menu}
+      title={meta.title}
+      breadcrumbs={[
+        { label: 'Home', to: '/dashboard' },
+        { label: 'Staff', to: '/staff/hub' },
+        { label: meta.title },
+      ]}
+      backTo="/staff/hub"
+      loading={!ready}
+      alerts={(
+        <SetupAlerts
+          notice={notice}
+          error={error}
+          busy={busy}
+          onDismissNotice={clearNotice}
+        />
       )}
-      {error && <div className="alert alert-danger">{error}</div>}
-      <div className="card shadow-sm"><div className="card-body">
-        <SetupBody screen={screen} data={data} busy={busy} onLoad={load} onSave={save} searchMore={searchMore} />
-      </div></div>
-    </DashboardLayout>
+    >
+      <SetupBody screen={screen} data={data} busy={busy} onLoad={load} onSave={save} searchMore={searchMore} />
+    </SetupPageShell>
   );
 }

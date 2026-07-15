@@ -6,21 +6,9 @@ import { validateCharNum } from '../utils/validation';
 import ThemeControlMenu from '../components/ThemeControlMenu';
 
 const LOGIN_FEATURES = [
-  {
-    icon: 'fa fa-dashboard',
-    title: 'Live dashboards',
-    desc: 'Attendance, strength, and faculty widgets',
-  },
-  {
-    icon: 'fa fa-graduation-cap',
-    title: 'Campus operations',
-    desc: 'Students, staff, fees, exams, and more',
-  },
-  {
-    icon: 'fa fa-shield',
-    title: 'Secure access',
-    desc: 'Role-based sign-in for your institution',
-  },
+  { icon: 'fa fa-calendar-check-o', title: 'Today’s register' },
+  { icon: 'fa fa-stethoscope', title: 'Academics & clinicals' },
+  { icon: 'fa fa-shield', title: 'Scoped access only' },
 ];
 
 export default function Login() {
@@ -64,116 +52,91 @@ export default function Login() {
   const institutionName = settings?.institutionShortName || 'APDCH';
   const pageTitle = settings?.adminTitle || `${institutionName} Central Login`;
 
+  // Server sends a fixed legacy-parity string here; rewrite it into a full sentence for display.
+  const displayError = error === 'Wrong! Username or Password.'
+    ? 'Incorrect Member ID or password. Check your details and try again.'
+    : error;
+
   return (
     <div className="login-page">
       <div className="login-theme-slot">
         <ThemeControlMenu />
       </div>
-      <div className="login-shell">
-        <aside className="login-showcase" aria-hidden="false">
-          <div className="login-showcase-brand">
-            <div className="login-showcase-logo">
-              <img src={logoUrl} alt="" />
-            </div>
+
+      <main className="login-card-wrap">
+        <div className="login-card">
+          <div className="login-card-brand">
+            <img className="login-card-logo" src={logoUrl} alt="" />
             <div>
-              <h1 className="login-showcase-name">{institutionName}</h1>
-              <p className="login-showcase-tagline">Campus Information System</p>
+              <p className="login-card-eyebrow">Campus Information System</p>
+              <p className="login-card-name">{institutionName}</p>
             </div>
           </div>
 
-          <div className="login-showcase-copy">
-            <h2 className="login-showcase-headline">Well begun is half done</h2>
-            <p className="login-showcase-desc">
-              Sign in to manage attendance, academics, payroll, and every module
-              in one modern campus workspace.
-            </p>
+          <div className="login-card-head">
+            <h1>Sign in</h1>
+            <p>{pageTitle}</p>
           </div>
 
-          <div className="login-showcase-features">
+          <form onSubmit={handleSubmit}>
+            <div className="login-field">
+              <label className="login-field-label" htmlFor="login-username">Username</label>
+              <div className="login-field-control">
+                <i className="fa fa-user" aria-hidden="true" />
+                <input
+                  id="login-username"
+                  type="text"
+                  value={username}
+                  maxLength={20}
+                  autoComplete="username"
+                  autoFocus
+                  placeholder="Member ID"
+                  onChange={(e) => setUsername(validateCharNum(e.target.value))}
+                />
+              </div>
+            </div>
+
+            <div className="login-field">
+              <label className="login-field-label" htmlFor="login-password">Password</label>
+              <div className="login-field-control">
+                <i className="fa fa-lock" aria-hidden="true" />
+                <input
+                  id="login-password"
+                  type="password"
+                  value={password}
+                  maxLength={50}
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <button className="login-submit" type="submit" disabled={loading}>
+              {loading ? 'Signing in…' : 'Sign In'}
+            </button>
+          </form>
+
+          {displayError && (
+            <div className="login-error" role="alert">
+              {displayError}
+            </div>
+          )}
+
+          <ul className="login-register-strip">
             {LOGIN_FEATURES.map((feature) => (
-              <div key={feature.title} className="login-feature-card">
-                <span className="login-feature-icon" aria-hidden="true">
-                  <i className={feature.icon} />
-                </span>
-                <div className="login-feature-text">
-                  <strong>{feature.title}</strong>
-                  <span>{feature.desc}</span>
-                </div>
-              </div>
+              <li key={feature.title}>
+                <i className={feature.icon} aria-hidden="true" />
+                <span>{feature.title}</span>
+              </li>
             ))}
-          </div>
-        </aside>
+          </ul>
 
-        <main className="login-main">
-          <div className="login-form-wrap">
-            <div className="login-mobile-brand d-lg-none">
-              <div className="login-showcase-logo">
-                <img src={logoUrl} alt="" />
-              </div>
-              <div>
-                <div className="login-showcase-name">{institutionName}</div>
-                <p className="login-showcase-tagline">Campus Information System</p>
-              </div>
-            </div>
-
-            <div className="login-form-header">
-              <h2 className="login-form-title">Sign in</h2>
-              <p className="login-form-subtitle">{pageTitle}</p>
-            </div>
-
-            <form onSubmit={handleSubmit}>
-              <div className="login-field">
-                <label className="form-label" htmlFor="login-username">Username</label>
-                <div className="login-input-wrap">
-                  <i className="fa fa-user login-input-icon" aria-hidden="true" />
-                  <input
-                    id="login-username"
-                    type="text"
-                    className="form-control"
-                    value={username}
-                    maxLength={20}
-                    autoComplete="username"
-                    autoFocus
-                    placeholder="Member ID"
-                    onChange={(e) => setUsername(validateCharNum(e.target.value))}
-                  />
-                </div>
-              </div>
-
-              <div className="login-field">
-                <label className="form-label" htmlFor="login-password">Password</label>
-                <div className="login-input-wrap">
-                  <i className="fa fa-lock login-input-icon" aria-hidden="true" />
-                  <input
-                    id="login-password"
-                    type="password"
-                    className="form-control"
-                    value={password}
-                    maxLength={50}
-                    autoComplete="current-password"
-                    placeholder="Enter your password"
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <button className="btn btn-primary login-submit" type="submit" disabled={loading}>
-                {loading ? 'Signing in…' : 'Sign In'}
-              </button>
-            </form>
-
-            {error && (
-              <div className="login-error" role="alert">
-                {error.replace(/^Wrong!\s*/i, '')}
-              </div>
-            )}
-
-            <p className="login-footer-note">
-              Authorized users only. Contact your administrator for access.
-            </p>
-          </div>
-        </main>
-      </div>
+          <p className="login-footer-note">
+            Authorized users only. Contact your administrator for access.
+          </p>
+        </div>
+      </main>
     </div>
   );
 }

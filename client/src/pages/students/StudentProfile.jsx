@@ -1,56 +1,30 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useOutletContext, useParams } from 'react-router-dom';
 import api from '../../api/client';
 import StudentAttachments from '../../components/students/StudentAttachments';
+import UserAvatar from '../../components/UserAvatar';
+import { FormActionBar, FormSection } from '../../components/FormShell';
+import ConfirmModal from '../../components/ConfirmModal';
 import StudentPageShell, { STUDENT_BREADCRUMB_HUB } from './StudentPageShell';
 
-function Field({ label, value }) {
-  return (
-    <div className="col-md-4 mb-3">
-      <div className="text-muted small">{label}</div>
-      <div>{value || '—'}</div>
-    </div>
-  );
-}
+// Edit fields grouped into meaningful sections (was a flat 37-field grid).
+const EDIT_SECTIONS = [
+  { id: 'identity', title: 'Identity', fields: [['registerNo', 'Register No'], ['studentName', 'Name'], ['studentInitial', 'Initial'], ['studentTitle', 'Title'], ['aadharNo', 'Aadhar']] },
+  { id: 'personal', title: 'Personal', fields: [['gender', 'Gender'], ['bloodGroup', 'Blood Group'], ['religion', 'Religion'], ['community', 'Community'], ['caste', 'Caste'], ['nationality', 'Nationality']] },
+  { id: 'family', title: 'Family', fields: [['fatherName', 'Father Name'], ['fatherTitle', 'Father Title'], ['motherName', 'Mother Name'], ['motherTitle', 'Mother Title']] },
+  { id: 'contact', title: 'Contact', fields: [['mobileNo', 'Mobile'], ['contactNo', 'Contact'], ['fatherMobile', 'Father Mobile'], ['motherMobile', 'Mother Mobile'], ['fatherEmail', 'Father Email'], ['personalEmail', 'Personal Email']] },
+  { id: 'permanent', title: 'Permanent Address', fields: [['doorNo', 'Door No'], ['street', 'Street'], ['post', 'Post'], ['district', 'District'], ['state', 'State'], ['pincode', 'Pincode']] },
+  { id: 'communication', title: 'Communication Address', fields: [['cDoorNo', 'Comm. Door No'], ['cStreet', 'Comm. Street'], ['cPost', 'Comm. Post'], ['cDistrict', 'Comm. District'], ['cState', 'Comm. State'], ['cPincode', 'Comm. Pincode']] },
+  { id: 'guardian', title: 'Guardian', fields: [['guardianName', 'Guardian Name'], ['guardianNo', 'Guardian Mobile'], ['guardianEmail', 'Guardian Email'], ['guardianRelation', 'Guardian Relation']] },
+];
 
-const EDIT_FIELDS = [
-  ['registerNo', 'Register No'],
-  ['studentName', 'Name'],
-  ['studentInitial', 'Initial'],
-  ['studentTitle', 'Title'],
-  ['gender', 'Gender'],
-  ['bloodGroup', 'Blood Group'],
-  ['religion', 'Religion'],
-  ['community', 'Community'],
-  ['caste', 'Caste'],
-  ['nationality', 'Nationality'],
-  ['aadharNo', 'Aadhar'],
-  ['fatherName', 'Father Name'],
-  ['fatherTitle', 'Father Title'],
-  ['motherName', 'Mother Name'],
-  ['motherTitle', 'Mother Title'],
-  ['mobileNo', 'Mobile'],
-  ['contactNo', 'Contact'],
-  ['fatherMobile', 'Father Mobile'],
-  ['motherMobile', 'Mother Mobile'],
-  ['fatherEmail', 'Father Email'],
-  ['personalEmail', 'Personal Email'],
-  ['doorNo', 'Door No'],
-  ['street', 'Street'],
-  ['post', 'Post'],
-  ['district', 'District'],
-  ['state', 'State'],
-  ['pincode', 'Pincode'],
-  ['cDoorNo', 'Comm. Door No'],
-  ['cStreet', 'Comm. Street'],
-  ['cPost', 'Comm. Post'],
-  ['cDistrict', 'Comm. District'],
-  ['cState', 'Comm. State'],
-  ['cPincode', 'Comm. Pincode'],
-  ['guardianName', 'Guardian Name'],
-  ['guardianNo', 'Guardian Mobile'],
-  ['guardianEmail', 'Guardian Email'],
-  ['guardianRelation', 'Guardian Relation'],
+const EDIT_FIELDS = EDIT_SECTIONS.flatMap((s) => s.fields);
+
+const TABS = [
+  ['overview', 'Overview', 'fa fa-id-badge'],
+  ['edit', 'Edit', 'fa fa-pencil'],
+  ['attachments', 'Attachments', 'fa fa-paperclip'],
+  ['status', 'Status', 'fa fa-exchange'],
 ];
 
 function buildFormFromProfile(p) {
@@ -60,10 +34,18 @@ function buildFormFromProfile(p) {
   }, {});
 }
 
+function ViewField({ label, value }) {
+  return (
+    <div className="col-md-4">
+      <div className="cis-view-label">{label}</div>
+      <div className="cis-view-value">{value || '—'}</div>
+    </div>
+  );
+}
+
 export default function StudentProfile() {
   const { id } = useParams();
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -72,17 +54,13 @@ export default function StudentProfile() {
   const [tab, setTab] = useState('overview');
   const [form, setForm] = useState({});
   const [statusForm, setStatusForm] = useState({});
+  const [dirty, setDirty] = useState(false);
+  const [pendingTab, setPendingTab] = useState(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [settingsRes, menuRes, profileRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-          api.get(`/api/students/${id}`),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
+        const profileRes = await api.get(`/api/students/${id}`);
         setProfile(profileRes.data);
         setForm(buildFormFromProfile(profileRes.data));
         setStatusForm({
@@ -99,6 +77,33 @@ export default function StudentProfile() {
     load();
   }, [id]);
 
+  // Guard unsaved edits on refresh / tab close.
+  useEffect(() => {
+    const handler = (e) => { if (dirty && !saving) { e.preventDefault(); e.returnValue = ''; } };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [dirty, saving]);
+
+  const setField = (key, value) => {
+    setDirty(true);
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const switchTab = (next) => {
+    if (tab === 'edit' && dirty && next !== 'edit') {
+      setPendingTab(next);
+      return;
+    }
+    setTab(next);
+  };
+
+  const discardAndSwitch = () => {
+    setForm(buildFormFromProfile(profile));
+    setDirty(false);
+    setTab(pendingTab);
+    setPendingTab(null);
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -108,6 +113,7 @@ export default function StudentProfile() {
       const res = await api.put(`/api/students/${id}`, form);
       setProfile(res.data);
       setForm(buildFormFromProfile(res.data));
+      setDirty(false);
       setMessage('Profile updated successfully.');
       setTab('overview');
     } catch (err) {
@@ -141,6 +147,12 @@ export default function StudentProfile() {
   const fullName = profile
     ? `${profile.studentTitle || ''} ${profile.studentName || ''} ${profile.studentInitial || ''}`.trim()
     : '';
+
+  // "Active" unless a real releaving date exists (legacy zero-dates count as active).
+  const released = useMemo(() => {
+    const d = profile?.releavingDate;
+    return Boolean(d && !String(d).startsWith('0000') && d !== '—');
+  }, [profile]);
 
   const alerts = (message || error) ? (
     <>
@@ -189,141 +201,136 @@ export default function StudentProfile() {
     >
       {profile && (
         <>
-          <div className="cis-student-profile-hero">
-            <div className="cis-student-profile-identity">
-              {profile.photoUrl && (
-                <img
-                  src={profile.photoUrl}
-                  alt={fullName}
-                  className="cis-student-profile-photo"
-                  onError={(e) => { e.target.style.display = 'none'; }}
-                />
-              )}
-              <div>
-                <h2 className="cis-student-profile-name">{fullName}</h2>
-                <p className="cis-student-profile-meta">
-                  {profile.registerNo}
-                  {profile.admissionNo ? ` · Admission ${profile.admissionNo}` : ''}
-                </p>
-                {profile.course && (
-                  <p className="cis-student-profile-course">
-                    {profile.course.degreeName}
-                    {profile.course.departmentName && profile.course.departmentName !== '-'
-                      ? ` — ${profile.course.departmentName}`
-                      : ''}
-                  </p>
-                )}
+          <div className="cis-student-hero">
+            <UserAvatar name={fullName} photoUrl={profile.photoUrl} size={72} className="cis-student-hero-avatar" />
+            <div className="cis-student-hero-body">
+              <div className="cis-student-hero-nameline">
+                <h2 className="cis-student-hero-name">{fullName}</h2>
+                <span className={`cis-status-pill ${released ? 'is-released' : 'is-active'}`}>
+                  <i className={`fa fa-${released ? 'sign-out' : 'check-circle'}`} aria-hidden="true" />
+                  {released ? 'Released' : 'Active'}
+                </span>
               </div>
+              <dl className="cis-student-hero-facts">
+                <div><dt>Register No</dt><dd className="cis-dt-num">{profile.registerNo || '—'}</dd></div>
+                <div><dt>Admission No</dt><dd className="cis-dt-num">{profile.admissionNo || '—'}</dd></div>
+                <div>
+                  <dt>Course</dt>
+                  <dd>
+                    {profile.course?.degreeName || '—'}
+                    {profile.course?.departmentName && profile.course.departmentName !== '-' ? ` · ${profile.course.departmentName}` : ''}
+                  </dd>
+                </div>
+                <div><dt>Batch</dt><dd>{profile.academicYear || profile.academics?.[0]?.academicYear || '—'}</dd></div>
+              </dl>
             </div>
           </div>
 
-          <ul className="nav cis-student-tabs mb-1">
-            {[
-              ['overview', 'Overview'],
-              ['edit', 'Edit'],
-              ['attachments', 'Attachments'],
-              ['status', 'Status'],
-            ].map(([key, label]) => (
-              <li key={key} className="nav-item">
-                <button
-                  type="button"
-                  className={`nav-link ${tab === key ? 'active' : ''}`}
-                  onClick={() => setTab(key)}
-                >
-                  {label}
-                </button>
-              </li>
+          <div className="cis-tabbar" role="tablist" aria-label="Profile sections">
+            {TABS.map(([key, label, icon]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={tab === key}
+                className={`cis-tab${tab === key ? ' is-active' : ''}`}
+                onClick={() => switchTab(key)}
+              >
+                <i className={icon} aria-hidden="true" />
+                {label}
+                {key === 'edit' && dirty ? <span className="cis-tab-dot" aria-label="unsaved" /> : null}
+              </button>
             ))}
-          </ul>
+          </div>
 
           {tab === 'overview' && (
-            <>
-              <div className="card mb-3">
-                <div className="card-header">Personal</div>
-                <div className="card-body row">
-                  <Field label="Register No" value={profile.registerNo} />
-                  <Field label="Gender" value={profile.gender} />
-                  <Field label="Date of Birth" value={profile.dateOfBirth} />
-                  <Field label="Blood Group" value={profile.bloodGroup} />
-                  <Field label="Religion" value={profile.religion} />
-                  <Field label="Community" value={profile.community} />
-                  <Field label="Caste" value={profile.caste} />
-                  <Field label="Aadhar" value={profile.aadharNo} />
-                </div>
-              </div>
+            <div className="cis-form-main">
+              <FormSection id="ov-personal" title="Personal" grid>
+                <ViewField label="Register No" value={profile.registerNo} />
+                <ViewField label="Gender" value={profile.gender} />
+                <ViewField label="Date of Birth" value={profile.dateOfBirth} />
+                <ViewField label="Blood Group" value={profile.bloodGroup} />
+                <ViewField label="Religion" value={profile.religion} />
+                <ViewField label="Community" value={profile.community} />
+                <ViewField label="Caste" value={profile.caste} />
+                <ViewField label="Aadhar" value={profile.aadharNo} />
+              </FormSection>
 
-              <div className="card mb-3">
-                <div className="card-header">Family & Contact</div>
-                <div className="card-body row">
-                  <Field label="Father" value={`${profile.fatherTitle || ''} ${profile.fatherName || ''}`.trim()} />
-                  <Field label="Mother" value={`${profile.motherTitle || ''} ${profile.motherName || ''}`.trim()} />
-                  <Field label="Mobile" value={profile.mobileNo} />
-                  <Field label="Father Mobile" value={profile.fatherMobile} />
-                  <Field label="Personal Email" value={profile.personalEmail} />
-                  <Field label="Address" value={[profile.doorNo, profile.street, profile.post, profile.district, profile.state, profile.pincode].filter(Boolean).join(', ')} />
-                </div>
-              </div>
+              <FormSection id="ov-contact" title="Family & Contact" grid>
+                <ViewField label="Father" value={`${profile.fatherTitle || ''} ${profile.fatherName || ''}`.trim()} />
+                <ViewField label="Mother" value={`${profile.motherTitle || ''} ${profile.motherName || ''}`.trim()} />
+                <ViewField label="Mobile" value={profile.mobileNo} />
+                <ViewField label="Father Mobile" value={profile.fatherMobile} />
+                <ViewField label="Personal Email" value={profile.personalEmail} />
+                <ViewField label="Address" value={[profile.doorNo, profile.street, profile.post, profile.district, profile.state, profile.pincode].filter(Boolean).join(', ')} />
+              </FormSection>
 
               {profile.academics?.length > 0 && (
-                <div className="card mb-3">
-                  <div className="card-header">Academic Records</div>
-                  <div className="table-responsive">
-                    <table className="table table-sm mb-0">
+                <FormSection id="ov-academics" title="Academic Records" grid={false}>
+                  <div className="cis-dt-scroll">
+                    <table className="cis-dt-table">
                       <thead>
-                        <tr>
-                          <th>Year</th>
-                          <th>Batch</th>
-                          <th>Current Year</th>
-                          <th>Type</th>
-                        </tr>
+                        <tr><th>Year</th><th>Batch</th><th>Current Year</th><th>Type</th></tr>
                       </thead>
                       <tbody>
                         {profile.academics.map((a) => (
                           <tr key={a.id}>
-                            <td>{a.academicYear}</td>
+                            <td className="cis-dt-num">{a.academicYear}</td>
                             <td>{a.batch}</td>
-                            <td>{a.currentYear}</td>
+                            <td className="cis-dt-num">{a.currentYear}</td>
                             <td>{a.type}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                </div>
+                </FormSection>
               )}
-            </>
+            </div>
           )}
 
           {tab === 'edit' && (
-            <form className="card cis-student-form-card mb-3" onSubmit={handleSave}>
-              <div className="card-header">Edit Profile</div>
-              <div className="card-body row g-3">
-                {EDIT_FIELDS.map(([key, label]) => (
-                  <div key={key} className="col-md-4">
-                    <label className="form-label" htmlFor={key}>{label}</label>
-                    <input
-                      id={key}
-                      className="form-control"
-                      value={form[key] || ''}
-                      onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="card-footer">
-                <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? 'Saving…' : 'Update'}
+            <form onSubmit={handleSave} className="cis-form-main">
+              {EDIT_SECTIONS.map((section) => (
+                <FormSection key={section.id} id={`edit-${section.id}`} title={section.title} grid>
+                  {section.fields.map(([key, label]) => (
+                    <div key={key} className="col-md-4">
+                      <label className="form-label" htmlFor={key}>{label}</label>
+                      <input
+                        id={key}
+                        className="form-control"
+                        value={form[key] || ''}
+                        onChange={(e) => setField(key, e.target.value)}
+                      />
+                    </div>
+                  ))}
+                </FormSection>
+              ))}
+              <FormActionBar
+                note={dirty
+                  ? <span className="cis-formbar-note is-dirty"><i className="fa fa-circle me-1" aria-hidden="true" style={{ fontSize: '0.5rem', verticalAlign: 'middle' }} /> Unsaved changes</span>
+                  : <span>Editing {fullName}</span>}
+              >
+                <button type="button" className="btn btn-outline-secondary" disabled={saving || !dirty} onClick={() => { setForm(buildFormFromProfile(profile)); setDirty(false); }}>
+                  Reset
                 </button>
-              </div>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? 'Saving…' : 'Update Profile'}
+                </button>
+              </FormActionBar>
             </form>
           )}
 
           {tab === 'attachments' && <StudentAttachments studentId={id} />}
 
           {tab === 'status' && (
-            <form className="card cis-student-form-card mb-3" onSubmit={handleStatusSave}>
-              <div className="card-header">Transfer / Discontinue</div>
-              <div className="card-body row g-3">
+            <form onSubmit={handleStatusSave} className="cis-form-main">
+              <FormSection
+                id="status"
+                title="Transfer / Discontinue"
+                description="Set a releaving date to mark this student as released. Leave blank to keep the student active."
+                grid
+              >
                 <div className="col-md-4">
                   <label className="form-label" htmlFor="releavingDate">Releaving Date</label>
                   <input
@@ -354,14 +361,24 @@ export default function StudentProfile() {
                     onChange={(e) => setStatusForm({ ...statusForm, releavingInfo: e.target.value })}
                   />
                 </div>
-              </div>
-              <div className="card-footer">
+              </FormSection>
+              <FormActionBar note={<span>Current status: <strong>{released ? 'Released' : 'Active'}</strong></span>}>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
                   {saving ? 'Saving…' : 'Update Status'}
                 </button>
-              </div>
+              </FormActionBar>
             </form>
           )}
+
+          <ConfirmModal
+            show={Boolean(pendingTab)}
+            title="Discard unsaved changes?"
+            message="You've edited this profile but not saved. Switching tabs will discard those changes."
+            confirmLabel="Discard changes"
+            cancelLabel="Keep editing"
+            onConfirm={discardAndSwitch}
+            onClose={() => setPendingTab(null)}
+          />
         </>
       )}
     </StudentPageShell>

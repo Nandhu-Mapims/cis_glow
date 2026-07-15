@@ -1,5 +1,5 @@
+import { useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 
 const REPORT_LINKS = [
   { to: '/payroll/dashboard', title: 'Payroll Dashboard', desc: 'Monthly salary summary by category', icon: 'fa fa-dashboard' },
@@ -19,7 +19,7 @@ const REPORT_LINKS = [
 const SETUP_LINK = { to: '/payroll/setup', title: 'Payroll Setup', desc: 'Config, salary, deductions, advances', icon: 'fa fa-cog' };
 
 export default function PayrollHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
 
   return (
     <ModuleHub
@@ -29,9 +29,8 @@ export default function PayrollHub() {
       dashboardTitle="Payroll"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
     />
   );
 }

@@ -5,15 +5,8 @@ import { FEE_SCREEN_META } from './feeModuleMeta';
 
 export const FEE_BREADCRUMB_HUB = { label: 'Fees', to: '/fees' };
 
-export function legacyPageSubtitle(legacy) {
-  if (!legacy) return undefined;
-  return (
-    <>
-      Legacy:
-      {' '}
-      <code>{legacy}</code>
-    </>
-  );
+export function legacyPageSubtitle() {
+  return undefined;
 }
 
 /**

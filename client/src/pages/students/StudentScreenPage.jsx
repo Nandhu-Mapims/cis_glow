@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useShellData } from '../../hooks/useShellData';
+import { Link, useLocation, useOutletContext } from 'react-router-dom';
 import { printReportHtml } from '../../utils/printReport';
 import AlumniEditPanel from './AlumniEditPanel';
 import AlumniIdCardPanel from './AlumniIdCardPanel';
+import AddressLabelPanel from './AddressLabelPanel';
 import CollageGeneratePanel from './CollageGeneratePanel';
 import CollageImagePanel from './CollageImagePanel';
 import PromotePanel from './PromotePanel';
@@ -51,8 +51,8 @@ function StudentAttachmentsPanel({ data, busy, onLoad, onSave, searchMore, readO
       {catalog && (
         <form onSubmit={(e) => { e.preventDefault(); if (!readOnly) onSave({ studentId: catalog.studentId, items }); }}>
           <p><strong>Student #{catalog.studentId}</strong></p>
-          <div className="table-responsive">
-            <table className="table table-bordered table-sm">
+          <div className="table-responsive cis-dt-wrap">
+            <table className="cis-dt-table table-sm">
               <thead><tr><th>Attachment</th><th>Number</th><th>File</th></tr></thead>
               <tbody>
                 {catalog.types.map((t, i) => (
@@ -96,15 +96,18 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
   const studentSearch = (
     <>
       <div className="col-md-2">
+        <label className="form-label">Search by</label>
         <select className="form-select" name="search_by" onChange={(e) => set('search_by', e.target.value)} defaultValue="roll_no">
           <option value="roll_no">Register No</option>
           <option value="batch">Batch</option>
         </select>
       </div>
       <div className="col-md-4">
+        <label className="form-label">Register nos / batch value</label>
         <input className="form-control" name="search_input" placeholder="Register nos (comma) or batch value" onChange={(e) => set('search_input', e.target.value)} />
       </div>
       <div className="col-md-3">
+        <label className="form-label">Course / batch</label>
         <select className="form-select" name="search_course" onChange={(e) => set('search_course', e.target.value)} defaultValue="">
           <option value="">Course / batch</option>
           {(data?.courses || []).flatMap((c) => (c.batchOptions || []).map((b) => (
@@ -116,17 +119,21 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
   );
 
   return (
-    <form className="row g-3 mb-3" onSubmit={(e) => {
+    <form className="row g-3 mb-3 cis-screen-filters" onSubmit={(e) => {
       e.preventDefault();
       const submitAction = meta.type === 'alumni-filter' ? 'Search' : 'Generate';
       const payload = { ...formFieldsFromDom(e.currentTarget, fields), Submit: submitAction };
       if (SAVE_SCREENS.has(screen)) onSave(payload);
       else onGenerate(payload);
     }}>
+      <div className="col-12">
+        <p className="cis-screen-filters-head">{meta.type === 'upload' ? 'Upload' : 'Filters'}</p>
+      </div>
       {(meta.type === 'student-search-report' || meta.type === 'course-report') && studentSearch}
       {meta.type === 'course-year-report' && (
         <>
           <div className="col-md-4">
+            <label className="form-label">Course / batch</label>
             <select className="form-select" onChange={(e) => set('search_course', e.target.value)}>
               <option value="">Course / batch</option>
               {(data?.courses || []).flatMap((c) => (c.batchOptions || []).map((b) => (
@@ -134,11 +141,17 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
               )))}
             </select>
           </div>
-          <div className="col-md-2"><input className="form-control" placeholder="Year" onChange={(e) => set('search_year', e.target.value)} /></div>
+          <div className="col-md-2">
+            <label className="form-label">Year</label>
+            <input className="form-control" placeholder="Year" onChange={(e) => set('search_year', e.target.value)} />
+          </div>
         </>
       )}
       {meta.type === 'application-report' && (
-        <div className="col-md-4"><input className="form-control" placeholder="Application no" onChange={(e) => set('application_no', e.target.value)} /></div>
+        <div className="col-md-4">
+          <label className="form-label">Application no</label>
+          <input className="form-control" placeholder="Application no" onChange={(e) => set('application_no', e.target.value)} />
+        </div>
       )}
       {meta.type === 'upload' && (
         <div className="col-md-6">
@@ -155,10 +168,20 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
       )}
       {meta.type === 'alumni-search' && (
         <>
-          <div className="col-md-2"><input type="date" className="form-control" onChange={(e) => set('from_date', e.target.value)} /></div>
-          <div className="col-md-2"><input type="date" className="form-control" onChange={(e) => set('to_date', e.target.value)} /></div>
-          <div className="col-md-2"><input className="form-control" placeholder="Find" onChange={(e) => set('find', e.target.value)} /></div>
           <div className="col-md-2">
+            <label className="form-label">From date</label>
+            <input type="date" className="form-control" onChange={(e) => set('from_date', e.target.value)} />
+          </div>
+          <div className="col-md-2">
+            <label className="form-label">To date</label>
+            <input type="date" className="form-control" onChange={(e) => set('to_date', e.target.value)} />
+          </div>
+          <div className="col-md-2">
+            <label className="form-label">Find</label>
+            <input className="form-control" placeholder="Find" onChange={(e) => set('find', e.target.value)} />
+          </div>
+          <div className="col-md-2">
+            <label className="form-label">Field</label>
             <select className="form-select" onChange={(e) => set('field', e.target.value)}>
               <option value="">Field</option>
               {Object.entries(data?.fieldLabels || {}).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -220,26 +243,50 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
         </>
       )}
       {meta.type === 'alumni-find' && (
-        <div className="col-md-4"><input className="form-control" name="find" placeholder="Name or reg no" onChange={(e) => set('find', e.target.value)} /></div>
+        <div className="col-md-4">
+          <label className="form-label">Name or register no</label>
+          <input className="form-control" name="find" placeholder="Name or reg no" onChange={(e) => set('find', e.target.value)} />
+        </div>
       )}
       {meta.type === 'temp-form' && (
         <>
-          <div className="col-md-3"><input className="form-control" placeholder="Application no *" onChange={(e) => set('application_no', e.target.value)} /></div>
-          <div className="col-md-3"><input className="form-control" placeholder="Student name" onChange={(e) => set('student_name', e.target.value)} /></div>
-          <div className="col-md-2"><input className="form-control" placeholder="Register no" onChange={(e) => set('register_no', e.target.value)} /></div>
-          <div className="col-md-2"><input className="form-control" placeholder="Mobile" onChange={(e) => set('mobile_no', e.target.value)} /></div>
+          <div className="col-md-3">
+            <label className="form-label">Application no *</label>
+            <input className="form-control" placeholder="Application no" onChange={(e) => set('application_no', e.target.value)} />
+          </div>
+          <div className="col-md-3">
+            <label className="form-label">Student name</label>
+            <input className="form-control" placeholder="Student name" onChange={(e) => set('student_name', e.target.value)} />
+          </div>
+          <div className="col-md-2">
+            <label className="form-label">Register no</label>
+            <input className="form-control" placeholder="Register no" onChange={(e) => set('register_no', e.target.value)} />
+          </div>
+          <div className="col-md-2">
+            <label className="form-label">Mobile</label>
+            <input className="form-control" placeholder="Mobile" onChange={(e) => set('mobile_no', e.target.value)} />
+          </div>
         </>
       )}
       {meta.type === 'temp-form-search' && (
         <>
-          <div className="col-md-3"><input className="form-control" placeholder="Application no" onChange={(e) => set('application_no', e.target.value)} /></div>
+          <div className="col-md-3">
+            <label className="form-label">Application no</label>
+            <input className="form-control" placeholder="Application no" onChange={(e) => set('application_no', e.target.value)} />
+          </div>
           <div className="col-md-2 d-flex align-items-end">
             <button type="button" className="btn btn-outline-primary" disabled={busy} onClick={() => onGenerate({ application_no: fields.application_no })}>Load</button>
           </div>
           {data?.profile && (
             <>
-              <div className="col-md-3"><input className="form-control" defaultValue={data.profile.studentName} placeholder="Name" onChange={(e) => set('student_name', e.target.value)} /></div>
-              <div className="col-md-2"><input className="form-control" defaultValue={data.profile.registerNo} placeholder="Register no" onChange={(e) => set('register_no', e.target.value)} /></div>
+              <div className="col-md-3">
+                <label className="form-label">Name</label>
+                <input className="form-control" defaultValue={data.profile.studentName} placeholder="Name" onChange={(e) => set('student_name', e.target.value)} />
+              </div>
+              <div className="col-md-2">
+                <label className="form-label">Register no</label>
+                <input className="form-control" defaultValue={data.profile.registerNo} placeholder="Register no" onChange={(e) => set('register_no', e.target.value)} />
+              </div>
               <input type="hidden" value={data.profile.id} onChange={() => set('student_id', data.profile.id)} />
             </>
           )}
@@ -247,7 +294,10 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
       )}
       {meta.type === 'academic-form' && (
         <>
-          <div className="col-md-3"><input className="form-control" placeholder="Register no" onChange={(e) => set('register_no', e.target.value)} /></div>
+          <div className="col-md-3">
+            <label className="form-label">Register no</label>
+            <input className="form-control" placeholder="Register no" onChange={(e) => set('register_no', e.target.value)} />
+          </div>
           <div className="col-md-2 d-flex align-items-end">
             <button type="button" className="btn btn-outline-primary" disabled={busy} onClick={() => onGenerate({ register_no: fields.register_no })}>Load</button>
           </div>
@@ -255,7 +305,10 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
       )}
       {meta.type === 'alumni-form' && (
         <>
-          <div className="col-md-3"><input className="form-control" placeholder="Alumni reg no" onChange={(e) => set('reg_no', e.target.value)} /></div>
+          <div className="col-md-3">
+            <label className="form-label">Alumni reg no</label>
+            <input className="form-control" placeholder="Alumni reg no" onChange={(e) => set('reg_no', e.target.value)} />
+          </div>
           <div className="col-md-2 d-flex align-items-end">
             <button type="button" className="btn btn-outline-primary" disabled={busy} onClick={() => onGenerate({ reg_no: fields.reg_no })}>Load</button>
           </div>
@@ -278,7 +331,7 @@ export default function StudentScreenPage() {
   const screen = STUDENT_SCREEN_META[pathSlug] ? pathSlug : null;
   const meta = screen ? STUDENT_SCREEN_META[screen] : null;
   const { data, busy, error, notice, load, save, searchMore } = useStudentScreenApi(screen || 'id-card');
-  const { settings, menu, loading: shellLoading, error: shellError, reload: reloadShell } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -290,18 +343,17 @@ export default function StudentScreenPage() {
     load().finally(() => setReady(true));
   }, [screen, meta, load]);
 
-  const pageLoading = shellLoading || (meta && !ready);
+  const pageLoading = meta && !ready;
 
-  const hasAlerts = Boolean((shellError && settings) || notice || error);
+  const hasAlerts = Boolean(notice || error);
 
   if (!meta) {
     return (
       <StudentPageShell
         settings={settings}
         menu={menu}
-        loading={shellLoading}
-        error={shellError}
-        onRetry={reloadShell}
+        loading={false}
+        error={null}
         dashboardTitle="Student"
         breadcrumbs={[
           { label: 'Home', to: '/dashboard' },
@@ -321,8 +373,7 @@ export default function StudentScreenPage() {
       settings={settings}
       menu={menu}
       loading={pageLoading}
-      error={shellError && !settings ? shellError : null}
-      onRetry={reloadShell}
+      error={null}
       dashboardTitle={meta.title}
       breadcrumbs={[
         { label: 'Home', to: '/dashboard' },
@@ -332,22 +383,18 @@ export default function StudentScreenPage() {
       title={meta.title}
       legacy={meta.legacy}
       actions={(
-        <>
-          {data?.reportHtml && screen !== 'alumni-id-card' && (
-            <button
-              type="button"
-              className="btn btn-outline-primary btn-sm"
-              onClick={() => printReportHtml(data.reportHtml)}
-            >
-              Print
-            </button>
-          )}
-          <Link to="/students/hub" className="btn btn-outline-secondary btn-sm">Module Hub</Link>
-        </>
+        data?.reportHtml && screen !== 'alumni-id-card' ? (
+          <button
+            type="button"
+            className="btn btn-outline-primary btn-sm"
+            onClick={() => printReportHtml(data.reportHtml)}
+          >
+            Print
+          </button>
+        ) : null
       )}
       notice={hasAlerts ? (
         <>
-          {shellError && settings && <div className="alert alert-warning mb-0">{shellError}</div>}
           {notice && <div className="alert alert-success mb-0">{notice}</div>}
           {error && <div className="alert alert-danger mb-0">{error}</div>}
         </>
@@ -367,7 +414,10 @@ export default function StudentScreenPage() {
           {screen === 'promote' && (
             <PromotePanel data={data} busy={busy} onReload={load} onPromote={save} />
           )}
-          {screen !== 'promote' && screen !== 'alumni-id-card' && screen !== 'collage-generate' && screen !== 'collage-image' && meta.type !== 'attachments' && meta.type !== 'attachments-view' && meta.type !== 'collage-image' && (
+          {screen === 'address-label' && (
+            <AddressLabelPanel data={data} busy={busy} onGenerate={load} />
+          )}
+          {screen !== 'promote' && screen !== 'address-label' && screen !== 'alumni-id-card' && screen !== 'collage-generate' && screen !== 'collage-image' && meta.type !== 'attachments' && meta.type !== 'attachments-view' && meta.type !== 'collage-image' && (
             <ScreenFilters screen={screen} meta={meta} data={data} busy={busy} onGenerate={load} onSave={save} />
           )}
           {(screen === 'attachments-upload' || screen === 'attachments-view') && (
@@ -381,8 +431,8 @@ export default function StudentScreenPage() {
             />
           )}
           {meta.type === 'academic-form' && data?.academics?.length > 0 && (
-            <div className="table-responsive mt-3">
-              <table className="table table-bordered table-sm">
+            <div className="table-responsive cis-dt-wrap mt-3">
+              <table className="cis-dt-table table-sm">
                 <thead><tr><th>Year</th><th>Batch</th><th>Current Year</th><th>Type</th><th>Register</th></tr></thead>
                 <tbody>
                   {data.academics.map((a) => (

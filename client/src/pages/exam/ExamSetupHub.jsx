@@ -1,6 +1,5 @@
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 
 const LINKS = [
   { to: '/exam/setup/exam-names', title: 'Exam Names', desc: 'CIA exam name master', icon: 'fa fa-tag' },
@@ -23,7 +22,7 @@ const LINKS = [
 ];
 
 export default function ExamSetupHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
 
   return (
     <ModuleHub
@@ -37,9 +36,8 @@ export default function ExamSetupHub() {
       dashboardTitle="Exam Setup"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
       actions={<Link to="/exam" className="btn btn-outline-secondary btn-sm">Back</Link>}
     />
   );

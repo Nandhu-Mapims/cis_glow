@@ -43,7 +43,7 @@ export async function saveCircularEditSetup(payload, memberId, files = [], audit
     const { update } = auditFields(memberId, audit);
     await prisma.$executeRawUnsafe(`
       UPDATE circular_tb SET del = 0,
-        updated_dt = NOW(), updated_by = '${update.updated_by}', updated_ip = '${update.updated_ip}'
+        updated_dt = NOW(), updated_by = '${escapeSql(update.updated_by)}', updated_ip = '${escapeSql(update.updated_ip)}'
       WHERE id = ${id}
     `);
     await logCircularSetup(PAGE, 'Delete', 'Successful', String(id), memberId, audit);

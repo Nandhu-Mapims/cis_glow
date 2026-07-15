@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { config } from '../../config/index.js';
 import { legacyPublicFileUrl } from '../../utils/fileUrls.js';
+import { escapeSql } from '../../utils/sqlSafe.js';
 import {
   buildCategoryFilter,
   loadPayrollMonthOptions,
@@ -111,14 +112,14 @@ export async function exportPayrollIndividualExcel(memberId, query = {}, audit =
   if (reportFor === 'bank') {
     const bankFilter = transferRef === 'cheque'
       ? " AND B.pay_type = 'Cheque'"
-      : (transferRef ? ` AND B.pay_type != 'Cheque' AND B.pay_bank = '${transferRef.replace(/'/g, "''")}'` : '');
+      : (transferRef ? ` AND B.pay_type != 'Cheque' AND B.pay_bank = '${escapeSql(transferRef)}'` : '');
     const { prisma } = await import('../../config/prisma.js');
     sqlRows = await prisma.$queryRawUnsafe(
       `SELECT A.staff_id, A.staff_name, A.staff_initial, B.net_pay, A.b_ac_no, A.b_ifsc, A.email_id
        FROM staff_profile_tb AS A
        INNER JOIN staff_payroll_tb AS B ON A.id = B.staff_id
        WHERE A.del = 1 AND B.del = 1 AND B.net_pay > 0
-         AND B.payroll_month = '${monthSql.replace(/'/g, "''")}'
+         AND B.payroll_month = '${escapeSql(monthSql)}'
          ${categoryFilterSql}
          ${bankFilter}`,
     );
@@ -130,7 +131,7 @@ export async function exportPayrollIndividualExcel(memberId, query = {}, audit =
        FROM staff_profile_tb AS A
        INNER JOIN staff_payroll_tb AS B ON A.id = B.staff_id
        WHERE A.del = 1 AND B.del = 1 AND B.${column} > 0
-         AND B.payroll_month = '${monthSql.replace(/'/g, "''")}'
+         AND B.payroll_month = '${escapeSql(monthSql)}'
          ${categoryFilterSql}`,
     );
   }

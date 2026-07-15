@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import { useTransientNotice } from '../../hooks/useTransientNotice';
-import { useShellData } from '../../hooks/useShellData';
 import SetupAlerts from './setup/SetupAlerts';
 import { FEE_SCREEN_META } from './feeModuleMeta';
 import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
@@ -9,7 +9,7 @@ import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShel
 const META = FEE_SCREEN_META['acmec-config'];
 
 export default function FeeAcmecConfigPage() {
-  const { settings, menu, loading: shellLoading, error: shellError, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [initLoading, setInitLoading] = useState(true);
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -59,9 +59,8 @@ export default function FeeAcmecConfigPage() {
   };
 
   useEffect(() => {
-    if (shellLoading) return;
     init();
-  }, [shellLoading]);
+  }, []);
 
   const selectStudent = async (studentId) => {
     setBusy(true);
@@ -102,9 +101,8 @@ export default function FeeAcmecConfigPage() {
     <FeePageShell
       settings={settings}
       menu={menu}
-      loading={shellLoading || initLoading}
-      error={shellError}
-      onRetry={reload}
+      loading={initLoading}
+      error={null}
       breadcrumbs={feeScreenBreadcrumbs('acmec-config')}
       title={META.title}
       legacy={META.legacy}

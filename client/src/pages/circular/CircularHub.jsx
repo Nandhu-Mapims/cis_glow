@@ -1,5 +1,5 @@
+import { useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 
 const LINKS = [
   { to: '/circular/setup/dashboard', title: 'Circular Dashboard', desc: 'Pending, approved, and recent circulars', icon: 'fa fa-file-text-o' },
@@ -14,7 +14,7 @@ const LINKS = [
 ];
 
 export default function CircularHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   return (
     <ModuleHub
       title="Circular Module"
@@ -23,9 +23,8 @@ export default function CircularHub() {
       dashboardTitle="Circular"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
     />
   );
 }

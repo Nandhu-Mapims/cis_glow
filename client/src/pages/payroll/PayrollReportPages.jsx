@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { printReportHtml } from '../../utils/printReport';
@@ -15,8 +15,7 @@ import {
 } from './PayrollReportLoading';
 
 function PayrollFilterReport({ title, apiPath, legacy, reportTypeField = null }) {
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [busyLabel, setBusyLabel] = useState('Loading…');
@@ -77,12 +76,6 @@ function PayrollFilterReport({ title, apiPath, legacy, reportTypeField = null })
   useEffect(() => {
     const init = async () => {
       try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
         await loadReport({}, { label: `Loading ${title.toLowerCase()}…` });
       } finally {
         setLoading(false);
@@ -137,7 +130,6 @@ function PayrollFilterReport({ title, apiPath, legacy, reportTypeField = null })
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
           <h3 className="dashboard-title mb-0">{title}</h3>
-          <p className="text-muted small mb-0">{legacy}</p>
         </div>
         <div className="d-flex gap-2">
           {data?.reportHtml && !busy && (

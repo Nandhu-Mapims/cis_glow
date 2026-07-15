@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import '../students/StudentReport.css';
 
 export default function StudentDailyAttendance() {
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [courseOptions, setCourseOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -22,13 +21,7 @@ export default function StudentDailyAttendance() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [settingsRes, menuRes, filtersRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-          api.get('/api/attendance/students/filters'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
+        const filtersRes = await api.get('/api/attendance/students/filters');
         setCourseOptions(filtersRes.data.courseOptions || []);
       } finally {
         setLoading(false);

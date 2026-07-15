@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import ReportPrintBar from '../../components/ReportPrintBar';
 import DashboardLayout from '../../layouts/DashboardLayout';
@@ -12,8 +12,7 @@ function toDisplayDate(iso) {
 }
 
 export default function StaffAttendanceReport() {
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -31,13 +30,7 @@ export default function StaffAttendanceReport() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [settingsRes, menuRes, catRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-          api.get('/api/attendance/staff/categories'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
+        const catRes = await api.get('/api/attendance/staff/categories');
         setCategories(catRes.data.categories || []);
       } finally {
         setLoading(false);

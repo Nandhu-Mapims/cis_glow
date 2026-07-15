@@ -10,6 +10,7 @@ import {
 import {
   createStudentAdmission,
   getAdmissionDegreeOptions,
+  getAdmissionFormOptions,
 } from '../services/students/studentAdmission.js';
 import { insertLog } from '../services/logService.js';
 import {
@@ -71,6 +72,15 @@ router.get('/admission/degrees', async (req, res) => {
     return res.json(data);
   } catch (error) {
     return handleError(res, error, 'Unable to load degree options');
+  }
+});
+
+router.get('/admission/options', async (_req, res) => {
+  try {
+    const data = await getAdmissionFormOptions();
+    return res.json(data);
+  } catch (error) {
+    return handleError(res, error, 'Unable to load admission options');
   }
 });
 

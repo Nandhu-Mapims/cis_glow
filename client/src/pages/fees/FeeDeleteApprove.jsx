@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import { useTransientNotice } from '../../hooks/useTransientNotice';
-import { useShellData } from '../../hooks/useShellData';
 import ReceiptDetailCard from './ReceiptDetailCard';
 import { FEE_SCREEN_META } from './feeModuleMeta';
 import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
@@ -9,7 +9,7 @@ import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShel
 const META = FEE_SCREEN_META['delete-approve'];
 
 export default function FeeDeleteApprove() {
-  const { settings, menu, loading: shellLoading, error: shellError, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [dataLoading, setDataLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState([]);
@@ -24,7 +24,6 @@ export default function FeeDeleteApprove() {
   };
 
   useEffect(() => {
-    if (shellLoading) return;
     const init = async () => {
       try {
         await loadPending();
@@ -33,7 +32,7 @@ export default function FeeDeleteApprove() {
       }
     };
     init();
-  }, [shellLoading]);
+  }, []);
 
   const loadDetail = async (receiptNo) => {
     setSelected(receiptNo);
@@ -72,9 +71,8 @@ export default function FeeDeleteApprove() {
     <FeePageShell
       settings={settings}
       menu={menu}
-      loading={shellLoading || dataLoading}
-      error={shellError}
-      onRetry={reload}
+      loading={dataLoading}
+      error={null}
       breadcrumbs={feeScreenBreadcrumbs('delete-approve')}
       title={META.title}
       legacy={META.legacy}

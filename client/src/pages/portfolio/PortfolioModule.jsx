@@ -10,7 +10,7 @@ export const PortfolioHub = createModuleHub({
     {
       to: '/portfolio/individual-report',
       title: 'Portfolia Report',
-      desc: 'Legacy: student_portfolia_individual_report.php',
+      desc: 'Individual portfolio report',
       icon: 'fa fa-file-text-o',
       section: 'Reports',
     },

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import ChipMultiSelect from '../../components/ChipMultiSelect';
 import DashboardLayout from '../../layouts/DashboardLayout';
@@ -20,8 +20,7 @@ export default function StipendGeneratePayroll() {
   const generateMetaRef = useRef(null);
   const studentsRef = useRef([]);
 
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -58,12 +57,6 @@ export default function StipendGeneratePayroll() {
   useEffect(() => {
     const init = async () => {
       try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
         await loadForm();
       } catch (err) {
         setError(err.message || 'Unable to initialize stipend generate payroll');

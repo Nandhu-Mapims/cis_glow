@@ -1,12 +1,10 @@
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 import { ACADEMIC_SETTINGS_LINKS, SETTINGS_SCREEN_META } from './settingsSetupMeta';
 
 const NATIVE_LINKS = Object.entries(SETTINGS_SCREEN_META).map(([screen, meta]) => ({
   to: `/settings/setup/${screen}`,
   title: meta.title,
-  desc: `Legacy: ${meta.legacy}`,
   icon: 'fa fa-wrench',
   section: meta.section,
 }));
@@ -14,7 +12,7 @@ const NATIVE_LINKS = Object.entries(SETTINGS_SCREEN_META).map(([screen, meta]) =
 const ALL_LINKS = [...NATIVE_LINKS, ...ACADEMIC_SETTINGS_LINKS];
 
 export default function SettingsHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
 
   return (
     <ModuleHub
@@ -25,9 +23,8 @@ export default function SettingsHub() {
       dashboardTitle="Settings"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
       actions={<Link to="/settings/setup" className="btn btn-outline-primary btn-sm">All setup screens</Link>}
     />
   );

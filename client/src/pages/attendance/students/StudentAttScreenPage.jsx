@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useOutletContext, useSearchParams } from 'react-router-dom';
 import api from '../../../api/client';
 import DashboardLayout from '../../../layouts/DashboardLayout';
-import { useShellData } from '../../../hooks/useShellData';
 import { printReportHtml } from '../../../utils/printReport';
 import { buildPgPunchPrintHtml } from '../../../utils/attendanceReportPrint';
 import { isPgPunchScreenType, resolveStudentAttScreenSlug, STUDENT_ATT_SCREEN_META } from './studentAttMeta';
 import { useStudentAttScreenApi } from './useStudentAttApi';
+import { cleanLegacyKey } from '../../../utils/legacyRoutes';
 
 const APPROVAL_SCREENS = new Set(['smr-leave-request', 'smr-dept-leave', 'smr-permission', 'smr-defaulter']);
 const SAVE_SCREENS = new Set([
@@ -2001,10 +2001,10 @@ function ScreenFilters({ screen, meta, data, filterFields, onGenerate, onSave, o
 export default function StudentAttScreenPage() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const screen = resolveStudentAttScreenSlug(location.pathname, searchParams.get('legacy'));
+  const screen = resolveStudentAttScreenSlug(location.pathname, searchParams.get('view'));
   const meta = screen ? STUDENT_ATT_SCREEN_META[screen] : null;
   const { data, busy, error, notice, clearNotice, load, save } = useStudentAttScreenApi(screen || 'biometric-report');
-  const { settings, menu, loading, error: shellError } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [ready, setReady] = useState(false);
   const [filterFields, setFilterFields] = useState({ a_status: '0' });
   const [pgReportHtml, setPgReportHtml] = useState('');
@@ -2013,8 +2013,8 @@ export default function StudentAttScreenPage() {
   const [pgError, setPgError] = useState(null);
 
   useEffect(() => {
-    if (!meta?.legacy || searchParams.get('legacy')) return;
-    setSearchParams({ legacy: meta.legacy }, { replace: true });
+    if (!meta?.legacy || searchParams.get('view')) return;
+    setSearchParams({ view: cleanLegacyKey(meta.legacy) }, { replace: true });
   }, [meta, searchParams, setSearchParams]);
 
   useEffect(() => {
@@ -2040,7 +2040,7 @@ export default function StudentAttScreenPage() {
   if (!meta) {
     return <div className="p-4"><p className="text-danger">Unknown student attendance screen.</p><Link to="/attendance/students/hub">Back</Link></div>;
   }
-  if (loading || !ready) return <div className="p-4 text-muted">Loading...</div>;
+  if (!ready) return <div className="p-4 text-muted">Loading...</div>;
 
   const handleGenerate = (fields) => {
     setFilterFields(fields);
@@ -2174,7 +2174,7 @@ export default function StudentAttScreenPage() {
         </ol>
       </nav>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <div><h3 className="dashboard-title mb-0">{meta.title}</h3><p className="text-muted small mb-0">Legacy: {meta.legacy}</p></div>
+        <div><h3 className="dashboard-title mb-0">{meta.title}</h3></div>
         <div className="d-flex gap-2">
           {printableReportHtml && (
             <button
@@ -2188,7 +2188,6 @@ export default function StudentAttScreenPage() {
           <Link to="/attendance/students/hub" className="btn btn-outline-secondary btn-sm">Back</Link>
         </div>
       </div>
-      {shellError && <div className="alert alert-warning">{shellError}</div>}
       {notice && (
         <div className="alert alert-success alert-dismissible fade show">
           {notice}

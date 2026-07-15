@@ -1,5 +1,5 @@
 import { prisma } from '../../../config/prisma.js';
-import { parseId } from '../../../utils/sqlSafe.js';
+import { escapeSql, parseId } from '../../../utils/sqlSafe.js';
 import { auditFields, logStaffModule } from '../staffModuleAudit.js';
 import { formatDisplayDate } from '../staffShared.js';
 
@@ -45,9 +45,9 @@ export async function loadInspectionConfigSetup(memberId, fields = {}, audit = {
               IF(CAST(from_date AS CHAR)='0000-00-00', NULL, from_date) AS from_date,
               IF(CAST(to_date AS CHAR)='0000-00-00', NULL, to_date) AS to_date,
               i_enable
-       FROM inspection_config_tb WHERE del = 1 AND course_id = '${String(courseId).replace(/'/g, "''")}'
-         AND academic_type = '${String(academicType).replace(/'/g, "''")}'
-         ${academicYear ? `AND academic_year = '${String(academicYear).replace(/'/g, "''")}'` : ''}
+       FROM inspection_config_tb WHERE del = 1 AND course_id = '${escapeSql(courseId)}'
+         AND academic_type = '${escapeSql(academicType)}'
+         ${academicYear ? `AND academic_year = '${escapeSql(academicYear)}'` : ''}
        ORDER BY id ASC`,
     );
     rows = dbRows.map((r) => ({

@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../config/prisma.js';
 
 const MODULE_MENU_PATTERNS = {
@@ -110,34 +111,24 @@ const MODULE_MENU_PATTERNS = {
 };
 
 async function userHasModuleAccess(userId, patterns) {
+  // Single query covering all patterns instead of one round-trip per pattern
+  // (some modules have 20-30 patterns; that was 20-30 sequential DB calls per request).
+  const likeConditions = Prisma.join(
+    patterns.map((pattern) => Prisma.sql`TRIM(M.sub_menu_link) LIKE ${pattern}`),
+    ' OR ',
+  );
   const rows = await prisma.$queryRaw`
-    SELECT COUNT(*) AS cnt
-    FROM authentication_tb AS A
-    INNER JOIN basic_admin_menu_tb AS M ON A.menu_id = M.id
-    WHERE A.del = 1 AND A.authentication = 1
-      AND M.del = 1 AND M.menu_enable = 1
-      AND A.user_id = ${userId}
-  `;
-  const totalAuth = Number(rows[0]?.cnt || 0);
-  if (totalAuth === 0) {
-    return false;
-  }
-
-  for (const pattern of patterns) {
-    const likeRows = await prisma.$queryRaw`
-      SELECT COUNT(*) AS cnt
+    SELECT EXISTS(
+      SELECT 1
       FROM authentication_tb AS A
       INNER JOIN basic_admin_menu_tb AS M ON A.menu_id = M.id
       WHERE A.del = 1 AND A.authentication = 1
         AND M.del = 1 AND M.menu_enable = 1
         AND A.user_id = ${userId}
-        AND TRIM(M.sub_menu_link) LIKE ${pattern}
-    `;
-    if (Number(likeRows[0]?.cnt || 0) > 0) {
-      return true;
-    }
-  }
-  return false;
+        AND (${likeConditions})
+    ) AS allowed
+  `;
+  return Number(rows[0]?.allowed || 0) > 0;
 }
 
 export function menuAuthForModule(moduleKey) {

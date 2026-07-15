@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useOutletContext, useParams } from 'react-router-dom';
 import DashboardLayout from '../../../layouts/DashboardLayout';
-import { useShellData } from '../../../hooks/useShellData';
 import { printReportHtml } from '../../../utils/printReport';
 import { STAFF_ATT_SCREEN_META } from './staffAttSetupMeta';
 import { useStaffAttScreenApi } from './useStaffAttSetupApi';
@@ -243,7 +242,7 @@ export default function StaffAttScreenPage() {
   const { screen } = useParams();
   const meta = STAFF_ATT_SCREEN_META[screen];
   const { data, busy, error, notice, load, save } = useStaffAttScreenApi(screen);
-  const { settings, menu, loading, error: shellError } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -254,7 +253,7 @@ export default function StaffAttScreenPage() {
   if (!meta) {
     return <div className="p-4"><p className="text-danger">Unknown staff attendance screen.</p><Link to="/attendance/staff/hub">Back</Link></div>;
   }
-  if (loading || !ready) return <div className="p-4 text-muted">Loading...</div>;
+  if (!ready) return <div className="p-4 text-muted">Loading...</div>;
 
   const handleGenerate = (fields) => {
     if (screen === 'clear-icache') save(fields);
@@ -272,13 +271,12 @@ export default function StaffAttScreenPage() {
         </ol>
       </nav>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <div><h3 className="dashboard-title mb-0">{meta.title}</h3><p className="text-muted small mb-0">Legacy: {meta.legacy}</p></div>
+        <div><h3 className="dashboard-title mb-0">{meta.title}</h3></div>
         <div className="d-flex gap-2">
           {data?.reportHtml && <button type="button" className="btn btn-outline-primary btn-sm" onClick={() => printReportHtml(data.reportHtml)}>Print</button>}
           <Link to="/attendance/staff/hub" className="btn btn-outline-secondary btn-sm">Back</Link>
         </div>
       </div>
-      {shellError && <div className="alert alert-warning">{shellError}</div>}
       {notice && <div className="alert alert-success">{notice}</div>}
       {data?.infoMessage && !data?.reportHtml && !(data?.rows?.length) && !(data?.dayRows?.length) && <div className="alert alert-info py-2">{data.infoMessage}</div>}
       {error && <div className="alert alert-danger">{error}</div>}

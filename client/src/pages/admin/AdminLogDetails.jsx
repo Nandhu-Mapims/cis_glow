@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import './AdminSetupPage.css';
@@ -70,8 +70,7 @@ function filtersFromResponse(apiFilters = {}) {
 
 export default function AdminLogDetails() {
   const [searchParams] = useSearchParams();
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -119,13 +118,6 @@ export default function AdminLogDetails() {
 
     const init = async () => {
       try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
-
         const userFromUrl = searchParams.get('user') || '';
         const initialFields = {
           from_date: defaultDateRange(),
@@ -192,7 +184,7 @@ export default function AdminLogDetails() {
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
           <h3 className="dashboard-title mb-0">Log Details</h3>
-          <p className="text-muted small mb-0">Legacy: log_details.php — session login/activity trace</p>
+          <p className="text-muted small mb-0">Session login/activity trace</p>
         </div>
         <div className="d-flex gap-2">
           <button type="button" className="btn btn-outline-primary btn-sm" onClick={printResults} disabled={!showResults}>Print</button>

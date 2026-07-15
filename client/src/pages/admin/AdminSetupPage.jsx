@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
-import api from '../../api/client';
-import { Breadcrumbs, PageHeader, PageLoading } from '../../components/PageShell';
-import DashboardLayout from '../../layouts/DashboardLayout';
+import { Link, useOutletContext, useParams, useSearchParams } from 'react-router-dom';
+import { SetupPageShell } from '../../components/PageShell';
+import SetupAlerts from '../../components/SetupAlerts';
 import { ADMIN_SCREEN_META } from './adminSetupMeta';
 import { useAdminSetupApi } from './setup/useAdminSetupApi';
 import AccountAddForm from './setup/AccountAddForm';
@@ -16,7 +15,6 @@ import OtpResetSetup from './setup/OtpResetSetup';
 import CommitteeAccessSetup from './setup/CommitteeAccessSetup';
 import StaffAuthSetup from './setup/StaffAuthSetup';
 import DeptAuthV1Setup from './setup/DeptAuthV1Setup';
-import SetupAlerts from '../fees/setup/SetupAlerts';
 import './AdminSetupPage.css';
 
 const SETUP_COMPONENTS = {
@@ -42,8 +40,7 @@ export default function AdminSetupPage({ screen: screenProp, initialFields = nul
   const initialFieldsRef = useRef(initialFields);
 
   const { data, busy, error, notice, setError, setNotice, load, save } = useAdminSetupApi(screen);
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,12 +50,6 @@ export default function AdminSetupPage({ screen: screenProp, initialFields = nul
         return;
       }
       try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
         const query = {};
         const uid = searchParams.get('uid');
         if (uid) query.uid = uid;
@@ -85,64 +76,64 @@ export default function AdminSetupPage({ screen: screenProp, initialFields = nul
 
   if (!meta) {
     return (
-      <div className="p-4">
-        <p className="text-danger">Unknown admin screen.</p>
-        <Link to="/admin">Back</Link>
-      </div>
+      <SetupPageShell
+        settings={settings}
+        menu={menu}
+        title="Admin"
+        breadcrumbs={[
+          { label: 'Home', to: '/dashboard' },
+          { label: 'Admin', to: '/admin' },
+          { label: 'Unknown' },
+        ]}
+        backTo="/admin"
+      >
+        <p className="text-danger mb-0">Unknown admin screen.</p>
+      </SetupPageShell>
     );
-  }
-
-  if (loading) {
-    return <PageLoading />;
   }
 
   const SetupComponent = SETUP_COMPONENTS[screen];
 
   return (
-    <DashboardLayout settings={settings} dashboard={{ title: meta.title }} menu={menu}>
-      <div className="cis-page">
-        <Breadcrumbs
-          items={[
-            { label: 'Home', to: '/dashboard' },
-            { label: 'Admin', to: '/admin' },
-            { label: meta.title },
-          ]}
-        />
-
-        <PageHeader
-          title={meta.title}
-          actions={(
-            <>
-              {screen === 'account-edit' && (
-                <Link to="/admin/users" className="btn btn-outline-primary btn-sm">User list</Link>
-              )}
-              <Link to="/admin" className="btn btn-outline-secondary btn-sm">Back</Link>
-            </>
+    <SetupPageShell
+      settings={settings}
+      menu={menu}
+      title={meta.title}
+      breadcrumbs={[
+        { label: 'Home', to: '/dashboard' },
+        { label: 'Admin', to: '/admin' },
+        { label: meta.title },
+      ]}
+      actions={(
+        <>
+          {screen === 'account-edit' && (
+            <Link to="/admin/users" className="btn btn-outline-primary btn-sm">User list</Link>
           )}
-        />
-
+          <Link to="/admin" className="btn btn-outline-secondary btn-sm">Back</Link>
+        </>
+      )}
+      loading={loading}
+      alerts={(
         <SetupAlerts
           notice={notice}
           error={error}
           busy={busy}
           onDismissNotice={() => setNotice(null)}
         />
-
-        <div className="card admin-setup-card">
-          <div className="card-body admin-setup-root admin-native-root">
-          {SetupComponent ? (
-            <SetupComponent
-              data={data}
-              busy={busy}
-              onLoad={handleLoad}
-              onSave={handleSave}
-            />
-          ) : (
-            <p className="text-muted mb-0">No native form available for this screen.</p>
-          )}
-        </div>
-      </div>
-      </div>
-    </DashboardLayout>
+      )}
+      cardClassName="cis-setup-card admin-setup-card"
+      rootClassName="cis-setup-root admin-setup-root admin-native-root"
+    >
+      {SetupComponent ? (
+        <SetupComponent
+          data={data}
+          busy={busy}
+          onLoad={handleLoad}
+          onSave={handleSave}
+        />
+      ) : (
+        <p className="text-muted mb-0">No form available for this screen.</p>
+      )}
+    </SetupPageShell>
   );
 }

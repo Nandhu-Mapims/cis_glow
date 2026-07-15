@@ -1,11 +1,10 @@
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 import { FEE_DELETE_HUB_LINKS, FEE_DELETE_BREADCRUMB } from './feeModuleMeta';
 import { FEE_BREADCRUMB_HUB } from './FeePageShell';
 
 export default function FeeDeleteHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
 
   return (
     <ModuleHub
@@ -19,9 +18,8 @@ export default function FeeDeleteHub() {
       dashboardTitle="Fee Delete"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
       actions={<Link to="/fees" className="btn btn-outline-secondary btn-sm">Back</Link>}
     />
   );

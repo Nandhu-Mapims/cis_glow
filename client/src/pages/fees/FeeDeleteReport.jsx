@@ -1,7 +1,7 @@
 import { useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import ReportPrintBar from '../../components/ReportPrintBar';
-import { useShellData } from '../../hooks/useShellData';
 import { FEE_SCREEN_META } from './feeModuleMeta';
 import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
 
@@ -14,7 +14,7 @@ function toDisplayDate(iso) {
 }
 
 export default function FeeDeleteReport() {
-  const { settings, menu, loading, error: shellError, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [generating, setGenerating] = useState(false);
   const [fromDate, setFromDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [toDate, setToDate] = useState('');
@@ -43,9 +43,8 @@ export default function FeeDeleteReport() {
     <FeePageShell
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={shellError}
-      onRetry={reload}
+      loading={false}
+      error={null}
       breadcrumbs={feeScreenBreadcrumbs('delete-report')}
       title={META.title}
       legacy={META.legacy}

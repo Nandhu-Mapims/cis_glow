@@ -143,7 +143,10 @@ export default function AlumniIdCardPanel({ data, busy, onGenerate }) {
         <div className="card cis-student-screen-card h-100">
           <div className="card-body">
             {!hasResults ? (
-              <p className="text-muted mb-0">Enter search criteria and click Go to generate ID cards.</p>
+              <div className="cis-report-empty">
+                <span className="cis-report-empty-icon" aria-hidden="true">🪪</span>
+                <p className="mb-0">Enter search criteria and click Go to generate ID cards.</p>
+              </div>
             ) : (
               <>
                 <p className="text-danger mb-2">Search results: {data.count} found...</p>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import FeeMultiDropdown from './FeeMultiDropdown';
-import { useShellData } from '../../hooks/useShellData';
 import { useTransientNotice } from '../../hooks/useTransientNotice';
 import { FEE_SCREEN_META } from './feeModuleMeta';
 import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
@@ -9,7 +9,7 @@ import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShel
 const META = FEE_SCREEN_META['pending-sms'];
 
 export default function FeePendingSms() {
-  const { settings, menu, loading: shellLoading, error: shellError, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [initLoading, setInitLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [sending, setSending] = useState(false);
@@ -24,7 +24,6 @@ export default function FeePendingSms() {
   const [sendProgress, setSendProgress] = useState({ current: 0, total: 0 });
 
   useEffect(() => {
-    if (shellLoading) return;
     const init = async () => {
       try {
         const classesRes = await api.get('/api/fees/pending-sms/classes');
@@ -37,7 +36,7 @@ export default function FeePendingSms() {
       }
     };
     init();
-  }, [shellLoading]);
+  }, []);
 
   const generate = async (e) => {
     e.preventDefault();
@@ -81,9 +80,8 @@ export default function FeePendingSms() {
     <FeePageShell
       settings={settings}
       menu={menu}
-      loading={shellLoading || initLoading}
-      error={shellError}
-      onRetry={reload}
+      loading={initLoading}
+      error={null}
       breadcrumbs={feeScreenBreadcrumbs('pending-sms')}
       title={META.title}
       legacy={META.legacy}

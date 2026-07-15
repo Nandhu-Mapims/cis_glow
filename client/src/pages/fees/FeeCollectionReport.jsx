@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import ReportPrintBar from '../../components/ReportPrintBar';
-import { useShellData } from '../../hooks/useShellData';
 import { FEE_SCREEN_META } from './feeModuleMeta';
 import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
 
@@ -14,7 +14,7 @@ function toDisplayDate(iso) {
 }
 
 export default function FeeCollectionReport() {
-  const { settings, menu, loading: shellLoading, error: shellError, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [accountHeads, setAccountHeads] = useState([]);
   const [paymentModes, setPaymentModes] = useState([]);
   const [filtersLoading, setFiltersLoading] = useState(true);
@@ -28,7 +28,6 @@ export default function FeeCollectionReport() {
   const [html, setHtml] = useState('');
 
   useEffect(() => {
-    if (shellLoading) return;
     const load = async () => {
       try {
         const filtersRes = await api.get('/api/fees/filters');
@@ -39,7 +38,7 @@ export default function FeeCollectionReport() {
       }
     };
     load();
-  }, [shellLoading]);
+  }, []);
 
   const generate = async (e) => {
     e.preventDefault();
@@ -66,9 +65,8 @@ export default function FeeCollectionReport() {
     <FeePageShell
       settings={settings}
       menu={menu}
-      loading={shellLoading || filtersLoading}
-      error={shellError}
-      onRetry={reload}
+      loading={filtersLoading}
+      error={null}
       breadcrumbs={feeScreenBreadcrumbs('report-collection')}
       title={META.title}
       legacy={META.legacy}

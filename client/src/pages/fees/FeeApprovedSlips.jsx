@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import { useTransientNotice } from '../../hooks/useTransientNotice';
 import { printReportHtml } from '../../utils/printReport';
-import { useShellData } from '../../hooks/useShellData';
 import { FEE_SCREEN_META } from './feeModuleMeta';
 import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
 import { formatIndianMoneyDisplay } from './feeUiHelpers';
@@ -11,7 +10,7 @@ import { formatIndianMoneyDisplay } from './feeUiHelpers';
 const META = FEE_SCREEN_META['slips-approved'];
 
 export default function FeeApprovedSlips() {
-  const { settings, menu, loading: shellLoading, error: shellError, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [dataLoading, setDataLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -37,7 +36,6 @@ export default function FeeApprovedSlips() {
   }, [page, search]);
 
   useEffect(() => {
-    if (shellLoading) return;
     const init = async () => {
       try {
         setBusy(true);
@@ -51,7 +49,7 @@ export default function FeeApprovedSlips() {
       }
     };
     init();
-  }, [shellLoading]);
+  }, []);
 
   const onSearch = async (e) => {
     e.preventDefault();
@@ -96,9 +94,8 @@ export default function FeeApprovedSlips() {
     <FeePageShell
       settings={settings}
       menu={menu}
-      loading={shellLoading || dataLoading}
-      error={shellError}
-      onRetry={reload}
+      loading={dataLoading}
+      error={null}
       breadcrumbs={feeScreenBreadcrumbs('slips-approved')}
       title={META.title}
       legacy={META.legacy}

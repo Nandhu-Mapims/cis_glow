@@ -6,6 +6,15 @@ function fmtDateExpr(col, alias) {
   return `IF(${col}='0000-00-00' OR ${col}='0000-00-00 00:00:00','',DATE_FORMAT(${col},'%Y-%m-%d')) AS ${a}`;
 }
 
+const SEARCH_BY_COLUMNS = new Set([
+  'resource_name',
+  'accession_no',
+  'convert_name',
+  'call_number',
+  'author_name',
+  'publisher_name',
+]);
+
 export async function loadBookCategoryOptions(category) {
   const rows = await prisma.$queryRawUnsafe(`
     SELECT id, category_name FROM book_category_tb
@@ -42,7 +51,7 @@ export async function searchBooks(filters = {}, { limit = 500 } = {}) {
     const terms = search.split(',').map((s) => s.trim()).filter(Boolean);
     if (terms.length > 1 && (!searchBy || searchBy === 'accession_no')) {
       where += ` AND (${terms.map((t) => `accession_no = '${escapeSql(t)}'`).join(' OR ')})`;
-    } else if (searchBy && searchBy !== '') {
+    } else if (searchBy && SEARCH_BY_COLUMNS.has(searchBy)) {
       where += ` AND ${searchBy} LIKE '%${escapeSql(search)}%'`;
     } else {
       where += ` AND (accession_no LIKE '%${escapeSql(search)}%' OR resource_name LIKE '%${escapeSql(search)}%' OR author_name LIKE '%${escapeSql(search)}%' OR call_number LIKE '%${escapeSql(search)}%')`;

@@ -1,5 +1,5 @@
+import { useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 
 const LINKS = [
   { to: '/library/setup/dashboard', title: 'Library Dashboard', desc: 'Book counts, issues, returns, and visitor stats', icon: 'fa fa-file-text-o' },
@@ -23,7 +23,7 @@ const LINKS = [
 ];
 
 export default function LibraryHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   return (
     <ModuleHub
       title="Library Module"
@@ -32,9 +32,8 @@ export default function LibraryHub() {
       dashboardTitle="Library"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
     />
   );
 }

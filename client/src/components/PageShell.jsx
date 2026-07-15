@@ -64,9 +64,59 @@ export function PageHeader({ title, subtitle, actions }) {
   );
 }
 
+/**
+ * Shared chrome for setup / report screens across modules.
+ * Wraps DashboardLayout + breadcrumbs + PageHeader + optional alerts + card body.
+ */
+export function SetupPageShell({
+  settings,
+  menu,
+  title,
+  subtitle,
+  breadcrumbs = [],
+  backTo,
+  backLabel = 'Back',
+  actions = null,
+  loading = false,
+  alerts = null,
+  cardClassName = 'cis-setup-card',
+  rootClassName = 'cis-setup-root',
+  bodyRef = null,
+  children,
+}) {
+  if (loading) {
+    return (
+      <DashboardLayout settings={settings} dashboard={{ title }} menu={menu}>
+        <PageLoading />
+      </DashboardLayout>
+    );
+  }
+
+  const headerActions = actions ?? (
+    backTo ? (
+      <Link to={backTo} className="btn btn-outline-secondary btn-sm">
+        {backLabel}
+      </Link>
+    ) : null
+  );
+
+  return (
+    <DashboardLayout settings={settings} dashboard={{ title }} menu={menu}>
+      <div className="cis-page">
+        <Breadcrumbs items={breadcrumbs} />
+        <PageHeader title={title} subtitle={subtitle} actions={headerActions} />
+        {alerts}
+        <div className={`card ${cardClassName}`}>
+          <div className={`card-body ${rootClassName}`} ref={bodyRef}>{children}</div>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}
+
 function normalizeHubLink(item) {
   const title = item.title || item.label || 'Screen';
-  const desc = item.desc || (item.legacy ? `Legacy: ${item.legacy}` : 'Open this screen');
+  const desc = item.desc || 'Open this screen';
   const icon = item.icon || 'fa fa-angle-right';
   return { ...item, title, desc, icon };
 }

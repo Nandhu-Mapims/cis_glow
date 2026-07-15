@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
-import api from '../api/client';
-import { Breadcrumbs, ModuleHub, PageHeader, PageLoading } from './PageShell';
-import DashboardLayout from '../layouts/DashboardLayout';
-import SetupAlerts from '../pages/fees/setup/SetupAlerts';
+import { Link, useOutletContext, useParams, useSearchParams } from 'react-router-dom';
+import { ModuleHub, PageError, SetupPageShell } from './PageShell';
+import SetupAlerts from './SetupAlerts';
+import { cleanLegacyKey } from '../utils/legacyRoutes';
 import '../pages/admin/AdminSetupPage.css';
 
 export function createModuleSetupPage({
@@ -14,22 +13,20 @@ export function createModuleSetupPage({
   useSetupApi,
 }) {
   return function ModuleSetupPage({ screen: screenProp, initialFields = null }) {
+    const { settings, menu } = useOutletContext();
     const { screen: routeScreen } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
     const screen = screenProp || routeScreen;
     const meta = metaMap[screen];
     const ScreenComponent = components[screen];
     const initialFieldsRef = useRef(initialFields);
-    const legacyLabel = searchParams.get('legacy') || meta?.legacy;
 
     const { data, busy, error, notice, setError, setNotice, load, save } = useSetupApi(screen);
-    const [settings, setSettings] = useState(null);
-    const [menu, setMenu] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-      if (!meta?.legacy || searchParams.get('legacy')) return;
-      setSearchParams({ legacy: meta.legacy }, { replace: true });
+      if (!meta?.legacy || searchParams.get('view')) return;
+      setSearchParams({ view: cleanLegacyKey(meta.legacy) }, { replace: true });
     }, [meta, searchParams, setSearchParams]);
 
     useEffect(() => {
@@ -40,12 +37,6 @@ export function createModuleSetupPage({
         }
         setLoading(true);
         try {
-          const [settingsRes, menuRes] = await Promise.all([
-            api.get('/api/settings/basic'),
-            api.get('/api/menu'),
-          ]);
-          setSettings(settingsRes.data);
-          setMenu(menuRes.data.menu || []);
           await load(initialFieldsRef.current || meta.initialLoadFields || {});
           initialFieldsRef.current = null;
         } finally {
@@ -67,85 +58,73 @@ export function createModuleSetupPage({
 
     if (!meta) {
       return (
-        <DashboardLayout settings={settings} menu={menu}>
-          <div className="alert alert-warning">Unknown screen.</div>
+        <SetupPageShell
+          settings={settings}
+          menu={menu}
+          title={moduleTitle}
+          breadcrumbs={[
+            { label: 'Home', to: '/dashboard' },
+            { label: moduleTitle, to: hubPath.replace('/setup', '') },
+            { label: 'Setup', to: hubPath },
+            { label: 'Unknown' },
+          ]}
+          backTo={hubPath}
+        >
+          <PageError message="Unknown screen." />
           <Link to={hubPath}>Back to {moduleTitle}</Link>
-        </DashboardLayout>
-      );
-    }
-
-    if (loading) {
-      return (
-        <DashboardLayout settings={settings} menu={menu}>
-          <PageLoading />
-        </DashboardLayout>
+        </SetupPageShell>
       );
     }
 
     return (
-      <DashboardLayout settings={settings} menu={menu}>
-        <Breadcrumbs items={[
+      <SetupPageShell
+        settings={settings}
+        menu={menu}
+        title={meta.title}
+        subtitle={meta.desc}
+        breadcrumbs={[
           { label: 'Home', to: '/dashboard' },
           { label: moduleTitle, to: hubPath.replace('/setup', '') },
           { label: 'Setup', to: hubPath },
           { label: meta.title },
-        ]} />
-        <PageHeader
-          title={meta.title}
-          subtitle={meta.desc || (legacyLabel ? `Legacy: ${legacyLabel}` : undefined)}
-          actions={<Link to={hubPath} className="btn btn-outline-secondary btn-sm">Back</Link>}
-        />
-        <SetupAlerts notice={notice} error={error} busy={busy} onDismissNotice={() => setNotice(null)} />
-        {ScreenComponent ? (
-          <div className="card admin-setup-card">
-            <div className="card-body admin-setup-root admin-native-root">
-              <ScreenComponent
-                data={data}
-                busy={busy}
-                readOnly={meta.readOnly}
-                onLoad={handleLoad}
-                onSave={handleSave}
-              />
-            </div>
-          </div>
-        ) : (
-          <p className="text-muted">No form available for this screen.</p>
+        ]}
+        backTo={hubPath}
+        loading={loading}
+        alerts={(
+          <SetupAlerts
+            notice={notice}
+            error={error}
+            busy={busy}
+            onDismissNotice={() => setNotice(null)}
+          />
         )}
-      </DashboardLayout>
+        cardClassName="cis-setup-card admin-setup-card"
+        rootClassName="cis-setup-root admin-setup-root admin-native-root"
+      >
+        {ScreenComponent ? (
+          <ScreenComponent
+            data={data}
+            busy={busy}
+            readOnly={meta.readOnly}
+            onLoad={handleLoad}
+            onSave={handleSave}
+          />
+        ) : (
+          <p className="text-muted mb-0">No form available for this screen.</p>
+        )}
+      </SetupPageShell>
     );
   };
 }
 
 export function createModuleSetupHub({ title, basePath, metaMap, extraLinks = [], parentPath = null }) {
   return function ModuleSetupHubPage() {
-    const [settings, setSettings] = useState(null);
-    const [menu, setMenu] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    const reload = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Unable to load hub');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    useEffect(() => { reload(); }, []);
+    const { settings, menu } = useOutletContext();
 
     const links = Object.entries(metaMap).map(([screen, meta]) => ({
       to: `${basePath}/setup/${screen}`,
       title: meta.title,
-      desc: meta.desc || `Legacy: ${meta.legacy}`,
+      desc: meta.desc,
       icon: meta.icon || 'fa fa-cog',
       section: meta.section || 'Screens',
     }));
@@ -162,9 +141,8 @@ export function createModuleSetupHub({ title, basePath, metaMap, extraLinks = []
         dashboardTitle={`${title} Setup`}
         settings={settings}
         menu={menu}
-        loading={loading}
-        error={error}
-        onRetry={reload}
+        loading={false}
+        error={null}
         actions={parentPath ? <Link to={parentPath} className="btn btn-outline-secondary btn-sm">Back</Link> : null}
       />
     );
@@ -173,29 +151,7 @@ export function createModuleSetupHub({ title, basePath, metaMap, extraLinks = []
 
 export function createModuleHub({ title, basePath, metaMap, extraLinks = [], dashboardPath = null }) {
   return function ModuleHubPage() {
-    const [settings, setSettings] = useState(null);
-    const [menu, setMenu] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    const reload = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Unable to load hub');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    useEffect(() => { reload(); }, []);
+    const { settings, menu } = useOutletContext();
 
     const links = [
       ...(dashboardPath ? [{ to: dashboardPath, title: `${title} Dashboard`, desc: 'Summary view', icon: 'fa fa-dashboard', section: 'Overview' }] : []),
@@ -203,7 +159,7 @@ export function createModuleHub({ title, basePath, metaMap, extraLinks = [], das
       ...Object.entries(metaMap).map(([screen, meta]) => ({
         to: `${basePath}/setup/${screen}`,
         title: meta.title,
-        desc: meta.desc || `Legacy: ${meta.legacy}`,
+        desc: meta.desc,
         icon: meta.icon || 'fa fa-file-text-o',
         section: meta.section || 'Screens',
       })),
@@ -218,9 +174,8 @@ export function createModuleHub({ title, basePath, metaMap, extraLinks = [], das
         dashboardTitle={title}
         settings={settings}
         menu={menu}
-        loading={loading}
-        error={error}
-        onRetry={reload}
+        loading={false}
+        error={null}
       />
     );
   };

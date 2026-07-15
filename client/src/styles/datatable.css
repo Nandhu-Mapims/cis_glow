@@ -1,0 +1,342 @@
+/* ── Shared ERP DataTable (client/src/components/DataTable.jsx) ──
+   One table language for every list/report screen: sticky header carrying the
+   app's crimson signature underline, zebra rows, tabular figures, a responsive
+   card view on small screens, and built-in loading / empty / error states. */
+
+.cis-dt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+/* Toolbar: search + record count + optional actions */
+.cis-dt-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.cis-dt-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: min(320px, 100%);
+  flex: 1 1 240px;
+  max-width: 380px;
+}
+
+.cis-dt-search > i {
+  position: absolute;
+  left: 0.75rem;
+  color: var(--cis-text-subtle);
+  font-size: 0.8125rem;
+  pointer-events: none;
+}
+
+.cis-dt-search input {
+  width: 100%;
+  height: 40px;
+  padding: 0 2.25rem;
+  border: 1px solid var(--cis-border-strong);
+  border-radius: var(--cis-radius-sm);
+  background: var(--cis-surface);
+  font-size: 0.875rem;
+  color: var(--cis-text);
+}
+
+.cis-dt-search input:focus {
+  outline: none;
+  border-color: var(--cis-primary);
+  box-shadow: var(--cis-focus-ring-primary);
+}
+
+.cis-dt-search-clear {
+  position: absolute;
+  right: 0.4rem;
+  border: none;
+  background: transparent;
+  color: var(--cis-text-subtle);
+  padding: 0.35rem;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.cis-dt-search-clear:hover { color: var(--cis-primary); }
+
+.cis-dt-toolbar-end {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.cis-dt-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--cis-text-subtle);
+  white-space: nowrap;
+}
+
+/* Table shell */
+.cis-dt-scroll {
+  overflow: auto;
+  /* Cap the height so long tables scroll *inside* the card (sticky header stays
+     pinned) instead of scrolling the whole page. Short tables stay shorter than
+     this, so they're unaffected. */
+  max-height: 68vh;
+  border: 1px solid var(--cis-border);
+  border-radius: var(--cis-card-radius);
+  background: var(--cis-surface);
+  box-shadow: var(--cis-shadow-sm);
+}
+
+.cis-dt-scroll:focus-visible {
+  outline: none;
+  box-shadow: var(--cis-focus-ring-primary);
+}
+
+.cis-dt-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+}
+
+.cis-dt-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--cis-surface);
+  /* the signature: a crimson rule under the header, like a ledger opening */
+  border-bottom: 2px solid var(--cis-primary);
+  padding: 0.75rem 0.9rem;
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cis-text-subtle);
+  white-space: nowrap;
+}
+
+.cis-dt-sortable { padding: 0; }
+
+.cis-dt-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: none;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.cis-dt-sort-btn:hover { color: var(--cis-primary); }
+.cis-dt-sort-ico { font-size: 0.75rem; opacity: 0.6; }
+.cis-dt-table th.is-sorted { color: var(--cis-primary); }
+.cis-dt-table th.is-sorted .cis-dt-sort-ico { opacity: 1; }
+
+.cis-dt-table tbody td {
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--cis-border);
+  color: var(--cis-text);
+  vertical-align: middle;
+}
+
+.cis-dt--compact .cis-dt-table thead th { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.cis-dt--compact .cis-dt-table tbody td { padding-top: 0.45rem; padding-bottom: 0.45rem; }
+
+.cis-dt-table tbody tr:last-child td { border-bottom: none; }
+.cis-dt-table tbody tr:nth-child(even) td { background: var(--cis-bg); }
+
+.cis-dt-row-clickable { cursor: pointer; transition: background 0.12s ease; }
+.cis-dt-row-clickable:hover td,
+.cis-dt-row-clickable:focus-visible td { background: var(--cis-accent-soft); }
+.cis-dt-row-clickable:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px rgba(var(--cis-primary-rgb), 0.4);
+}
+
+.cis-dt-primary { font-weight: 650; color: var(--cis-text); }
+.cis-dt-num { font-variant-numeric: tabular-nums; }
+.cis-dt-align-center { text-align: center; }
+.cis-dt-align-right { text-align: right; }
+th.cis-dt-align-center .cis-dt-sort-btn { justify-content: center; }
+th.cis-dt-align-right .cis-dt-sort-btn { justify-content: flex-end; }
+
+.cis-dt-action-col { width: 1%; white-space: nowrap; text-align: right; }
+
+.cis-dt-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--cis-primary);
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--cis-radius-sm);
+}
+
+.cis-dt-open:hover { background: var(--cis-primary-soft); color: var(--cis-primary-hover); }
+
+/* Pagination */
+.cis-dt-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.cis-dt-pager-info { font-size: 0.8125rem; color: var(--cis-text-muted); }
+.cis-dt-pager-info strong { color: var(--cis-text); font-variant-numeric: tabular-nums; }
+.cis-dt-pager-btns { display: flex; align-items: center; gap: 0.75rem; }
+.cis-dt-pager-page { font-size: 0.8125rem; color: var(--cis-text-muted); font-variant-numeric: tabular-nums; }
+
+/* States */
+.cis-dt-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 3rem 1.5rem;
+  border: 1px dashed var(--cis-border-strong);
+  border-radius: var(--cis-card-radius);
+  background: var(--cis-bg-subtle);
+}
+
+.cis-dt-state--error {
+  border-style: solid;
+  border-color: rgba(var(--cis-primary-rgb), 0.25);
+  background: var(--cis-danger-soft);
+  color: var(--cis-danger);
+}
+
+.cis-dt-state--error > i { font-size: 1.5rem; }
+
+.cis-dt-state-icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--cis-accent-soft);
+  color: var(--cis-primary);
+  font-size: 1.375rem;
+  margin-bottom: 0.25rem;
+}
+
+.cis-dt-state-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cis-text);
+  margin: 0;
+}
+
+.cis-dt-state-msg {
+  font-size: 0.875rem;
+  color: var(--cis-text-muted);
+  margin: 0;
+  max-width: 30rem;
+}
+
+/* Skeleton */
+.cis-dt-skel-bar {
+  display: inline-block;
+  height: 0.75rem;
+  border-radius: 999px;
+  background: var(--cis-border);
+  animation: cis-dt-pulse 1.3s ease-in-out infinite;
+}
+
+@keyframes cis-dt-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* Mobile card view — hidden by default, table shown */
+.cis-dt-cards { display: none; }
+
+@media (max-width: 767.98px) {
+  .cis-dt-scroll { display: none; }
+
+  .cis-dt-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .cis-dt-card {
+    display: block;
+    position: relative;
+    padding: 0.875rem 2rem 0.875rem 1rem;
+    border: 1px solid var(--cis-border);
+    border-radius: var(--cis-radius);
+    background: var(--cis-surface);
+    box-shadow: var(--cis-shadow-sm);
+    text-decoration: none;
+    color: inherit;
+    width: 100%;
+    text-align: left;
+  }
+
+  .cis-dt-card--link { cursor: pointer; }
+  .cis-dt-card--link:hover { border-color: rgba(var(--cis-primary-rgb), 0.4); }
+  .cis-dt-card--link:focus-visible { outline: none; box-shadow: var(--cis-focus-ring-primary); }
+
+  .cis-dt-card-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.9375rem;
+    color: var(--cis-text);
+    margin-bottom: 0.5rem;
+  }
+
+  .cis-dt-card-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem 0.75rem;
+    margin: 0;
+  }
+
+  .cis-dt-card-details dt {
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--cis-text-subtle);
+  }
+
+  .cis-dt-card-details dd {
+    margin: 0.1rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--cis-text);
+  }
+
+  .cis-dt-card-arrow {
+    position: absolute;
+    right: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--cis-text-subtle);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cis-dt-skel-bar { animation: none; opacity: 0.6; }
+  .cis-dt-row-clickable { transition: none; }
+}

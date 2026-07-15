@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import { PageError, PageLoading } from '../components/PageShell';
 import { useShellData } from '../hooks/useShellData';
@@ -16,7 +17,9 @@ export default function AppShellLayout() {
 
   return (
     <DashboardLayout settings={settings} menu={menu}>
-      <Outlet />
+      <Suspense fallback={<PageLoading message="Loading…" />}>
+        <Outlet context={{ settings, menu }} />
+      </Suspense>
     </DashboardLayout>
   );
 }

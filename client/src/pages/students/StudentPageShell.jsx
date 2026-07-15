@@ -3,15 +3,8 @@ import { Breadcrumbs, PageError, PageHeader, PageLoading } from '../../component
 
 export const STUDENT_BREADCRUMB_HUB = { label: 'Student', to: '/students/hub' };
 
-export function legacyPageSubtitle(legacy) {
-  if (!legacy) return undefined;
-  return (
-    <>
-      Legacy:
-      {' '}
-      <code>{legacy}</code>
-    </>
-  );
+export function legacyPageSubtitle() {
+  return undefined;
 }
 
 /**

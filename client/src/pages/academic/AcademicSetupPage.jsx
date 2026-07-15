@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useOutletContext, useParams } from 'react-router-dom';
 import api from '../../api/client';
-import DashboardLayout from '../../layouts/DashboardLayout';
-import { useShellData } from '../../hooks/useShellData';
+import { SetupPageShell } from '../../components/PageShell';
+import SetupAlerts from '../../components/SetupAlerts';
 import {
   collectLegacyFormFiles,
   isAcademicReportScreen,
@@ -97,7 +97,7 @@ export default function AcademicSetupPage({
     : (meta?.hub === 'reports' ? '/academic/reports' : '/academic/setup');
   const hubLabel = isCurriculum ? 'Curriculum' : (meta?.hub === 'reports' ? 'Reports' : 'Setup');
 
-  const { settings, menu, loading: shellLoading } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
@@ -200,9 +200,9 @@ export default function AcademicSetupPage({
           setHtml(res.data.html || '');
           setScripts(res.data.scripts || '');
           if (res.data.success) {
-            setNotice(res.data.message || 'Saved successfully.');
+            setNotice(res.data.message || 'Saved.');
           } else {
-            setError(res.data.message || 'Save failed.');
+            setError(res.data.message || 'Could not save — check the form and try again.');
           }
         } else {
           await loadForm(fields);
@@ -220,34 +220,36 @@ export default function AcademicSetupPage({
 
   if (!meta) {
     return (
-      <div className="p-4">
-        <p className="text-danger">Unknown academic screen.</p>
-        <Link to={hubPath}>Back</Link>
-      </div>
+      <SetupPageShell
+        settings={settings}
+        menu={menu}
+        title="Academic"
+        breadcrumbs={[
+          { label: 'Home', to: '/dashboard' },
+          { label: 'Academic', to: '/academic' },
+          { label: 'Setup', to: '/academic/setup' },
+          { label: 'Unknown' },
+        ]}
+        backTo="/academic/setup"
+      >
+        <p className="text-danger mb-0">Unknown academic screen.</p>
+      </SetupPageShell>
     );
   }
 
-  if (shellLoading && !settings) {
-    return <div className="p-4 text-muted">Loading...</div>;
-  }
-
   return (
-    <DashboardLayout settings={settings} dashboard={{ title: meta.title }} menu={menu}>
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb">
-          <li className="breadcrumb-item"><Link to="/dashboard">Home</Link></li>
-          <li className="breadcrumb-item"><Link to="/academic">Academic</Link></li>
-          <li className="breadcrumb-item"><Link to={hubPath}>{hubLabel}</Link></li>
-          <li className="breadcrumb-item active">{meta.title}</li>
-        </ol>
-      </nav>
-
-      <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <div>
-          <h3 className="dashboard-title mb-0">{meta.title}</h3>
-          <p className="text-muted small mb-0">Legacy: {meta.legacy}</p>
-        </div>
-        <div className="d-flex gap-2">
+    <SetupPageShell
+      settings={settings}
+      menu={menu}
+      title={meta.title}
+      breadcrumbs={[
+        { label: 'Home', to: '/dashboard' },
+        { label: 'Academic', to: '/academic' },
+        { label: hubLabel, to: hubPath },
+        { label: meta.title },
+      ]}
+      actions={(
+        <div className="d-flex gap-2 flex-wrap">
           {isReport && html && !NativeComponent && (
             <button type="button" className="btn btn-outline-primary btn-sm" onClick={printReport}>
               Print report
@@ -258,28 +260,26 @@ export default function AcademicSetupPage({
           )}
           <Link to={hubPath} className="btn btn-outline-secondary btn-sm">Back</Link>
         </div>
-      </div>
-
-      {notice && (
-        <div className="alert alert-success alert-dismissible fade show">
-          {notice}
-          <button type="button" className="btn-close" aria-label="Close" onClick={() => setNotice(null)} />
-        </div>
       )}
-      {error && <div className="alert alert-danger">{error}</div>}
-      {busy && <div className="text-muted small mb-2">Working…</div>}
-
-      <div className="card shadow-sm academic-setup-card">
-        <div className="card-body academic-setup-root" ref={containerRef}>
-          {NativeComponent ? (
-            <NativeComponent />
-          ) : html ? (
-            <div dangerouslySetInnerHTML={{ __html: html }} />
-          ) : (
-            !busy && <p className="text-muted mb-0">No form content returned.</p>
-          )}
-        </div>
-      </div>
-    </DashboardLayout>
+      alerts={(
+        <SetupAlerts
+          notice={notice}
+          error={error}
+          busy={busy}
+          onDismissNotice={() => setNotice(null)}
+        />
+      )}
+      cardClassName="cis-setup-card academic-setup-card"
+      rootClassName="cis-setup-root academic-setup-root"
+      bodyRef={containerRef}
+    >
+      {NativeComponent ? (
+        <NativeComponent />
+      ) : html ? (
+        <div dangerouslySetInnerHTML={{ __html: html }} />
+      ) : (
+        !busy && <p className="text-muted mb-0">No form content returned.</p>
+      )}
+    </SetupPageShell>
   );
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import ChipMultiSelect from '../../components/ChipMultiSelect';
 import DashboardLayout from '../../layouts/DashboardLayout';
@@ -37,8 +37,7 @@ function groupReportTypeOptions(options = []) {
 }
 
 export default function StipendPayrollReport() {
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [busyLabel, setBusyLabel] = useState('Loading…');
@@ -90,12 +89,6 @@ export default function StipendPayrollReport() {
   useEffect(() => {
     const init = async () => {
       try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
         await loadReport({}, { label: 'Loading stipend payroll report…' });
       } catch (err) {
         setError(err.message || 'Unable to initialize stipend payroll report');

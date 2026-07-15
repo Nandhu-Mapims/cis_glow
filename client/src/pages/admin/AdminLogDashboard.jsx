@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { useShellData } from '../../hooks/useShellData';
 import { Breadcrumbs } from '../../components/PageShell';
 import { printReportHtml } from '../../utils/printReport';
 
@@ -125,7 +124,7 @@ function mergeDashboardState(prev, next) {
 }
 
 export default function AdminLogDashboard() {
-  const { settings, menu, error: shellError } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [busy, setBusy] = useState(false);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -261,11 +260,7 @@ export default function AdminLogDashboard() {
           <div className="cis-dash-hero-copy">
             <h1 className="cis-dash-hero-title">Login Dashboard</h1>
             <p className="cis-dash-hero-subtitle">
-              Legacy:
-              {' '}
-              <code>log_dashboard.php</code>
-              {' '}
-              — active login counts and daily success/failure activity.
+              Active login counts and daily success/failure activity.
             </p>
             {data?.lastView && (
               <div className="cis-dash-hero-meta">
@@ -329,7 +324,7 @@ export default function AdminLogDashboard() {
             </div>
           </form>
 
-          {(error || shellError) && <div className="alert alert-danger mb-0">{error || shellError}</div>}
+          {error && <div className="alert alert-danger mb-0">{error}</div>}
           {busy && !data?.panels && (
             <div className="cis-dash-loading">
               <img src="/legacy/img/loading.gif" alt="" width="24" />

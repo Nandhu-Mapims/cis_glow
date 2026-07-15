@@ -1,9 +1,9 @@
+import { useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 import { STUDENT_HUB_LINKS } from './studentModuleMeta';
 
 export default function StudentHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   return (
     <ModuleHub
       title="Student"
@@ -13,9 +13,8 @@ export default function StudentHub() {
       dashboardTitle="Student Module"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
     />
   );
 }

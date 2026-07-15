@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import { useAuth } from '../../auth/AuthContext';
+import DashboardWidgetCard from '../../components/DashboardWidgetCard';
 import { Breadcrumbs, PageLoading } from '../../components/PageShell';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { getWidgetSlotClassName } from '../../utils/dashboardWidgetLayout';
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -22,14 +22,12 @@ function formatDisplayDate(iso) {
 export default function DashboardWidgetShell({
   shellPath,
   title,
-  legacy,
   breadcrumbLabel,
   showYearPickers = false,
 }) {
   const { user } = useAuth();
-  const [settings, setSettings] = useState(null);
+  const { settings, menu } = useOutletContext();
   const [shell, setShell] = useState(null);
-  const [menu, setMenu] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [attendanceDate, setAttendanceDate] = useState(todayIso());
@@ -102,22 +100,16 @@ export default function DashboardWidgetShell({
     const init = async () => {
       try {
         setLoadError(null);
-        const [settingsRes, menuRes, shellRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-          fetchShell(),
-        ]);
+        const shellRes = await fetchShell();
         if (cancelled) return;
 
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
         setShell(shellRes);
         const date = shellRes.attendanceDate || todayIso();
         setAttendanceDate(date);
         const years = shellRes.academicYears || {
-          ugr: settingsRes.data.ugAcademicYear || '',
-          uga: settingsRes.data.ugaAcademicYear || '',
-          pgr: settingsRes.data.pgAcademicYear || '',
+          ugr: settings?.ugAcademicYear || '',
+          uga: settings?.ugaAcademicYear || '',
+          pgr: settings?.pgAcademicYear || '',
         };
         setAcademicYears(years);
         setLoading(false);
@@ -193,15 +185,6 @@ export default function DashboardWidgetShell({
           <div className="cis-dash-hero-copy">
             <h1 className="cis-dash-hero-title">{title || shell?.title}</h1>
             <p className="cis-dash-hero-subtitle">
-              {legacy && (
-                <>
-                  Legacy:
-                  {' '}
-                  <code>{legacy}</code>
-                  .
-                  {' '}
-                </>
-              )}
               Review widgets for
               {' '}
               <strong>{formatDisplayDate(attendanceDate)}</strong>
@@ -399,53 +382,30 @@ export default function DashboardWidgetShell({
 
           {widgetLoading && widgetCount > 0 && (
             <div className="cis-dash-loading">
-              <img src="/legacy/img/loading.gif" alt="" width="24" />
-              Loading widget data…
+              <span className="cis-dash-loading-dot" aria-hidden="true" />
+              Loading panel data…
             </div>
           )}
 
-          <div className="row dashboard-widgets-row">
+          <div className={`cis-widget-grid${widgetLoading ? ' is-refreshing' : ''}`}>
             {(shell?.widgets || []).map((widget) => (
-              <div key={widget.id} className={getWidgetSlotClassName(widget.id)}>
-                {widgetHtml[widget.id] ? (
-                  <div
-                    className={`legacy-widget-root legacy-widget-root--${widget.id}`}
-                    dangerouslySetInnerHTML={{ __html: widgetHtml[widget.id] }}
-                  />
-                ) : (
-                  <div className="card dashboard-widget h-100">
-                    <div className="card-header dashboard-widget-header">
-                      <h5 className="mb-0">{widget.label}</h5>
-                    </div>
-                    <div className="card-body d-flex align-items-center justify-content-center text-muted">
-                      <div className="text-center small">
-                        {widgetLoading ? (
-                          <>
-                            <img src="/legacy/img/loading.gif" alt="Loading widget" width="32" className="mb-2" />
-                            <div>Loading…</div>
-                          </>
-                        ) : (
-                          'No data for this widget'
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <DashboardWidgetCard
+                key={widget.id}
+                widget={widget}
+                html={widgetHtml[widget.id]}
+                loading={widgetLoading}
+              />
             ))}
 
             {widgetCount === 0 && (
-              <div className="col-12">
+              <div className="cis-widget-grid-empty">
                 <div className="cis-dash-empty">
                   <div className="cis-dash-empty-icon">
                     <i className="fa fa-pie-chart" aria-hidden="true" />
                   </div>
-                  <h3 className="h5 mb-2">No widgets configured</h3>
+                  <h3 className="h5 mb-2">No panels assigned</h3>
                   <p className="text-muted mb-0">
-                    Ask an administrator to assign widgets in
-                    {' '}
-                    <code>dashboard_access</code>
-                    .
+                    Ask an administrator to assign widgets in Dashboard widget access.
                   </p>
                 </div>
               </div>

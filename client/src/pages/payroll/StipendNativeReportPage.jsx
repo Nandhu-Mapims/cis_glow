@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { buildAttendanceReportPrintHtml } from '../../utils/attendanceReportPrint';
@@ -16,8 +16,7 @@ export default function StipendNativeReportPage({
 }) {
   const isStatement = variant === 'statement';
 
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -49,12 +48,6 @@ export default function StipendNativeReportPage({
   useEffect(() => {
     const init = async () => {
       try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
         await loadReport();
       } catch (err) {
         setError(err.message || `Unable to initialize ${title.toLowerCase()}`);

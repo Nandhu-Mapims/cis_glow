@@ -3,6 +3,10 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '',
   withCredentials: true,
+  // Catches hung/dead connections. Known-heavy endpoints (PDF generation, bridge
+  // reports) already override this per-request with a longer timeout - see
+  // StipendIndividualPdfReport.jsx and useStaffAttSetupApi.js.
+  timeout: 30000,
 });
 
 api.interceptors.request.use((config) => {

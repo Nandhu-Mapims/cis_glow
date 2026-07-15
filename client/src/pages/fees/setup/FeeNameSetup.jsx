@@ -331,7 +331,7 @@ export default function FeeNameSetup() {
                           className="btn btn-sm btn-outline-danger"
                           onClick={() => setDeleteId(row.id)}
                         >
-                          <i className="bi bi-trash" />
+                          <i className="fa fa-trash" />
                         </button>
                       ) : null}
                     </td>

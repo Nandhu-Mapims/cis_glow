@@ -1,0 +1,93 @@
+// Minimal reboot — replaces what Bootstrap's reboot.css provided.
+// Kept intentionally small: the app's own tokens (theme.css) set color/font on <body>.
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--cis-text-body);
+  color: var(--cis-text);
+  background: var(--cis-bg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+p {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+ul, ol {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+}
+
+a {
+  color: var(--cis-primary);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--cis-primary-hover);
+    text-decoration: underline;
+  }
+}
+
+img, svg {
+  vertical-align: middle;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+button, input, optgroup, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+label {
+  display: inline-block;
+}
+
+hr {
+  margin: 1rem 0;
+  border: 0;
+  border-top: 1px solid var(--cis-border);
+  opacity: 1;
+}
+
+small, .small {
+  font-size: 0.8125em;
+}

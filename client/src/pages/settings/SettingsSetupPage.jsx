@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import api from '../../api/client';
-import { Breadcrumbs, PageHeader, PageLoading } from '../../components/PageShell';
-import DashboardLayout from '../../layouts/DashboardLayout';
+import { useOutletContext, useParams } from 'react-router-dom';
+import { SetupPageShell } from '../../components/PageShell';
+import SetupAlerts from '../../components/SetupAlerts';
 import { SETTINGS_SCREEN_META } from './settingsSetupMeta';
 import { useSettingsSetupApi } from './useSettingsSetupApi';
 import ApprovalSetup from './setup/ApprovalSetup';
@@ -44,9 +43,8 @@ export default function SettingsSetupPage({ screen: screenProp, initialFields = 
   const meta = SETTINGS_SCREEN_META[screen];
   const initialFieldsRef = useRef(initialFields);
 
-  const { data, busy, error, notice, setError, load, save } = useSettingsSetupApi(screen);
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { data, busy, error, notice, setError, setNotice, load, save } = useSettingsSetupApi(screen);
+  const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,12 +54,6 @@ export default function SettingsSetupPage({ screen: screenProp, initialFields = 
         return;
       }
       try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
         await load(initialFieldsRef.current || {});
         initialFieldsRef.current = null;
       } finally {
@@ -83,55 +75,59 @@ export default function SettingsSetupPage({ screen: screenProp, initialFields = 
 
   if (!meta) {
     return (
-      <div className="p-4">
-        <p className="text-danger">Unknown settings screen.</p>
-        <Link to="/settings/setup">Back</Link>
-      </div>
+      <SetupPageShell
+        settings={settings}
+        menu={menu}
+        title="Settings"
+        breadcrumbs={[
+          { label: 'Home', to: '/dashboard' },
+          { label: 'Settings', to: '/settings' },
+          { label: 'Setup', to: '/settings/setup' },
+          { label: 'Unknown' },
+        ]}
+        backTo="/settings/setup"
+      >
+        <p className="text-danger mb-0">Unknown settings screen.</p>
+      </SetupPageShell>
     );
-  }
-
-  if (loading) {
-    return <PageLoading />;
   }
 
   const SetupComponent = SETUP_COMPONENTS[screen];
 
   return (
-    <DashboardLayout settings={settings} dashboard={{ title: meta.title }} menu={menu}>
-      <div className="cis-page">
-        <Breadcrumbs
-          items={[
-            { label: 'Home', to: '/dashboard' },
-            { label: 'Settings', to: '/settings' },
-            { label: 'Setup', to: '/settings/setup' },
-            { label: meta.title },
-          ]}
+    <SetupPageShell
+      settings={settings}
+      menu={menu}
+      title={meta.title}
+      breadcrumbs={[
+        { label: 'Home', to: '/dashboard' },
+        { label: 'Settings', to: '/settings' },
+        { label: 'Setup', to: '/settings/setup' },
+        { label: meta.title },
+      ]}
+      backTo="/settings/setup"
+      loading={loading}
+      alerts={(
+        <SetupAlerts
+          notice={notice}
+          error={error}
+          busy={busy}
+          onDismissNotice={setNotice ? () => setNotice(null) : undefined}
         />
-
-        <PageHeader
-          title={meta.title}
-          subtitle={`Legacy reference: ${meta.legacy}`}
-          actions={<Link to="/settings/setup" className="btn btn-outline-secondary btn-sm">Back</Link>}
+      )}
+      cardClassName="cis-setup-card admin-setup-card"
+      rootClassName="cis-setup-root admin-setup-root admin-native-root"
+    >
+      {SetupComponent ? (
+        <SetupComponent
+          data={data}
+          busy={busy}
+          onLoad={handleLoad}
+          onSave={handleSave}
         />
-
-        {notice && <div className="alert alert-success">{notice}</div>}
-        {error && <div className="alert alert-danger">{error}</div>}
-
-        <div className="card admin-setup-card">
-          <div className="card-body admin-setup-root admin-native-root">
-            {SetupComponent ? (
-              <SetupComponent
-                data={data}
-                busy={busy}
-                onLoad={handleLoad}
-                onSave={handleSave}
-              />
-            ) : (
-              <p className="text-muted mb-0">No native form available for this screen.</p>
-            )}
-          </div>
-        </div>
-      </div>
-    </DashboardLayout>
+      ) : (
+        <p className="text-muted mb-0">No form available for this screen.</p>
+      )}
+    </SetupPageShell>
   );
 }

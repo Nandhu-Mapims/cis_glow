@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { useShellData } from '../../hooks/useShellData';
 import { buildExamDashboardPrintHtml } from '../../utils/examDashboardPrint';
 import { printReportHtml } from '../../utils/printReport';
 import './ExamSetupPage.css';
@@ -41,7 +40,7 @@ function writeSessionCache(payload) {
 }
 
 export default function ExamDashboard() {
-  const { settings, menu } = useShellData();
+  const { settings, menu } = useOutletContext();
   const initialCache = readSessionCache();
   const [busy, setBusy] = useState(!initialCache?.html);
   const [error, setError] = useState(null);
@@ -113,7 +112,6 @@ export default function ExamDashboard() {
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
           <h3 className="dashboard-title mb-0">Exam Dashboard</h3>
-          <p className="text-muted small mb-0">Legacy: exam_dashboard.php</p>
         </div>
         <div className="d-flex gap-2">
           {html && (

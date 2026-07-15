@@ -70,8 +70,6 @@ export function applyThemeToDocument(themeId, sidebarMode, customColors = DEFAUL
     root.style.setProperty(key, value);
   });
 
-  root.style.setProperty('--bs-primary', vars['--cis-primary']);
-
   Object.entries(SIDEBAR_MODES[mode]).forEach(([key, value]) => {
     root.style.setProperty(key, value);
   });

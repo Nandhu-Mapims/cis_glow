@@ -129,8 +129,8 @@ export default function PromotePanel({ data, busy, onReload, onPromote }) {
       )}
 
       {promotion?.rows?.length > 0 && (
-        <div className="table-responsive mb-3">
-          <table className="table table-bordered table-sm align-middle">
+        <div className="table-responsive cis-dt-wrap mb-3">
+          <table className="cis-dt-table table-sm align-middle">
             <thead>
               <tr>
                 <th>Promote</th>

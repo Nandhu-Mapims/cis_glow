@@ -127,7 +127,7 @@ export async function saveTransportSetupSetup(payload, memberId, audit = {}) {
   if (payload.action === 'delete') {
     await prisma.$executeRawUnsafe(
       `UPDATE staff_transport_setup_tb SET del = 0,
-        updated_dt = NOW(), updated_ip = '${update.updated_ip}', updated_by = '${update.updated_by}'
+        updated_dt = NOW(), updated_ip = '${escapeSql(update.updated_ip)}', updated_by = '${escapeSql(update.updated_by)}'
        WHERE staff_id = '${staffKey}' AND del = 1`,
     );
     await logStaffModule(PAGE, 'Delete', 'Successful', staffKey, memberId, audit);
@@ -146,7 +146,7 @@ export async function saveTransportSetupSetup(payload, memberId, audit = {}) {
       if (row.id) {
         await prisma.$executeRawUnsafe(
           `UPDATE staff_transport_setup_tb SET del = 0,
-            updated_dt = NOW(), updated_ip = '${update.updated_ip}', updated_by = '${update.updated_by}'
+            updated_dt = NOW(), updated_ip = '${escapeSql(update.updated_ip)}', updated_by = '${escapeSql(update.updated_by)}'
            WHERE id = ${Number(row.id)}`,
         );
       }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { printReportHtml } from '../../utils/printReport';
@@ -16,8 +16,7 @@ import {
 
 export default function PayrollIndividualBundle() {
   const reportRef = useRef(null);
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [busyLabel, setBusyLabel] = useState('Loading…');
@@ -65,12 +64,6 @@ export default function PayrollIndividualBundle() {
   useEffect(() => {
     const init = async () => {
       try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
         await loadReport({}, { label: 'Loading bundle report…' });
       } catch (err) {
         setError(err.message || 'Unable to initialize payroll bundle report');
@@ -110,7 +103,6 @@ export default function PayrollIndividualBundle() {
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
           <h3 className="dashboard-title mb-0">Payroll Individual Bundle</h3>
-          <p className="text-muted small mb-0">Legacy: payroll_individual_report1.php</p>
         </div>
         <div className="d-flex gap-2">
           {data?.reportHtml && !busy && (

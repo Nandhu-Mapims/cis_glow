@@ -24,21 +24,21 @@ export const STUDENT_CORE_LINKS = [
 
 export const STUDENT_SCREEN_META = {
   'temp-admission-add': {
-    title: 'Student Admission — Add',
+    title: 'Provisional Admission — New',
     legacy: 'student_profile_temp_add.php',
     type: 'temp-form',
     hubSection: 'Admission',
     icon: 'fa fa-plus-circle',
   },
   'temp-admission-edit': {
-    title: 'Student Admission — Edit',
+    title: 'Provisional Admission — Edit',
     legacy: 'student_profile_temp_edit.php',
     type: 'temp-form-search',
     hubSection: 'Admission',
     icon: 'fa fa-pencil-square-o',
   },
   'temp-affidavit': {
-    title: 'Student Admission — Print',
+    title: 'Provisional Admission — Affidavit',
     legacy: 'student_profile_temp_affidavit.php',
     type: 'application-report',
     hubSection: 'Admission',
@@ -103,7 +103,7 @@ export const STUDENT_SCREEN_META = {
   'address-label': {
     title: 'Address Label',
     legacy: 'student_address.php',
-    type: 'student-search-report',
+    type: 'address-label',
     hubSection: 'Documents & ID',
     icon: 'fa fa-map-marker',
   },

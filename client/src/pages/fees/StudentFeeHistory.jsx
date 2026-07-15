@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 import api from '../../api/client';
-import { useShellData } from '../../hooks/useShellData';
 import { printReportHtml } from '../../utils/printReport';
 import { FEE_SCREEN_META } from './feeModuleMeta';
 import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
@@ -11,7 +10,7 @@ const META = FEE_SCREEN_META.history;
 
 export default function StudentFeeHistory() {
   const [searchParams] = useSearchParams();
-  const { settings, menu, loading: shellLoading, error: shellError, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [searching, setSearching] = useState(false);
   const [registerNo, setRegisterNo] = useState(() => searchParams.get('registerNo') || '');
   const [error, setError] = useState(null);
@@ -33,7 +32,7 @@ export default function StudentFeeHistory() {
 
   useEffect(() => {
     const roll = searchParams.get('registerNo');
-    if (!shellLoading && roll && !data && !searching) {
+    if (roll && !data && !searching) {
       setRegisterNo(roll);
       setSearching(true);
       api.get(`/api/fees/students/${encodeURIComponent(roll)}/history`)
@@ -41,7 +40,7 @@ export default function StudentFeeHistory() {
         .catch((err) => setError(err.response?.data?.message || 'Unable to load fee history'))
         .finally(() => setSearching(false));
     }
-  }, [shellLoading, searchParams, data, searching]);
+  }, [searchParams, data, searching]);
 
   const search = async (e) => {
     e.preventDefault();
@@ -67,9 +66,8 @@ export default function StudentFeeHistory() {
     <FeePageShell
       settings={settings}
       menu={menu}
-      loading={shellLoading}
-      error={shellError}
-      onRetry={reload}
+      loading={false}
+      error={null}
       breadcrumbs={feeScreenBreadcrumbs('history')}
       title={META.title}
       legacy={META.legacy}

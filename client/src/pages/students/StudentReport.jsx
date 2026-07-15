@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
-import { useShellData } from '../../hooks/useShellData';
+import { FormActionBar, FormSection } from '../../components/FormShell';
 import { extractReportBodyHtml, printReportHtml } from '../../utils/printReport';
 import StudentPageShell, { STUDENT_BREADCRUMB_HUB } from './StudentPageShell';
 
 export default function StudentReport() {
-  const { settings, menu, loading: shellLoading, error: shellError, reload: reloadShell } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [fieldGroups, setFieldGroups] = useState([]);
   const [filters, setFilters] = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
@@ -23,7 +23,7 @@ export default function StudentReport() {
   const [discontinued, setDiscontinued] = useState('Regular');
   const [selectedFields, setSelectedFields] = useState([]);
   const [customField, setCustomField] = useState('');
-  const [expandedGroup, setExpandedGroup] = useState(null);
+  const [fieldFilter, setFieldFilter] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -58,6 +58,13 @@ export default function StudentReport() {
       });
       return next;
     });
+  };
+
+  const toggleField = (field) => {
+    setError(null);
+    setSelectedFields((prev) => (
+      prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
+    ));
   };
 
   const removeField = (index) => {
@@ -133,7 +140,6 @@ export default function StudentReport() {
 
   const pageAlerts = (
     <>
-      {shellError && <div className="alert alert-warning mb-0">{shellError}</div>}
       {error && <div className="alert alert-danger mb-0">{error}</div>}
     </>
   );
@@ -142,9 +148,8 @@ export default function StudentReport() {
     <StudentPageShell
       settings={settings}
       menu={menu}
-      loading={shellLoading || dataLoading}
-      error={shellError && !settings ? shellError : null}
-      onRetry={reloadShell}
+      loading={dataLoading}
+      error={null}
       dashboardTitle="Student Report"
       breadcrumbs={[
         { label: 'Home', to: '/dashboard' },
@@ -156,246 +161,255 @@ export default function StudentReport() {
       actions={(
         <Link to="/students/hub" className="btn btn-outline-secondary btn-sm">Module Hub</Link>
       )}
-      notice={(shellError && settings) || error ? pageAlerts : null}
+      notice={error ? pageAlerts : null}
     >
       <div className="cis-student-report-page student-report-page">
-        <section className="card cis-student-screen-card mb-3">
-          <div className="card-header">Filter</div>
-          <div className="card-body">
-            <div className="row g-3">
-              <div className="col-md-6">
-                <label className="form-label">Course</label>
-                <select
-                  className="form-select"
-                  value={courseName}
-                  onChange={(e) => setCourseName(e.target.value)}
-                >
-                  {(filters?.courseOptions || []).map((opt) => (
+        <FormSection
+          id="report-scope"
+          title="Report scope"
+          description="Choose which cohort of students the report should cover."
+        >
+          <div className="col-md-6">
+            <label className="form-label">Course</label>
+            <select
+              className="form-select"
+              value={courseName}
+              onChange={(e) => setCourseName(e.target.value)}
+            >
+              {(filters?.courseOptions || []).map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+              {(filters?.groupedCourses || []).map((group) => (
+                <optgroup key={group.courseName} label={group.courseName}>
+                  {group.options.map((opt) => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
-                  {(filters?.groupedCourses || []).map((group) => (
-                    <optgroup key={group.courseName} label={group.courseName}>
-                      {group.options.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-              </div>
+                </optgroup>
+              ))}
+            </select>
+          </div>
 
-              <div className="col-md-6">
-                <label className="form-label">Search by</label>
-                <div>
-                  <label className="me-3">
-                    <input
-                      type="radio"
-                      name="searchBy"
-                      value="batch"
-                      checked={searchBy === 'batch'}
-                      onChange={() => {
-                        setSearchBy('batch');
-                        setAcademicYear('All');
-                      }}
-                    />
-                    {' '}Batch
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name="searchBy"
-                      value="year"
-                      checked={searchBy === 'year'}
-                      onChange={() => {
-                        setSearchBy('year');
-                        setAcademicYear('All___');
-                      }}
-                    />
-                    {' '}Year
-                  </label>
-                </div>
-              </div>
+          <div className="col-md-6">
+            <label className="form-label">Search by</label>
+            <div className="d-flex flex-wrap gap-3 pt-1">
+              <label className="d-inline-flex align-items-center gap-2">
+                <input
+                  type="radio"
+                  name="searchBy"
+                  value="batch"
+                  checked={searchBy === 'batch'}
+                  onChange={() => {
+                    setSearchBy('batch');
+                    setAcademicYear('All');
+                  }}
+                />
+                Batch
+              </label>
+              <label className="d-inline-flex align-items-center gap-2">
+                <input
+                  type="radio"
+                  name="searchBy"
+                  value="year"
+                  checked={searchBy === 'year'}
+                  onChange={() => {
+                    setSearchBy('year');
+                    setAcademicYear('All___');
+                  }}
+                />
+                Year
+              </label>
+            </div>
+          </div>
 
-              <div className="col-md-6">
-                <label className="form-label">{searchBy === 'year' ? 'Year' : 'Batch'}</label>
-                <select
-                  className="form-select"
-                  value={academicYear}
-                  onChange={(e) => setAcademicYear(e.target.value)}
-                >
-                  {(searchBy === 'year' ? filters?.yearOptions : filters?.batchOptions || []).map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
+          <div className="col-md-6">
+            <label className="form-label">{searchBy === 'year' ? 'Year' : 'Batch'}</label>
+            <select
+              className="form-select"
+              value={academicYear}
+              onChange={(e) => setAcademicYear(e.target.value)}
+            >
+              {(searchBy === 'year' ? filters?.yearOptions : filters?.batchOptions || []).map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
 
-              <div className="col-md-6">
-                <label className="form-label">Title</label>
+          <div className="col-md-6">
+            <label className="form-label">Show</label>
+            <div className="d-flex flex-wrap gap-3 pt-1">
+              {['Regular', 'Discontinue', 'All'].map((value) => (
+                <label key={value} className="d-inline-flex align-items-center gap-2">
+                  <input
+                    type="radio"
+                    name="discontinued"
+                    value={value}
+                    checked={discontinued === value}
+                    onChange={() => setDiscontinued(value)}
+                  />
+                  {value}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="col-md-6">
+            <label className="form-label">Report title</label>
+            <input
+              className="form-control"
+              placeholder="Optional heading shown on the printout"
+              value={reportTitle}
+              onChange={(e) => setReportTitle(e.target.value)}
+            />
+          </div>
+
+          <div className="col-md-6">
+            <label className="form-label">Print options</label>
+            <div className="d-flex flex-wrap gap-3 pt-1">
+              <label className="d-inline-flex align-items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showHeader}
+                  onChange={(e) => setShowHeader(e.target.checked)}
+                />
+                College header
+              </label>
+              <label className="d-inline-flex align-items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showSerialNo}
+                  onChange={(e) => setShowSerialNo(e.target.checked)}
+                />
+                Serial no. column
+              </label>
+            </div>
+          </div>
+        </FormSection>
+
+        <FormSection
+          id="report-fields"
+          title="Choose columns"
+          description="Tick the details you want in the report. Reorder them on the right."
+          grid={false}
+        >
+          <div className="cis-report-picker">
+            <div className="cis-report-picker-list">
+              <div className="cis-report-search">
                 <input
                   className="form-control"
-                  value={reportTitle}
-                  onChange={(e) => setReportTitle(e.target.value)}
+                  placeholder="Search fields…"
+                  value={fieldFilter}
+                  onChange={(e) => setFieldFilter(e.target.value)}
                 />
               </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Options</label>
-                <div className="d-flex flex-wrap gap-3">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={showHeader}
-                      onChange={(e) => setShowHeader(e.target.checked)}
-                    />
-                    {' '}Header
-                  </label>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={showSerialNo}
-                      onChange={(e) => setShowSerialNo(e.target.checked)}
-                    />
-                    {' '}S.No.
-                  </label>
-                </div>
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Show</label>
-                <div className="d-flex flex-wrap gap-3">
-                  {['Regular', 'Discontinue', 'All'].map((value) => (
-                    <label key={value}>
-                      <input
-                        type="radio"
-                        name="discontinued"
-                        value={value}
-                        checked={discontinued === value}
-                        onChange={() => setDiscontinued(value)}
-                      />
-                      {' '}{value}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-3 d-flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="btn btn-primary"
-                disabled={generating}
-                onClick={() => generateReport('html')}
-              >
-                {generating ? 'Generating…' : 'Print'}
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                disabled={generating}
-                onClick={() => generateReport('xls')}
-              >
-                Export XLS
-              </button>
-              <button type="button" className="btn btn-outline-secondary" onClick={clearFields}>
-                Clear fields
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <div className="row g-3">
-          <div className="col-lg-8">
-            <section className="card cis-student-screen-card">
-              <div className="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <span>Select required fields</span>
-                <div className="d-flex gap-2">
-                  <input
-                    className="form-control form-control-sm"
-                    placeholder="Custom field name"
-                    value={customField}
-                    onChange={(e) => setCustomField(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-primary"
-                    onClick={() => {
-                      addField(customField);
-                      setCustomField('');
-                    }}
-                  >
-                    Add
-                  </button>
-                </div>
-              </div>
-              <div className="card-body report-field-catalog">
-                {fieldGroups.map((group) => (
-                  <div key={group.name} className="report-field-group">
-                    <button
-                      type="button"
-                      className="report-field-group-title"
-                      onClick={() => setExpandedGroup(expandedGroup === group.name ? null : group.name)}
-                    >
-                      {group.name}
-                      <span className="ms-2 text-white-50 small">({group.fields.length})</span>
-                    </button>
-                    {expandedGroup === group.name && (
-                      <div className="report-field-group-actions">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-primary mb-2"
-                          onClick={() => addGroupFields(group)}
-                        >
-                          Add all
-                        </button>
-                        <div className="report-field-list">
-                          {group.fields.map((field) => (
-                            <button
-                              key={field}
-                              type="button"
-                              className="report-field-chip"
-                              onClick={() => addField(field)}
-                            >
-                              {field}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-
-          <div className="col-lg-4">
-            <section className="card cis-student-screen-card">
-              <div className="card-header">Selected fields ({selectedFields.length})</div>
-              <div className="card-body">
-                {selectedFields.length === 0 ? (
-                  <p className="text-muted mb-0">Place your fields here.</p>
-                ) : (
-                  <ol className="report-selected-fields">
-                    {selectedFields.map((field, index) => (
-                      <li key={`${field}-${index}`}>
-                        <span>{field}</span>
-                        <span className="report-selected-actions">
-                          <button type="button" onClick={() => moveField(index, -1)} disabled={index === 0}>↑</button>
+              <div className="cis-report-checklist">
+                {(() => {
+                  const q = fieldFilter.trim().toLowerCase();
+                  const groups = fieldGroups
+                    .map((g) => ({
+                      ...g,
+                      shown: q ? g.fields.filter((f) => f.toLowerCase().includes(q)) : g.fields,
+                    }))
+                    .filter((g) => g.shown.length);
+                  if (!groups.length) {
+                    return <p className="text-muted small mb-0 px-1">No fields match “{fieldFilter}”.</p>;
+                  }
+                  return groups.map((group) => {
+                    const allIn = group.fields.every((f) => selectedFields.includes(f));
+                    return (
+                      <div key={group.name} className="cis-report-group">
+                        <div className="cis-report-group-head">
+                          <span>{group.name}</span>
                           <button
                             type="button"
-                            onClick={() => moveField(index, 1)}
-                            disabled={index === selectedFields.length - 1}
+                            className="btn btn-sm btn-link p-0"
+                            onClick={() => (allIn
+                              ? setSelectedFields((prev) => prev.filter((f) => !group.fields.includes(f)))
+                              : addGroupFields(group))}
                           >
-                            ↓
+                            {allIn ? 'Clear group' : 'Select all'}
                           </button>
-                          <button type="button" onClick={() => removeField(index)}>×</button>
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
+                        </div>
+                        {group.shown.map((field) => (
+                          <label key={field} className="cis-report-check">
+                            <input
+                              type="checkbox"
+                              checked={selectedFields.includes(field)}
+                              onChange={() => toggleField(field)}
+                            />
+                            <span>{field}</span>
+                          </label>
+                        ))}
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+              <div className="cis-report-custom mt-2">
+                <input
+                  className="form-control form-control-sm"
+                  placeholder="Add a custom field…"
+                  value={customField}
+                  onChange={(e) => setCustomField(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addField(customField);
+                      setCustomField('');
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={() => {
+                    addField(customField);
+                    setCustomField('');
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            <div className="cis-report-picker-order">
+              <div className="cis-report-order-head">
+                <span>Report columns ({selectedFields.length})</span>
+                {selectedFields.length > 0 && (
+                  <button type="button" className="btn btn-sm btn-link text-danger p-0" onClick={clearFields}>
+                    Clear all
+                  </button>
                 )}
               </div>
-            </section>
+              {selectedFields.length === 0 ? (
+                <div className="cis-report-empty">
+                  <span className="cis-report-empty-icon" aria-hidden="true">▤</span>
+                  <p className="mb-0">No columns yet — tick fields on the left.</p>
+                </div>
+              ) : (
+                <ol className="report-selected-fields">
+                  {selectedFields.map((field, index) => (
+                    <li key={`${field}-${index}`}>
+                      <span className="report-selected-index">{index + 1}</span>
+                      <span className="report-selected-name">{field}</span>
+                      <span className="report-selected-actions">
+                        <button type="button" title="Move up" onClick={() => moveField(index, -1)} disabled={index === 0}>↑</button>
+                        <button
+                          type="button"
+                          title="Move down"
+                          onClick={() => moveField(index, 1)}
+                          disabled={index === selectedFields.length - 1}
+                        >
+                          ↓
+                        </button>
+                        <button type="button" title="Remove" onClick={() => removeField(index)}>×</button>
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
           </div>
-        </div>
+        </FormSection>
 
         {previewHtml && (
           <section className="card cis-student-report-output mt-3">
@@ -409,6 +423,32 @@ export default function StudentReport() {
             </div>
           </section>
         )}
+
+        <FormActionBar
+          note={selectedFields.length === 0
+            ? 'Select at least one field to generate a report.'
+            : `${selectedFields.length} column${selectedFields.length === 1 ? '' : 's'} selected`}
+        >
+          <button type="button" className="btn btn-outline-secondary" onClick={clearFields}>
+            Clear fields
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline-primary"
+            disabled={generating}
+            onClick={() => generateReport('xls')}
+          >
+            Export XLS
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={generating}
+            onClick={() => generateReport('html')}
+          >
+            {generating ? 'Generating…' : 'Print report'}
+          </button>
+        </FormActionBar>
       </div>
     </StudentPageShell>
   );

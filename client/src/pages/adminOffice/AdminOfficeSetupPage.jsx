@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import api from '../../api/client';
+import { Link, useOutletContext, useParams } from 'react-router-dom';
 import { Breadcrumbs, PageHeader, PageLoading } from '../../components/PageShell';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { ADMIN_OFFICE_SCREEN_META } from './adminOfficeSetupMeta';
@@ -33,8 +32,7 @@ export default function AdminOfficeSetupPage() {
   const { screen } = useParams();
   const meta = ADMIN_OFFICE_SCREEN_META[screen];
   const { data, busy, error, notice, setError, load, save } = useAdminOfficeSetupApi(screen);
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,12 +42,6 @@ export default function AdminOfficeSetupPage() {
         return;
       }
       try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
         await load();
       } finally {
         setLoading(false);

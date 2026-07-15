@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
-import { useShellData } from '../../hooks/useShellData';
 import { printReportHtml } from '../../utils/printReport';
 import { FEE_SCREEN_META } from './feeModuleMeta';
 import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
@@ -86,7 +86,7 @@ function FeeDashboardSkeleton() {
 }
 
 export default function FeeDashboard() {
-  const { settings, menu, loading: shellLoading, error: shellError, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
   const [attendanceDate, setAttendanceDate] = useState(todayIso);
@@ -208,23 +208,20 @@ export default function FeeDashboard() {
   }, []);
 
   useEffect(() => {
-    if (!shellLoading) {
-      const initialDate = todayIso();
-      const cached = readSessionCache(initialDate);
-      loadDashboard(initialDate, { showSpinner: !cached?.html });
-    }
+    const initialDate = todayIso();
+    const cached = readSessionCache(initialDate);
+    loadDashboard(initialDate, { showSpinner: !cached?.html });
     return () => {
       requestIdRef.current += 1;
     };
-  }, [shellLoading, loadDashboard]);
+  }, [loadDashboard]);
 
   return (
     <FeePageShell
       settings={settings}
       menu={menu}
-      loading={shellLoading}
-      error={shellError}
-      onRetry={reload}
+      loading={false}
+      error={null}
       dashboardTitle={META.title}
       breadcrumbs={feeScreenBreadcrumbs('dashboard')}
       title={META.title}
@@ -258,7 +255,7 @@ export default function FeeDashboard() {
         </div>
       </form>
 
-      {(error || shellError) && <div className="alert alert-danger">{error || shellError}</div>}
+      {error && <div className="alert alert-danger">{error}</div>}
 
       <div className={`cis-fee-dashboard-body ${generating ? 'is-loading' : ''}`}>
         {generating && html && (

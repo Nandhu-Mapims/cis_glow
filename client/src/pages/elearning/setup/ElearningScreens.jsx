@@ -1,24 +1,18 @@
 import { useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import api from '../../../api/client';
 import { Breadcrumbs, PageHeader, PageLoading } from '../../../components/PageShell';
 import DashboardLayout from '../../../layouts/DashboardLayout';
 
 export function ElearnDashboardPage() {
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [data, setData] = useState(null);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(true);
 
   const load = async (d = date) => {
     setLoading(true);
-    const [settingsRes, menuRes, dashRes] = await Promise.all([
-      api.get('/api/settings/basic'),
-      api.get('/api/menu'),
-      api.get('/api/elearning/dashboard', { params: { date: d } }),
-    ]);
-    setSettings(settingsRes.data);
-    setMenu(menuRes.data.menu || []);
+    const dashRes = await api.get('/api/elearning/dashboard', { params: { date: d } });
     setData(dashRes.data);
     setLoading(false);
   };
@@ -30,7 +24,7 @@ export function ElearnDashboardPage() {
   return (
     <DashboardLayout settings={settings} menu={menu}>
       <Breadcrumbs items={[{ label: 'Home', to: '/dashboard' }, { label: 'E-Learning', to: '/elearning' }, { label: 'Dashboard' }]} />
-      <PageHeader title="E-Learning Dashboard" subtitle="Legacy: elearn_dashboard.php" />
+      <PageHeader title="E-Learning Dashboard" />
       <form className="row g-2 mb-3" onSubmit={(e) => { e.preventDefault(); load(date); }}>
         <div className="col-md-4"><input type="date" className="form-control" value={date} onChange={(e) => setDate(e.target.value)} /></div>
         <div className="col-md-2"><button className="btn btn-info" type="submit">Refresh</button></div>

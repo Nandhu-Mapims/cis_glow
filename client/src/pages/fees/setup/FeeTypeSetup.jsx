@@ -95,7 +95,7 @@ export default function FeeTypeSetup() {
                 <td>
                   {row.id ? (
                     <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setDeleteId(row.id)}>
-                      <i className="bi bi-trash" />
+                      <i className="fa fa-trash" />
                     </button>
                   ) : null}
                 </td>

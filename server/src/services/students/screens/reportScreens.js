@@ -26,6 +26,10 @@ import {
   parseAlumniIdCardOptions,
 } from '../alumniIdCard.js';
 import { getStudentAttachmentCatalog } from '../studentAttachments.js';
+import {
+  buildAddressLabelFilterOptions,
+  generateAddressLabelReport,
+} from '../addressLabel.js';
 
 async function studentsForReport(fields, memberId, page, audit) {
   const students = await resolveStudentFilter(fields);
@@ -83,23 +87,56 @@ export async function loadPhotoEmptyScreen(memberId, fields = {}, audit = {}) {
 }
 
 export async function loadAddressLabelScreen(memberId, fields = {}, audit = {}) {
-  const lookups = await loadStudentLookups();
-  if (!fields.Submit && !fields.search_by) {
+  const [lookups, filterOptions] = await Promise.all([
+    loadStudentLookups(),
+    buildAddressLabelFilterOptions(),
+  ]);
+  const submitted = Boolean(fields.Submit || fields.search_course || fields.search_year);
+  if (!submitted) {
     await logStudentModule('student_address.php', 'View', 'Successful', '', memberId, audit);
-    return { ...lookups, reportHtml: null };
+    return {
+      ...lookups,
+      ...filterOptions,
+      filters: {
+        search_by: 'batch',
+        display_opt: 'Regular',
+        search_course: [],
+        search_year: [],
+      },
+      reportHtml: null,
+      count: 0,
+    };
   }
-  const students = await studentsForReport(fields, memberId, 'student_address.php', audit);
-  const labels = students.map((s) => {
-    const lines = [
-      `<strong>${escapeHtml(formatStudentName(s))}</strong>`,
-      escapeHtml([s.door_no, s.street].filter(Boolean).join(', ')),
-      escapeHtml([s.post, s.taluk].filter(Boolean).join(', ')),
-      escapeHtml([s.district, s.state, s.pincode].filter(Boolean).join(' - ')),
-      `Reg: ${escapeHtml(s.register_no)}`,
-    ].filter((l) => l && l !== 'Reg: ').join('<br/>');
-    return `<div class="border p-3 m-2 d-inline-block" style="width:280px;min-height:120px">${lines}</div>`;
-  });
-  return { ...lookups, count: students.length, reportHtml: wrapReportHtml('Address Labels', labels.join('') || '<p>No students found.</p>') };
+
+  const report = await generateAddressLabelReport(fields);
+  if (!audit?.skipLog) {
+    await logStudentModule(
+      'student_address.php',
+      'Generate',
+      'Successful',
+      String(report.count || 0),
+      memberId,
+      audit,
+    );
+  }
+  return {
+    ...lookups,
+    ...filterOptions,
+    filters: {
+      search_by: fields.search_by === 'year' ? 'year' : 'batch',
+      display_opt: ['Regular', 'Discontinue', 'All'].includes(fields.display_opt)
+        ? fields.display_opt
+        : 'Regular',
+      search_course: Array.isArray(fields.search_course)
+        ? fields.search_course
+        : (fields.search_course ? [fields.search_course] : []),
+      search_year: Array.isArray(fields.search_year)
+        ? fields.search_year
+        : (fields.search_year ? [fields.search_year] : []),
+    },
+    count: report.count,
+    reportHtml: report.reportHtml,
+  };
 }
 
 export async function loadAttachmentsReportScreen(memberId, fields = {}, audit = {}) {
@@ -117,17 +154,20 @@ export async function loadAttachmentsReportScreen(memberId, fields = {}, audit =
   }
   sql += ' ORDER BY A.register_no ASC LIMIT 500';
   const students = await prisma.$queryRawUnsafe(sql);
-  const rows = [];
-  for (const s of students) {
-    const att = await prisma.$queryRawUnsafe(
-      `SELECT COUNT(*) AS c FROM student_attachment_tb WHERE del=1 AND s_id=${Number(s.id)} AND attach_file!=''`,
-    );
-    rows.push([
-      escapeHtml(s.register_no),
-      escapeHtml(formatStudentName(s)),
-      escapeHtml(String(att[0]?.c || 0)),
-    ]);
-  }
+  const studentIds = students.map((s) => Number(s.id)).filter((id) => Number.isInteger(id));
+  const attachmentCounts = studentIds.length
+    ? await prisma.$queryRawUnsafe(
+      `SELECT s_id, COUNT(*) AS c FROM student_attachment_tb
+       WHERE del=1 AND attach_file != '' AND s_id IN (${studentIds.join(',')})
+       GROUP BY s_id`,
+    )
+    : [];
+  const countsById = new Map(attachmentCounts.map((r) => [Number(r.s_id), Number(r.c)]));
+  const rows = students.map((s) => [
+    escapeHtml(s.register_no),
+    escapeHtml(formatStudentName(s)),
+    escapeHtml(String(countsById.get(Number(s.id)) || 0)),
+  ]);
   await logStudentModule('student_attachments_report.php', 'Generate', 'Successful', String(rows.length), memberId, audit);
   return { ...lookups, reportHtml: wrapReportHtml('Student Attachments Report', tableHtml(['Register No', 'Name', 'Files'], rows)) };
 }
@@ -248,7 +288,7 @@ async function buildAlumniReportTableRows(where) {
   if (courseIds.length) {
     const courses = await prisma.$queryRawUnsafe(
       `SELECT id, degree_name, department_name
-       FROM basic_setup_course_tb WHERE del=1 AND id IN (${courseIds.join(',')})`,
+       FROM basic_setup_course_tb WHERE del=1 AND id IN (${courseIds.map((id) => `'${escapeSql(id)}'`).join(',')})`,
     );
     for (const course of courses) {
       const deptName = String(course.department_name || '').trim();

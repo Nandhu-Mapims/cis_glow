@@ -1,3 +1,5 @@
+import { FormSection } from '../../components/FormShell';
+
 export function readFileAsBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -9,9 +11,9 @@ export function readFileAsBase64(file) {
 
 export function Field({ label, value }) {
   return (
-    <div className="col-md-4 mb-3">
-      <div className="text-muted small">{label}</div>
-      <div>{value || '—'}</div>
+    <div className="col-md-4">
+      <div className="cis-view-label">{label}</div>
+      <div className="cis-view-value">{value || '—'}</div>
     </div>
   );
 }
@@ -185,10 +187,9 @@ export function OverviewTab({ profile }) {
     .filter(Boolean).join(', ');
 
   return (
-    <div className="card shadow-sm">
-      <div className="card-body row">
+    <div className="cis-form-main">
+      <FormSection id="ov-employment" title="Employment" grid>
         <Field label="Joined" value={profile.joinedDate} />
-        <Field label="DOB" value={profile.dateOfBirth} />
         <Field label="Payroll category" value={profile.jobCategoryName} />
         <Field label="Department" value={profile.currentDepartmentName || profile.departmentName} />
         <Field label="Designation" value={profile.currentDesignationName || profile.designationName} />
@@ -198,36 +199,50 @@ export function OverviewTab({ profile }) {
         <Field label="Payroll type" value={profile.payrollType} />
         <Field label="Attendance category" value={profile.attCategoryName} />
         <Field label="Att. authentication" value={profile.attenAuth ? 'Yes' : 'No'} />
+        <Field label="Appointment order" value={profile.appoiOrderNo} />
+        <Field label="Appointment date" value={profile.appoiOrderDate} />
+        <Field label="Starting pay" value={profile.salary1} />
+        <Field label="Relieving date" value={profile.releavingDate} />
+      </FormSection>
+
+      <FormSection id="ov-personal" title="Personal" grid>
+        <Field label="DOB" value={profile.dateOfBirth} />
+        <Field label="PAN" value={profile.panNo} />
+        <Field label="Bank A/c" value={profile.bankAcNo} />
+      </FormSection>
+
+      <FormSection id="ov-contact" title="Contact & Address" grid>
         <Field label="Email" value={profile.emailId} />
         <Field label="Mobile" value={profile.mobile1} />
         <Field label="Alternate mobile" value={profile.mobile2} />
         <Field label="Address" value={address} />
         <Field label="Communication address" value={profile.usesQuartersAddress ? `Quarters${commAddress ? `: ${commAddress}` : ''}` : commAddress} />
-        <Field label="Appointment order" value={profile.appoiOrderNo} />
-        <Field label="Appointment date" value={profile.appoiOrderDate} />
-        <Field label="Starting pay" value={profile.salary1} />
-        <Field label="PAN" value={profile.panNo} />
-        <Field label="Bank A/c" value={profile.bankAcNo} />
-        <Field label="Relieving date" value={profile.releavingDate} />
-        <div className="col-12">
-          <h6 className="mt-2">Department / Designation history</h6>
-          {profile.designations?.length ? (
-            <ul className="mb-0">
-              {profile.designations.map((d) => (
-                <li key={d.id}>
-                  {d.designationName || d.designationId}
-                  {d.departmentName ? ` (${d.departmentName})` : ''}
-                  {d.unitType ? ` · Unit ${d.unitType}` : ''}
-                  {' — '}
-                  {d.fromDate || '?'} to {d.toDate || 'present'}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <span className="text-muted">No designation records.</span>
-          )}
-        </div>
-      </div>
+      </FormSection>
+
+      <FormSection id="ov-history" title="Department / Designation History" grid={false}>
+        {profile.designations?.length ? (
+          <div className="cis-dt-scroll">
+            <table className="cis-dt-table">
+              <thead>
+                <tr><th>Designation</th><th>Department</th><th>Unit</th><th>From</th><th>To</th></tr>
+              </thead>
+              <tbody>
+                {profile.designations.map((d) => (
+                  <tr key={d.id}>
+                    <td>{d.designationName || d.designationId}</td>
+                    <td>{d.departmentName || '—'}</td>
+                    <td>{d.unitType || '—'}</td>
+                    <td className="cis-dt-num">{d.fromDate || '?'}</td>
+                    <td className="cis-dt-num">{d.toDate || 'present'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <span className="text-muted">No designation records.</span>
+        )}
+      </FormSection>
     </div>
   );
 }
@@ -535,27 +550,29 @@ export function ExperienceTab({ records, setRecords, options, variant, embedded 
   );
 }
 
-export function AwardsTab({ records, setRecords }) {
+export function AwardsTab({ records, setRecords, embedded = false }) {
   const update = (i, key, val) => setRecords((p) => ({
     ...p,
     awards: p.awards.map((r, idx) => (idx === i ? { ...r, [key]: val } : r)),
   }));
+  const body = (
+    <RowTable
+      rows={records.awards}
+      emptyRow={EMPTY_AWARD}
+      onAdd={(row) => setRecords((p) => ({ ...p, awards: [...p.awards, { ...row }] }))}
+      onRemove={(i) => setRecords((p) => ({ ...p, awards: p.awards.filter((_, idx) => idx !== i) }))}
+      onChange={update}
+      columns={[
+        { key: 'year', label: 'Year' },
+        { key: 'title', label: 'Appreciation received' },
+        { key: 'notes', label: 'Summary' },
+      ]}
+    />
+  );
+  if (embedded) return body;
   return (
     <div className="card shadow-sm">
-      <div className="card-body">
-        <RowTable
-          rows={records.awards}
-          emptyRow={EMPTY_AWARD}
-          onAdd={(row) => setRecords((p) => ({ ...p, awards: [...p.awards, { ...row }] }))}
-          onRemove={(i) => setRecords((p) => ({ ...p, awards: p.awards.filter((_, idx) => idx !== i) }))}
-          onChange={update}
-          columns={[
-            { key: 'year', label: 'Year' },
-            { key: 'title', label: 'Appreciation received' },
-            { key: 'notes', label: 'Summary' },
-          ]}
-        />
-      </div>
+      <div className="card-body">{body}</div>
     </div>
   );
 }

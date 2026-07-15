@@ -1,9 +1,9 @@
+import { useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../../components/PageShell';
-import { useShellData } from '../../../hooks/useShellData';
 import { STUDENT_ATT_HUB_LINKS } from './studentAttMeta';
 
 export default function StudentAttHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   return (
     <ModuleHub
       title="Student Attendance"
@@ -12,9 +12,8 @@ export default function StudentAttHub() {
       dashboardTitle="Student Attendance"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
     />
   );
 }

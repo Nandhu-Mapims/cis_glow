@@ -32,12 +32,16 @@ function buildGridHtml(rows, cols) {
   return html;
 }
 
-function CollageFieldRow({ label, children }) {
+function Swatch({ value }) {
+  const hex = String(value || '').replace(/^#/, '');
+  const valid = /^[0-9a-fA-F]{3,8}$/.test(hex);
   return (
-    <tr>
-      <td className="cis-collage-label">{label}</td>
-      <td>{children}</td>
-    </tr>
+    <span
+      className="cis-collage-swatch"
+      style={valid ? { background: `#${hex}` } : undefined}
+      aria-hidden="true"
+      title={valid ? `#${hex}` : 'Enter a hex colour'}
+    />
   );
 }
 
@@ -58,13 +62,29 @@ export default function CollageGeneratePanel({ data, busy, onGenerate }) {
 
   const templates = data?.templates || [];
 
+  // One captioned input in a multi-value row.
+  const Num = ({ name, cap, wide = false }) => (
+    <label className={`cis-collage-input${wide ? ' is-wide' : ''}`}>
+      <span className="cis-collage-cap">{cap}</span>
+      <input
+        name={name}
+        className="form-control form-control-sm"
+        value={fields[name] || ''}
+        onChange={(e) => set(name, e.target.value)}
+      />
+    </label>
+  );
+
+  const nameOn = fields.name_enable === '1' || fields.name_enable === true;
+  const mNameOn = fields.m_name_enable === '1' || fields.m_name_enable === true;
+
   return (
     <div className="row g-3">
-      <div className="col-lg-4">
+      <div className="col-lg-5">
         <div className="card cis-student-screen-card">
           <div className="card-body">
-            <div className="cis-student-filter-heading mb-3">Filter</div>
             <form
+              className="cis-collage-form"
               onSubmit={(e) => {
                 e.preventDefault();
                 const payload = { ...formFieldsFromDom(e.currentTarget, fields), Search: 'Search' };
@@ -79,73 +99,133 @@ export default function CollageGeneratePanel({ data, busy, onGenerate }) {
                 onGenerate(payload);
               }}
             >
-              <table className="table table-sm cis-collage-filter-table mb-3">
-                <tbody>
-                  <tr><td colSpan={2}><strong>Display</strong></td></tr>
-                  <CollageFieldRow label="RxC,M">
-                    <div className="d-flex gap-1 flex-wrap">
-                      <input name="row_count" className="form-control form-control-sm cis-collage-mini" value={fields.row_count || ''} onChange={(e) => set('row_count', e.target.value)} placeholder="Row" />
-                      <input name="column_count" className="form-control form-control-sm cis-collage-mini" value={fields.column_count || ''} onChange={(e) => set('column_count', e.target.value)} placeholder="Column" />
-                      <input name="photo_margin" className="form-control form-control-sm cis-collage-mini" value={fields.photo_margin || ''} onChange={(e) => set('photo_margin', e.target.value)} placeholder="Margin" />
+              {/* ── Grid layout ── */}
+              <div className="cis-collage-section">
+                <p className="cis-collage-section-title">Grid layout</p>
+                <div className="cis-collage-field">
+                  <span className="cis-collage-field-label">Rows × Columns, margin</span>
+                  <div className="cis-collage-inputs">
+                    <Num name="row_count" cap="Rows" />
+                    <Num name="column_count" cap="Columns" />
+                    <Num name="photo_margin" cap="Margin (px)" />
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Photos ── */}
+              <div className="cis-collage-section">
+                <p className="cis-collage-section-title">Photos</p>
+                <div className="cis-collage-field">
+                  <label className="cis-collage-field-label" htmlFor="collage-regs">Register / staff numbers</label>
+                  <input
+                    id="collage-regs"
+                    name="search_by_a_no"
+                    className="form-control form-control-sm"
+                    value={fields.search_by_a_no || ''}
+                    onChange={(e) => set('search_by_a_no', e.target.value)}
+                    placeholder="e.g. 2021006, 14640"
+                  />
+                  <div className="form-text">Comma-separated. These fill the grid in order.</div>
+                </div>
+                <div className="cis-collage-field">
+                  <span className="cis-collage-field-label">Photo size &amp; background</span>
+                  <div className="cis-collage-inputs">
+                    <Num name="photo_width" cap="Width" />
+                    <Num name="photo_height" cap="Height" />
+                    <label className="cis-collage-input">
+                      <span className="cis-collage-cap">Background</span>
+                      <div className="cis-collage-color">
+                        <Swatch value={fields.photo_bgcolor} />
+                        <input name="photo_bgcolor" className="form-control form-control-sm" value={fields.photo_bgcolor || ''} onChange={(e) => set('photo_bgcolor', e.target.value)} placeholder="FFFFFF" />
+                      </div>
+                    </label>
+                  </div>
+                </div>
+                <div className="cis-collage-field">
+                  <label className="cis-collage-toggle">
+                    <input type="checkbox" name="name_enable" value="1" checked={nameOn} onChange={(e) => set('name_enable', e.target.checked ? '1' : false)} />
+                    <span>Show name under each photo</span>
+                  </label>
+                  {nameOn && (
+                    <div className="cis-collage-inputs mt-2">
+                      <Num name="name_size" cap="Font size" />
+                      <Num name="name_height" cap="Line height" />
+                      <label className="cis-collage-input">
+                        <span className="cis-collage-cap">Text colour</span>
+                        <div className="cis-collage-color">
+                          <Swatch value={fields.name_color} />
+                          <input name="name_color" className="form-control form-control-sm" value={fields.name_color || ''} onChange={(e) => set('name_color', e.target.value)} placeholder="333333" />
+                        </div>
+                      </label>
                     </div>
-                  </CollageFieldRow>
-                  <tr><td colSpan={2}><strong>Photo</strong></td></tr>
-                  <CollageFieldRow label="Reg / Staff No">
-                    <input name="search_by_a_no" className="form-control form-control-sm" value={fields.search_by_a_no || ''} onChange={(e) => set('search_by_a_no', e.target.value)} placeholder="e.g. 2021006, 14640" />
-                  </CollageFieldRow>
-                  <CollageFieldRow label="WxH,BG">
-                    <div className="d-flex gap-1 flex-wrap">
-                      <input name="photo_width" className="form-control form-control-sm cis-collage-mini" value={fields.photo_width || ''} onChange={(e) => set('photo_width', e.target.value)} />
-                      <input name="photo_height" className="form-control form-control-sm cis-collage-mini" value={fields.photo_height || ''} onChange={(e) => set('photo_height', e.target.value)} />
-                      <input name="photo_bgcolor" className="form-control form-control-sm cis-collage-mini" value={fields.photo_bgcolor || ''} onChange={(e) => set('photo_bgcolor', e.target.value)} />
+                  )}
+                </div>
+                <div className="cis-collage-field">
+                  <label className="cis-collage-field-label" htmlFor="collage-tpl">Template</label>
+                  <select id="collage-tpl" name="template_id" className="form-select form-select-sm" value={fields.template_id || ''} onChange={(e) => set('template_id', e.target.value)}>
+                    <option value="">None</option>
+                    {templates.map((tpl) => <option key={tpl.value} value={tpl.value}>{tpl.label}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* ── Merged cells (optional) ── */}
+              <div className="cis-collage-section">
+                <p className="cis-collage-section-title">Merged cells <span className="cis-collage-optional">optional</span></p>
+                <div className="cis-collage-field">
+                  <label className="cis-collage-field-label" htmlFor="collage-merge-a">Photos for merged area</label>
+                  <input id="collage-merge-a" name="merge_a_no" className="form-control form-control-sm" value={fields.merge_a_no || ''} onChange={(e) => set('merge_a_no', e.target.value)} placeholder="2356, 4323" />
+                </div>
+                <div className="cis-collage-field">
+                  <label className="cis-collage-field-label" htmlFor="collage-merge-box">Cells to merge</label>
+                  <input id="collage-merge-box" name="merge_box" className="form-control form-control-sm" value={fields.merge_box || ''} onChange={(e) => set('merge_box', e.target.value)} placeholder="e.g. 15,16,21,22" />
+                  <div className="form-text">Shaded cells in the preview show one larger photo. Legacy: 510 × 500 for a 2×2 merge.</div>
+                </div>
+                <div className="cis-collage-field">
+                  <span className="cis-collage-field-label">Merged photo size &amp; background</span>
+                  <div className="cis-collage-inputs">
+                    <Num name="m_width" cap="Width" />
+                    <Num name="m_height" cap="Height" />
+                    <label className="cis-collage-input">
+                      <span className="cis-collage-cap">Background</span>
+                      <div className="cis-collage-color">
+                        <Swatch value={fields.m_bgcolor} />
+                        <input name="m_bgcolor" className="form-control form-control-sm" value={fields.m_bgcolor || ''} onChange={(e) => set('m_bgcolor', e.target.value)} placeholder="FFFFFF" />
+                      </div>
+                    </label>
+                  </div>
+                </div>
+                <div className="cis-collage-field">
+                  <label className="cis-collage-toggle">
+                    <input type="checkbox" name="m_name_enable" value="1" checked={mNameOn} onChange={(e) => set('m_name_enable', e.target.checked ? '1' : false)} />
+                    <span>Show name under merged photo</span>
+                  </label>
+                  {mNameOn && (
+                    <div className="cis-collage-inputs mt-2">
+                      <Num name="m_name_size" cap="Font size" />
+                      <Num name="m_name_height" cap="Line height" />
+                      <label className="cis-collage-input">
+                        <span className="cis-collage-cap">Text colour</span>
+                        <div className="cis-collage-color">
+                          <Swatch value={fields.m_name_color} />
+                          <input name="m_name_color" className="form-control form-control-sm" value={fields.m_name_color || ''} onChange={(e) => set('m_name_color', e.target.value)} placeholder="333333" />
+                        </div>
+                      </label>
                     </div>
-                  </CollageFieldRow>
-                  <CollageFieldRow label="Name">
-                    <div className="d-flex gap-1 flex-wrap align-items-center">
-                      <input type="checkbox" name="name_enable" value="1" checked={fields.name_enable === '1' || fields.name_enable === true} onChange={(e) => set('name_enable', e.target.checked ? '1' : false)} />
-                      <input name="name_size" className="form-control form-control-sm cis-collage-mini" value={fields.name_size || ''} onChange={(e) => set('name_size', e.target.value)} />
-                      <input name="name_height" className="form-control form-control-sm cis-collage-mini" value={fields.name_height || ''} onChange={(e) => set('name_height', e.target.value)} />
-                      <input name="name_color" className="form-control form-control-sm cis-collage-mini" value={fields.name_color || ''} onChange={(e) => set('name_color', e.target.value)} />
-                    </div>
-                  </CollageFieldRow>
-                  <CollageFieldRow label="Template">
-                    <select name="template_id" className="form-select form-select-sm" value={fields.template_id || ''} onChange={(e) => set('template_id', e.target.value)}>
-                      <option value="">None</option>
-                      {templates.map((tpl) => <option key={tpl.value} value={tpl.value}>{tpl.label}</option>)}
-                    </select>
-                  </CollageFieldRow>
-                  <tr><td colSpan={2}><strong>Merge</strong></td></tr>
-                  <CollageFieldRow label="A.No">
-                    <input name="merge_a_no" className="form-control form-control-sm" value={fields.merge_a_no || ''} onChange={(e) => set('merge_a_no', e.target.value)} placeholder="2356,4323" />
-                  </CollageFieldRow>
-                  <CollageFieldRow label="Merge Box">
-                    <input name="merge_box" className="form-control form-control-sm" value={fields.merge_box || ''} onChange={(e) => set('merge_box', e.target.value)} placeholder="Eg: (15,16,21,22)" />
-                    <div className="form-text">Merged cells show one larger photo. Set WxH below (legacy: 510 x 500 for a 2x2 merge).</div>
-                  </CollageFieldRow>
-                  <CollageFieldRow label="WxH,BG">
-                    <div className="d-flex gap-1 flex-wrap">
-                      <input name="m_width" className="form-control form-control-sm cis-collage-mini" value={fields.m_width || ''} onChange={(e) => set('m_width', e.target.value)} />
-                      <input name="m_height" className="form-control form-control-sm cis-collage-mini" value={fields.m_height || ''} onChange={(e) => set('m_height', e.target.value)} />
-                      <input name="m_bgcolor" className="form-control form-control-sm cis-collage-mini" value={fields.m_bgcolor || ''} onChange={(e) => set('m_bgcolor', e.target.value)} />
-                    </div>
-                  </CollageFieldRow>
-                  <CollageFieldRow label="Name">
-                    <div className="d-flex gap-1 flex-wrap align-items-center">
-                      <input type="checkbox" name="m_name_enable" value="1" checked={fields.m_name_enable === '1' || fields.m_name_enable === true} onChange={(e) => set('m_name_enable', e.target.checked ? '1' : false)} />
-                      <input name="m_name_size" className="form-control form-control-sm cis-collage-mini" value={fields.m_name_size || ''} onChange={(e) => set('m_name_size', e.target.value)} />
-                      <input name="m_name_height" className="form-control form-control-sm cis-collage-mini" value={fields.m_name_height || ''} onChange={(e) => set('m_name_height', e.target.value)} />
-                      <input name="m_name_color" className="form-control form-control-sm cis-collage-mini" value={fields.m_name_color || ''} onChange={(e) => set('m_name_color', e.target.value)} />
-                    </div>
-                  </CollageFieldRow>
-                  <CollageFieldRow label="Template">
-                    <select name="m_template_id" className="form-select form-select-sm" value={fields.m_template_id || ''} onChange={(e) => set('m_template_id', e.target.value)}>
-                      <option value="">None</option>
-                      {templates.map((tpl) => <option key={`m-${tpl.value}`} value={tpl.value}>{tpl.label}</option>)}
-                    </select>
-                  </CollageFieldRow>
-                </tbody>
-              </table>
-              <button type="submit" className="btn btn-primary w-100" disabled={busy}>Search</button>
+                  )}
+                </div>
+                <div className="cis-collage-field">
+                  <label className="cis-collage-field-label" htmlFor="collage-m-tpl">Template</label>
+                  <select id="collage-m-tpl" name="m_template_id" className="form-select form-select-sm" value={fields.m_template_id || ''} onChange={(e) => set('m_template_id', e.target.value)}>
+                    <option value="">None</option>
+                    {templates.map((tpl) => <option key={`m-${tpl.value}`} value={tpl.value}>{tpl.label}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" className="btn btn-primary w-100" disabled={busy}>
+                {busy ? 'Generating…' : 'Generate collage'}
+              </button>
               {(localMessage || data?.validationMessage) && (
                 <p className="text-danger small mt-2 mb-0">{localMessage || data.validationMessage}</p>
               )}
@@ -154,14 +234,18 @@ export default function CollageGeneratePanel({ data, busy, onGenerate }) {
         </div>
       </div>
 
-      <div className="col-lg-8">
+      <div className="col-lg-7">
         <div className="card cis-student-screen-card mb-3">
           <div className="card-body">
+            <p className="cis-collage-section-title">Preview</p>
             <div className="mb-3" dangerouslySetInnerHTML={{ __html: gridHtml }} />
             {data?.outputUrl ? (
               <img src={data.outputUrl} alt="Collage output" className="img-fluid cis-collage-output-image" />
             ) : (
-              <p className="text-muted mb-0">Configure the grid and click Search to generate the collage.</p>
+              <div className="cis-report-empty">
+                <span className="cis-report-empty-icon" aria-hidden="true">🖼</span>
+                <p className="mb-0">Configure the grid and click Generate to build the collage.</p>
+              </div>
             )}
           </div>
         </div>

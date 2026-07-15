@@ -1,6 +1,5 @@
-import { Link, useParams } from 'react-router-dom';
-import DashboardLayout from '../../layouts/DashboardLayout';
-import { useShellData } from '../../hooks/useShellData';
+import { useOutletContext, useParams } from 'react-router-dom';
+import { SetupPageShell } from '../../components/PageShell';
 import { EXAM_SCREEN_META } from './examSetupMeta';
 import ExamNameSetup from './setup/ExamNameSetup';
 import OmrConfigSetup from './setup/OmrConfigSetup';
@@ -16,7 +15,6 @@ import ProgressCardSetup from './setup/ProgressCardSetup';
 import SchedulePrintSetup from './setup/SchedulePrintSetup';
 import InvigilatorPrintSetup from './setup/InvigilatorPrintSetup';
 import ReportAnalysisSetup from './setup/ReportAnalysisSetup';
-import GenericExamScreen from './setup/GenericExamScreen';
 import ExamNodueSetup from './setup/ExamNodueSetup';
 import ExamExaminersSetup from './setup/ExamExaminersSetup';
 import AttendanceEntrySetup from './setup/AttendanceEntrySetup';
@@ -66,52 +64,51 @@ const NATIVE_SCREENS = {
   'report-analysis-v1': ReportAnalysisV1Setup,
 };
 
-export default function ExamSetupPage({ screen: screenProp, initialFields = null, initialQuery = null }) {
+export default function ExamSetupPage({ screen: screenProp }) {
   const { screen: routeScreen } = useParams();
   const screen = screenProp || routeScreen;
   const meta = EXAM_SCREEN_META[screen];
   const NativeComponent = NATIVE_SCREENS[screen];
   const hubPath = meta?.hub === 'reports' ? '/exam/reports' : '/exam/setup';
+  const hubLabel = meta?.hub === 'reports' ? 'Reports' : 'Setup';
 
-  const { settings, menu, loading: shellLoading } = useShellData();
+  const { settings, menu } = useOutletContext();
 
   if (!meta) {
     return (
-      <div className="p-4">
-        <p className="text-danger">Unknown exam screen.</p>
-        <Link to={hubPath}>Back</Link>
-      </div>
+      <SetupPageShell
+        settings={settings}
+        menu={menu}
+        title="Examination"
+        breadcrumbs={[
+          { label: 'Home', to: '/dashboard' },
+          { label: 'Examination', to: '/exam' },
+          { label: 'Setup', to: '/exam/setup' },
+          { label: 'Unknown' },
+        ]}
+        backTo="/exam/setup"
+      >
+        <p className="text-danger mb-0">Unknown exam screen.</p>
+      </SetupPageShell>
     );
   }
 
-  if (shellLoading && !settings) {
-    return <div className="p-4 text-muted">Loading...</div>;
-  }
-
   return (
-    <DashboardLayout settings={settings} dashboard={{ title: meta.title }} menu={menu}>
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb">
-          <li className="breadcrumb-item"><Link to="/dashboard">Home</Link></li>
-          <li className="breadcrumb-item"><Link to="/exam">Examination</Link></li>
-          <li className="breadcrumb-item"><Link to={hubPath}>{meta.hub === 'reports' ? 'Reports' : 'Setup'}</Link></li>
-          <li className="breadcrumb-item active">{meta.title}</li>
-        </ol>
-      </nav>
-
-      <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <div>
-          <h3 className="dashboard-title mb-0">{meta.title}</h3>
-          <p className="text-muted small mb-0">Legacy: {meta.legacy}</p>
-        </div>
-        <Link to={hubPath} className="btn btn-outline-secondary btn-sm">Back</Link>
-      </div>
-
-      <div className="card shadow-sm exam-setup-card">
-        <div className="card-body exam-setup-root">
-          {NativeComponent ? <NativeComponent readOnly={meta.readOnly} /> : <p className="text-muted mb-0">Screen not available.</p>}
-        </div>
-      </div>
-    </DashboardLayout>
+    <SetupPageShell
+      settings={settings}
+      menu={menu}
+      title={meta.title}
+      breadcrumbs={[
+        { label: 'Home', to: '/dashboard' },
+        { label: 'Examination', to: '/exam' },
+        { label: hubLabel, to: hubPath },
+        { label: meta.title },
+      ]}
+      backTo={hubPath}
+      cardClassName="cis-setup-card exam-setup-card"
+      rootClassName="cis-setup-root exam-setup-root"
+    >
+      {NativeComponent ? <NativeComponent readOnly={meta.readOnly} /> : <p className="text-muted mb-0">Screen not available.</p>}
+    </SetupPageShell>
   );
 }

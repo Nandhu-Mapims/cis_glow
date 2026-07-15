@@ -109,7 +109,7 @@ export async function buildStaffAttendanceWidgets({ memberId, academicDate }) {
   const lpCache = new Map();
 
   const staffRows = await prisma.$queryRawUnsafe(
-    `SELECT A.id, A.staff_id, A.att_category, B.category_sname, B.id AS cat_id
+    `SELECT A.id, A.staff_id, A.att_category, A.job_category, B.category_sname, B.id AS cat_id
      FROM staff_profile_tb AS A
      INNER JOIN edu_setup_tb AS B ON A.job_category = B.id
      WHERE A.del = 1
@@ -120,6 +120,19 @@ export async function buildStaffAttendanceWidgets({ memberId, academicDate }) {
        AND B.category_name != 'College Support' ${staffFilter}
      ORDER BY B.category_order ASC`,
   );
+
+  // The academic-calendar lookup inside getAttendance() is the same for every
+  // staff row on this date - fetch it once here instead of once per staff
+  // (getAttendance() already supports this via sharedContext, it just wasn't wired up).
+  let calendarRow = (await prisma.$queryRawUnsafe(
+    `SELECT academic_events, comments, academic_category FROM calendar_tb WHERE academic_date='${d}' AND del=1 LIMIT 1`,
+  ))[0] ?? null;
+  if (!calendarRow) {
+    calendarRow = (await prisma.$queryRawUnsafe(
+      `SELECT academic_events, comments, '' AS academic_category
+       FROM academic_calender_tb WHERE academic_date='${d}' AND del=1 LIMIT 1`,
+    ))[0] ?? null;
+  }
 
   for (const row of staffRows) {
     const stId = row.id;
@@ -139,7 +152,10 @@ export async function buildStaffAttendanceWidgets({ memberId, academicDate }) {
       lpCache.set(catKey, await getLPTime(attCategory));
     }
     const latePermission = lpCache.get(catKey);
-    const attendanceStatus = await getAttendance(stId, staffId, academicDate, latePermission, 'actual');
+    const attendanceStatus = await getAttendance(stId, staffId, academicDate, latePermission, 'actual', {
+      calendarRow,
+      jobCategory: row.job_category,
+    });
 
     let lApply = 0;
     if (attendanceStatus.s !== 'H') {
@@ -251,9 +267,17 @@ export async function buildStaffAttendanceWidgets({ memberId, academicDate }) {
   attendanceDetails[2] += ' </table></div></section> </div>';
 
   const tblName = punchTableName(academicDate);
-  const lastSyncRows = await prisma.$queryRawUnsafe(
-    `SELECT upload_dt FROM ${tblName} ORDER BY upload_dt DESC LIMIT 1`,
-  );
+  let lastSyncRows = [];
+  try {
+    lastSyncRows = await prisma.$queryRawUnsafe(
+      `SELECT upload_dt FROM ${tblName} ORDER BY upload_dt DESC LIMIT 1`,
+    );
+  } catch (err) {
+    // Punch tables are created per year+quarter as biometric syncs happen; a quarter
+    // with no punch data yet (or a date outside the biometric system's history) simply
+    // has no table. Treat that as "no sync recorded" instead of failing the whole widget.
+    if (err?.meta?.code !== '1146') throw err; // 1146 = ER_NO_SUCH_TABLE
+  }
   const lastSync = formatSyncTime(lastSyncRows[0]?.upload_dt);
 
   attendanceDetails[0] = `  <div class="col-sm-4 dashboard-container">

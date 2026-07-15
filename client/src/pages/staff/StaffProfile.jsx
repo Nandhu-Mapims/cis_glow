@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useOutletContext, useParams } from 'react-router-dom';
 import api from '../../api/client';
-import DashboardLayout from '../../layouts/DashboardLayout';
+import UserAvatar from '../../components/UserAvatar';
+import { FormActionBar, FormSection } from '../../components/FormShell';
 import StaffAttachments from '../../components/staff/StaffAttachments';
+import StaffPageShell, { STAFF_BREADCRUMB_HUB } from './StaffPageShell';
 import {
   AwardsTab,
   buildProfileForm,
@@ -15,10 +17,23 @@ import {
   SkillsTab,
 } from './StaffProfileSections';
 
+const TABS = [
+  ['overview', 'Overview', 'fa fa-id-badge'],
+  ['edit', 'Edit', 'fa fa-pencil'],
+  ['education', 'Education', 'fa fa-graduation-cap'],
+  ['experience', 'Experience', 'fa fa-briefcase'],
+  ['awards', 'Awards', 'fa fa-trophy'],
+  ['skills', 'Skills', 'fa fa-star'],
+  ['attachments', 'Attachments', 'fa fa-paperclip'],
+  ['status', 'Status', 'fa fa-exchange'],
+  ['legacy', 'Legacy Form', 'fa fa-file-text-o'],
+];
+
+const RECORD_TABS = new Set(['education', 'experience', 'awards', 'skills']);
+
 export default function StaffProfile() {
   const { id } = useParams();
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [options, setOptions] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -49,12 +64,6 @@ export default function StaffProfile() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
         try {
           const optionsRes = await api.get('/api/staff/profile-options');
           setOptions(optionsRes.data);
@@ -69,6 +78,7 @@ export default function StaffProfile() {
       }
     };
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadLegacyForm = async () => {
@@ -92,6 +102,7 @@ export default function StaffProfile() {
     if (tab === 'legacy' && !legacyNotice) {
       loadLegacyForm();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, id, legacyNotice]);
 
   const switchTab = (nextTab) => {
@@ -162,71 +173,45 @@ export default function StaffProfile() {
     }
   };
 
-  if (loading) {
-    return (
-      <DashboardLayout settings={settings} menu={menu}>
-        <div className="p-4">Loading staff profile...</div>
-      </DashboardLayout>
-    );
-  }
+  const fullName = profile ? (profile.displayName || `${profile.staffName || ''} ${profile.staffInitial || ''}`.trim()) : '';
+  const roleLabel = profile ? (profile.currentRoleLabel || profile.designationName || profile.jobCategoryName || '—') : '';
 
-  if (!profile) {
-    return (
-      <DashboardLayout settings={settings} menu={menu}>
-        <div className="alert alert-danger">{error || 'Staff not found'}</div>
-        <Link to="/staff" className="btn btn-link">Back to search</Link>
-      </DashboardLayout>
-    );
-  }
-
-  const tabs = [
-    ['overview', 'Overview'],
-    ['edit', 'Edit'],
-    ['education', 'Education'],
-    ['experience', 'Experience'],
-    ['awards', 'Awards'],
-    ['skills', 'Skills'],
-    ['attachments', 'Attachments'],
-    ['status', 'Status'],
-    ['legacy', 'Legacy Form'],
-  ];
-
-  const recordTabs = new Set(['education', 'experience', 'awards', 'skills']);
+  const alerts = (message || error) ? (
+    <>
+      {message && <div className="alert alert-success mb-0">{message}</div>}
+      {error && <div className="alert alert-danger mb-0">{error}</div>}
+    </>
+  ) : null;
 
   return (
-    <DashboardLayout settings={settings} menu={menu}>
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb">
-          <li className="breadcrumb-item"><Link to="/dashboard">Home</Link></li>
-          <li className="breadcrumb-item"><Link to="/staff">Staff</Link></li>
-          <li className="breadcrumb-item active">{profile.staffId}</li>
-        </ol>
-      </nav>
-
-      <div className="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
-        <div className="d-flex gap-3">
-          {profile.photoUrl && (
-            <img src={profile.photoUrl} alt="" width={98} height={119} className="border rounded object-fit-cover" />
-          )}
-          <div>
-            <h4 className="mb-1">
-              {profile.displayName || `${profile.staffName} ${profile.staffInitial}`.trim()}
-              {profile.resigned && <span className="ms-2 badge text-bg-secondary">Resigned</span>}
-            </h4>
-            <div className="text-muted">{profile.staffId}</div>
-            <div className="small">
-              {profile.currentRoleLabel || profile.designationName || profile.jobCategoryName || '—'}
-            </div>
-            {profile.jobCategoryName && profile.currentRoleLabel && (
-              <div className="text-muted small">{profile.jobCategoryName}</div>
-            )}
-          </div>
-        </div>
-        <div className="d-flex flex-wrap gap-2">
+    <StaffPageShell
+      settings={settings}
+      menu={menu}
+      loading={loading}
+      error={!profile ? error : null}
+      dashboardTitle="Staff Profile"
+      breadcrumbs={profile ? [
+        { label: 'Home', to: '/dashboard' },
+        STAFF_BREADCRUMB_HUB,
+        { label: 'Search', to: '/staff' },
+        { label: profile.staffId },
+      ] : [
+        { label: 'Home', to: '/dashboard' },
+        STAFF_BREADCRUMB_HUB,
+      ]}
+      title={fullName || 'Staff Profile'}
+      subtitle={profile ? (
+        <>
+          {profile.staffId}
+          {profile.jobCategoryName ? ` · ${profile.jobCategoryName}` : ''}
+        </>
+      ) : undefined}
+      actions={profile ? (
+        <>
           <Link
             to="/staff/setup/designation-edit"
             state={{ staffId: profile.id }}
-            className="btn btn-outline-primary btn-sm"
+            className="btn btn-outline-secondary btn-sm"
           >
             Designation Edit
           </Link>
@@ -236,109 +221,150 @@ export default function StaffProfile() {
           >
             Attendance
           </Link>
-          <Link to="/staff" className="btn btn-info btn-sm text-white">Search</Link>
-        </div>
-      </div>
-
-      {message && <div className="alert alert-success">{message}</div>}
-      {error && <div className="alert alert-danger">{error}</div>}
-
-      <ul className="nav nav-tabs mb-3 flex-wrap">
-        {tabs.map(([key, label]) => (
-          <li className="nav-item" key={key}>
-            <button
-              type="button"
-              className={`nav-link ${tab === key ? 'active' : ''}`}
-              onClick={() => switchTab(key)}
-            >
-              {label}
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      {tab === 'overview' && <OverviewTab profile={profile} />}
-
-      {tab === 'edit' && (
+          <Link to="/staff" className="btn btn-outline-primary btn-sm">Search</Link>
+        </>
+      ) : (
+        <Link to="/staff" className="btn btn-outline-secondary btn-sm">Back to search</Link>
+      )}
+      notice={alerts}
+    >
+      {profile && (
         <>
-          <PersonalEditTab form={form} setForm={setForm} options={options || {}} />
-          <div className="mt-3">
-            <button type="button" className="btn btn-primary" onClick={handleSaveProfile} disabled={saving}>
-              {saving ? 'Saving...' : 'Save profile'}
-            </button>
+          <div className="cis-staff-hero">
+            <UserAvatar name={fullName} photoUrl={profile.photoUrl} size={72} className="cis-staff-hero-avatar" />
+            <div className="cis-staff-hero-body">
+              <div className="cis-staff-hero-nameline">
+                <h2 className="cis-staff-hero-name">{fullName}</h2>
+                <span className={`cis-status-pill ${profile.resigned ? 'is-released' : 'is-active'}`}>
+                  <i className={`fa fa-${profile.resigned ? 'sign-out' : 'check-circle'}`} aria-hidden="true" />
+                  {profile.resigned ? 'Resigned' : 'Active'}
+                </span>
+              </div>
+              <dl className="cis-staff-hero-facts">
+                <div><dt>Staff ID</dt><dd className="cis-dt-num">{profile.staffId || '—'}</dd></div>
+                <div><dt>Role</dt><dd>{roleLabel}</dd></div>
+                <div><dt>Department</dt><dd>{profile.currentDepartmentName || profile.departmentName || '—'}</dd></div>
+                <div><dt>Category</dt><dd>{profile.jobCategoryName || '—'}</dd></div>
+              </dl>
+            </div>
           </div>
+
+          <div className="cis-tabbar" role="tablist" aria-label="Profile sections">
+            {TABS.map(([key, label, icon]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={tab === key}
+                className={`cis-tab${tab === key ? ' is-active' : ''}`}
+                onClick={() => switchTab(key)}
+              >
+                <i className={icon} aria-hidden="true" />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {tab === 'overview' && <OverviewTab profile={profile} />}
+
+          {tab === 'edit' && (
+            <div className="cis-form-main">
+              <FormSection id="edit-personal" title="Edit Profile" grid={false}>
+                <PersonalEditTab form={form} setForm={setForm} options={options || {}} />
+              </FormSection>
+              <FormActionBar note={<span>Editing {fullName}</span>}>
+                <button type="button" className="btn btn-primary" onClick={handleSaveProfile} disabled={saving}>
+                  {saving ? 'Saving…' : 'Save Profile'}
+                </button>
+              </FormActionBar>
+            </div>
+          )}
+
+          {RECORD_TABS.has(tab) && (
+            <div className="cis-form-main">
+              <FormSection id={`edit-${tab}`} title={TABS.find(([key]) => key === tab)[1]} grid={false}>
+                {tab === 'education' && <EducationTab records={records} setRecords={setRecords} options={options} embedded />}
+                {tab === 'experience' && <ExperienceTab records={records} setRecords={setRecords} options={options} embedded />}
+                {tab === 'awards' && <AwardsTab records={records} setRecords={setRecords} embedded />}
+                {tab === 'skills' && <SkillsTab records={records} setRecords={setRecords} options={options} embedded />}
+              </FormSection>
+              <FormActionBar note={<span>Editing {fullName}</span>}>
+                <button type="button" className="btn btn-primary" onClick={handleSaveRecords} disabled={saving}>
+                  {saving ? 'Saving…' : 'Save Records'}
+                </button>
+              </FormActionBar>
+            </div>
+          )}
+
+          {tab === 'attachments' && <StaffAttachments staffRowId={id} />}
+
+          {tab === 'status' && (
+            <form onSubmit={(e) => { e.preventDefault(); handleStatusSave(); }} className="cis-form-main">
+              <FormSection
+                id="status"
+                title="Transfer / Relieve"
+                description="Set a relieving date to mark this staff member as resigned. Leave blank to keep them active."
+                grid
+              >
+                <div className="col-md-4">
+                  <label className="form-label" htmlFor="staff-releaving-date">Relieving Date</label>
+                  <input
+                    id="staff-releaving-date"
+                    type="date"
+                    className="form-control"
+                    value={statusForm.releavingDate || ''}
+                    onChange={(e) => setStatusForm((prev) => ({ ...prev, releavingDate: e.target.value }))}
+                  />
+                </div>
+                <div className="col-md-8">
+                  <label className="form-label" htmlFor="staff-releaving-attachment">Resignation Letter</label>
+                  <input
+                    id="staff-releaving-attachment"
+                    type="file"
+                    className="form-control"
+                    accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx"
+                    onChange={(e) => setStatusFile(e.target.files?.[0] || null)}
+                  />
+                  {profile.releavingAttachmentUrl && !statusFile && (
+                    <p className="cis-searchbar-hint mb-0 mt-1">
+                      Current:
+                      {' '}
+                      <a href={profile.releavingAttachmentUrl} target="_blank" rel="noreferrer">
+                        {profile.releavingAttachment}
+                      </a>
+                    </p>
+                  )}
+                </div>
+                <div className="col-12">
+                  <label className="form-label" htmlFor="staff-releaving-info">Relieving Reason</label>
+                  <textarea
+                    id="staff-releaving-info"
+                    className="form-control"
+                    rows={4}
+                    value={statusForm.releavingInfo || ''}
+                    onChange={(e) => setStatusForm((prev) => ({ ...prev, releavingInfo: e.target.value }))}
+                  />
+                </div>
+              </FormSection>
+              <FormActionBar note={<span>Current status: <strong>{profile.resigned ? 'Resigned' : 'Active'}</strong></span>}>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? 'Saving…' : 'Update Status'}
+                </button>
+              </FormActionBar>
+            </form>
+          )}
+
+          {tab === 'legacy' && (
+            <div className="cis-form-main">
+              <FormSection id="legacy" title="Legacy Form" grid={false}>
+                <div className="alert alert-info mb-0">
+                  {legacyNotice || 'The legacy PHP staff form has been replaced by the tabs on this page.'}
+                </div>
+              </FormSection>
+            </div>
+          )}
         </>
       )}
-
-      {tab === 'education' && <EducationTab records={records} setRecords={setRecords} options={options} />}
-      {tab === 'experience' && <ExperienceTab records={records} setRecords={setRecords} options={options} />}
-      {tab === 'awards' && <AwardsTab records={records} setRecords={setRecords} />}
-      {tab === 'skills' && <SkillsTab records={records} setRecords={setRecords} options={options} />}
-
-      {recordTabs.has(tab) && (
-        <div className="mt-3">
-          <button type="button" className="btn btn-primary" onClick={handleSaveRecords} disabled={saving}>
-            {saving ? 'Saving...' : 'Save records'}
-          </button>
-        </div>
-      )}
-
-      {tab === 'attachments' && <StaffAttachments staffRowId={id} />}
-
-      {tab === 'status' && (
-        <div className="card shadow-sm">
-          <div className="card-body col-lg-6">
-            <div className="mb-3">
-              <label className="form-label">Relieving date</label>
-              <input
-                type="date"
-                className="form-control"
-                value={statusForm.releavingDate || ''}
-                onChange={(e) => setStatusForm((prev) => ({ ...prev, releavingDate: e.target.value }))}
-              />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">Relieving reason</label>
-              <textarea
-                className="form-control"
-                rows={4}
-                value={statusForm.releavingInfo || ''}
-                onChange={(e) => setStatusForm((prev) => ({ ...prev, releavingInfo: e.target.value }))}
-              />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">Resignation letter</label>
-              <input
-                type="file"
-                className="form-control"
-                accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx"
-                onChange={(e) => setStatusFile(e.target.files?.[0] || null)}
-              />
-              {profile.releavingAttachmentUrl && !statusFile && (
-                <p className="small mt-2 mb-0">
-                  Current:{' '}
-                  <a href={profile.releavingAttachmentUrl} target="_blank" rel="noreferrer">
-                    {profile.releavingAttachment}
-                  </a>
-                </p>
-              )}
-            </div>
-            <button type="button" className="btn btn-primary" onClick={handleStatusSave} disabled={saving}>
-              {saving ? 'Saving...' : 'Update status'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {tab === 'legacy' && (
-        <div className="card shadow-sm">
-          <div className="card-body">
-            <div className="alert alert-info mb-0">
-              {legacyNotice || 'The legacy PHP staff form has been replaced by the tabs on this page.'}
-            </div>
-          </div>
-        </div>
-      )}
-    </DashboardLayout>
+    </StaffPageShell>
   );
 }

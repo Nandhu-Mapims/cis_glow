@@ -1,5 +1,5 @@
+import { useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 
 const LINKS = [
   { to: '/hostel/setup/dashboard', title: 'Hostel Dashboard', desc: 'Blocks, rooms, students, and pass stats', icon: 'fa fa-file-text-o' },
@@ -20,7 +20,7 @@ const LINKS = [
 ];
 
 export default function HostelHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   return (
     <ModuleHub
       title="Hostel Module"
@@ -29,9 +29,8 @@ export default function HostelHub() {
       dashboardTitle="Hostel"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
     />
   );
 }

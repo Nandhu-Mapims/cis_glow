@@ -1,6 +1,5 @@
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 
 const LINKS = [
   { to: '/payroll/stipend/generate-payroll', title: 'Generate Payroll', desc: 'Batch generate stipend payroll', icon: 'fa fa-cogs' },
@@ -15,7 +14,7 @@ const LINKS = [
 ];
 
 export default function StipendHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
 
   return (
     <ModuleHub
@@ -29,9 +28,8 @@ export default function StipendHub() {
       dashboardTitle="Stipend Payroll"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
       actions={<Link to="/payroll" className="btn btn-outline-secondary btn-sm">Back</Link>}
     />
   );

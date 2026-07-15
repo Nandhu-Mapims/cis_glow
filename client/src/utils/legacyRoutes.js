@@ -476,10 +476,27 @@ function normalizeLegacyPath(legacyLink) {
   return String(legacyLink || '').replace(/^\//, '').trim().split('?')[0];
 }
 
+/**
+ * Stable, URL-friendly key derived from a legacy PHP filename - used only to
+ * disambiguate which sidebar link is active when several share one modern route
+ * (e.g. dashboard.php / dashboard_task.php / edashboard.php all -> /dashboard).
+ * Deliberately not the raw filename: it shouldn't show a ".php" name in the URL bar.
+ */
+export function cleanLegacyKey(legacyLink) {
+  return normalizeLegacyPath(legacyLink)
+    .replace(/\.php$/i, '')
+    .replace(/[/_]/g, '-');
+}
+
 /** Sidebar labels for legacy links that share generic names (e.g. Report / Config). */
 const MENU_LABEL_OVERRIDES = {
   'class_time_table_v3.php': 'Report (New)',
   'tt_config_v3.php': 'Config (New)',
+  // Provisional (temporary) admission flow — named distinctly from the
+  // permanent "New Profile" (student_profile_add.php) to avoid confusion.
+  'student_profile_temp_add.php': 'Provisional Admission — New',
+  'student_profile_temp_edit.php': 'Provisional Admission — Edit',
+  'student_profile_temp_affidavit.php': 'Provisional Admission — Affidavit',
 };
 
 export function resolveMenuLabel(legacyLink, defaultName) {
@@ -542,15 +559,15 @@ export function resolveMenuLink(legacyLink) {
   return query ? `${modern}?${query}` : modern;
 }
 
-/** Menu href — adds `legacy=` when several sidebar items share one modern route. */
+/** Menu href — adds `view=` when several sidebar items share one modern route. */
 export function buildMenuHref(legacyLink) {
   const modern = resolveMenuLink(legacyLink);
   if (!modern) return null;
   const pathOnly = modern.split('?')[0];
   if (!sharedLegacyPathsForRoute(pathOnly)) return modern;
-  const legacyKey = normalizeLegacyPath(legacyLink);
+  const legacyKey = cleanLegacyKey(legacyLink);
   const params = new URLSearchParams(modern.includes('?') ? modern.split('?')[1] : '');
-  params.set('legacy', legacyKey);
+  params.set('view', legacyKey);
   return `${pathOnly}?${params.toString()}`;
 }
 
@@ -562,8 +579,8 @@ export function isMenuLinkActive(legacyLink, pathname, search = '') {
   if (!pathnameMatchesMenuRoute(pathOnly, pathname)) return false;
   const shared = sharedLegacyPathsForRoute(pathOnly);
   if (!shared) return true;
-  const legacyKey = normalizeLegacyPath(legacyLink);
-  const currentLegacy = new URLSearchParams(search).get('legacy');
+  const legacyKey = cleanLegacyKey(legacyLink);
+  const currentLegacy = new URLSearchParams(search).get('view');
   if (currentLegacy) return currentLegacy === legacyKey;
   return false;
 }

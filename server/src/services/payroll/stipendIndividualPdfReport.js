@@ -1,6 +1,6 @@
-import { runLegacyBridge } from '../legacy/phpBridge.js';
 import { logPayrollPage } from './payrollHelpers.js';
 import { loadStipendPayrollMonthOptions } from './stipendHelpers.js';
+import { generateStipendIndividualPdf } from './stipendPdfNative.js';
 
 const PAGE = 'stipend_payroll_individual_report3.php';
 
@@ -11,20 +11,10 @@ export async function loadStipendIndividualPdfReport(memberId, fields = {}, audi
   const isGenerate = fields.Submit === 'Generate';
 
   if (isGenerate && payrollMonth) {
-    const raw = await runLegacyBridge('stipend_individual_report_pdf_bridge.php', {
-      memberId,
-      fields: {
-        payroll_month: payrollMonth,
-        copy_type: copyType,
-      },
-    });
-
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      return { error: 'Invalid response from PDF generator' };
-    }
+    const parsed = await generateStipendIndividualPdf(memberId, {
+      payroll_month: payrollMonth,
+      copy_type: copyType,
+    }, audit);
 
     if (parsed.error) {
       return { error: parsed.error };

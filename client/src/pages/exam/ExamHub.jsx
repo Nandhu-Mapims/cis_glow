@@ -1,5 +1,5 @@
+import { useOutletContext } from 'react-router-dom';
 import { ModuleHub } from '../../components/PageShell';
-import { useShellData } from '../../hooks/useShellData';
 
 const LINKS = [
   { to: '/exam/dashboard', title: 'Exam Dashboard', desc: 'Active exam summary and mark status', icon: 'fa fa-dashboard' },
@@ -10,7 +10,7 @@ const LINKS = [
 ];
 
 export default function ExamHub() {
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
 
   return (
     <ModuleHub
@@ -20,9 +20,8 @@ export default function ExamHub() {
       dashboardTitle="Examination"
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
     />
   );
 }

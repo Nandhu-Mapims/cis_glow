@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import { Breadcrumbs, PageHeader, PageLoading } from '../../components/PageShell';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { useShellData } from '../../hooks/useShellData';
 
 function readFormYears(form) {
   return {
@@ -13,7 +12,7 @@ function readFormYears(form) {
 }
 
 export default function PortfolioDashboardPage() {
-  const { settings, menu, loading: shellLoading } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -64,10 +63,6 @@ export default function PortfolioDashboardPage() {
     loadDashboard(nextFields);
   };
 
-  if (shellLoading && !settings) {
-    return <DashboardLayout settings={settings} menu={menu}><PageLoading /></DashboardLayout>;
-  }
-
   const ugYearOptions = data?.ugYearOptions || [];
   const pgYearOptions = data?.pgYearOptions || [];
 
@@ -75,7 +70,7 @@ export default function PortfolioDashboardPage() {
     <DashboardLayout settings={settings} menu={menu}>
       <Breadcrumbs items={[{ label: 'Home', to: '/dashboard' }, { label: 'Student Portfolio', to: '/portfolio' }, { label: 'Dashboard' }]} />
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <PageHeader title="Student Portfolio Dashboard" subtitle="Legacy: student_portfolio_dashboard.php" />
+        <PageHeader title="Student Portfolio Dashboard" />
         <Link to="/portfolio" className="btn btn-outline-secondary btn-sm">Back</Link>
       </div>
 

@@ -26,27 +26,25 @@ const DCI_WIDGET_IDS = new Set(['staff_unit']);
 const ROSTER_WIDGET_IDS = new Set(['staff_unit_1', 'staff_unit_2']);
 
 /**
- * Bootstrap column + sample layout modifiers for dashboard widget slots.
+ * Modern grid modifiers for dashboard widget slots.
  */
 export function getWidgetSlotClassName(widgetId) {
-  const parts = ['widget-slot', 'col-12'];
+  const parts = ['cis-widget-slot'];
 
   if (WIDE_WIDGET_IDS.has(widgetId)) {
-    parts.push('widget-slot--wide');
-  } else {
-    parts.push('col-xl-6');
+    parts.push('cis-widget-slot--wide');
   }
 
   if (widgetId === 'staff_attendance') {
-    parts.push('widget-slot--kpi');
+    parts.push('cis-widget-slot--kpi');
   }
 
   if (DCI_WIDGET_IDS.has(widgetId)) {
-    parts.push('widget-slot--dci');
+    parts.push('cis-widget-slot--dci');
   }
 
   if (ROSTER_WIDGET_IDS.has(widgetId)) {
-    parts.push('widget-slot--roster');
+    parts.push('cis-widget-slot--roster');
   }
 
   return parts.join(' ');

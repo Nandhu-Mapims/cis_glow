@@ -84,6 +84,41 @@ export function parseWidgetDate({ dateUnix, cFlag, time }) {
   return { academicDate, academicTime };
 }
 
+// Several widgets (staff attendance in particular) run dozens of per-staff
+// queries and can take 10-30s to compute. The result is identical for every
+// user asking about the same date/scope within a short window, so cache the
+// computed HTML briefly instead of recomputing on every dashboard visit.
+// cRefresh=1 (wired to the dashboard's "Refresh" button) bypasses the cache.
+const WIDGET_CACHE_TTL_MS = 90_000;
+const WIDGET_CACHE_MAX_ENTRIES = 500;
+const widgetCache = new Map();
+
+function widgetCacheKey({ memberId, widgetNames, dateUnix, cFlag, time, academicYears }) {
+  // `time` only affects staff_current (live in-campus status) - for every other
+  // widget it's the caller's current wall-clock minute and including it would
+  // needlessly bust the cache every 60s for widgets it has no effect on.
+  const timeComponent = widgetNames.includes('staff_current') ? time : '';
+  return [
+    memberId,
+    [...widgetNames].sort().join(','),
+    dateUnix,
+    cFlag,
+    timeComponent,
+    JSON.stringify(academicYears),
+  ].join('|');
+}
+
+function pruneWidgetCache() {
+  const now = Date.now();
+  for (const [key, entry] of widgetCache) {
+    if (entry.expires <= now) widgetCache.delete(key);
+  }
+  if (widgetCache.size > WIDGET_CACHE_MAX_ENTRIES) {
+    const oldestKey = widgetCache.keys().next().value;
+    widgetCache.delete(oldestKey);
+  }
+}
+
 /**
  * Fetch dashboard widgets via native handlers (no PHP bridge).
  * Returns the same shape as normalizeLegacyWidgetResponse.
@@ -97,6 +132,14 @@ export async function fetchWidgets({
   academicYears = {},
   cRefresh = 0,
 }) {
+  const cacheKey = widgetCacheKey({ memberId, widgetNames, dateUnix, cFlag, time, academicYears });
+  if (!cRefresh) {
+    const cached = widgetCache.get(cacheKey);
+    if (cached && cached.expires > Date.now()) {
+      return cached.value;
+    }
+  }
+
   const { academicDate, academicTime } = parseWidgetDate({ dateUnix, cFlag, time });
   const ctx = {
     memberId,
@@ -138,7 +181,7 @@ export async function fetchWidgets({
   const nativeResults = new Map();
   for (const name of nativeWidgetNames) {
     preloadTasks.push(
-      NATIVE_HANDLERS[name](ctx).then((html) => { nativeResults.set(name, html); }),
+      NATIVE_HANDLERS[name](ctx).then((result) => { nativeResults.set(name, result); }),
     );
   }
   await Promise.all(preloadTasks);
@@ -166,8 +209,18 @@ export async function fetchWidgets({
 
   const widgets = [];
 
+  // Native handlers may return a plain HTML string (legacy shape) or
+  // { html, chart } when the widget also has structured data to plot.
+  const splitResult = (result) => (
+    typeof result === 'string' ? { html: result, chart: undefined } : {
+      html: result?.html ?? '',
+      chart: result?.chart,
+    }
+  );
+
   for (const name of widgetNames) {
     let html;
+    let chart;
 
     if (name in STAFF_ATT_INDICES) {
       html = staffAttCache[STAFF_ATT_INDICES[name]];
@@ -183,15 +236,18 @@ export async function fetchWidgets({
         html = studentHostelExtras[name];
       }
     } else if (nativeResults.has(name)) {
-      html = nativeResults.get(name);
+      ({ html, chart } = splitResult(nativeResults.get(name)));
     } else {
       html = renderPlaceholder(name);
     }
 
-    widgets.push({ id: name, html });
+    widgets.push(chart ? { id: name, html, chart } : { id: name, html });
   }
 
-  return { count: widgets.length, widgets };
+  const result = { count: widgets.length, widgets };
+  pruneWidgetCache();
+  widgetCache.set(cacheKey, { expires: Date.now() + WIDGET_CACHE_TTL_MS, value: result });
+  return result;
 }
 
 /** @deprecated kept for tests; fetchWidgets returns normalized shape directly */

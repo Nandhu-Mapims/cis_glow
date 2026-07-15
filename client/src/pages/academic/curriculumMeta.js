@@ -61,7 +61,6 @@ function buildHubLink(slug, section, defaultIcon) {
   return {
     to: screenPath(slug),
     title: meta.title,
-    desc: `Legacy: ${meta.legacy}`,
     section,
     icon: defaultIcon,
   };

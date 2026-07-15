@@ -801,7 +801,7 @@ export function CommitteeMemberScreen({ data, busy, onLoad, onSave }) {
                             title="Delete"
                             onClick={() => setDeleteId(row.id)}
                           >
-                            <i className="bi bi-trash" aria-hidden="true" />
+                            <i className="fa fa-trash" aria-hidden="true" />
                           </button>
                         ) : null}
                       </td>

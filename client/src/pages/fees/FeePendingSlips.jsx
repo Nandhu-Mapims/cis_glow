@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
-import { useShellData } from '../../hooks/useShellData';
 import { FEE_SCREEN_META } from './feeModuleMeta';
 import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
 
@@ -10,7 +9,7 @@ import { formatIndianMoneyDisplay } from './feeUiHelpers';
 const META = FEE_SCREEN_META['slips-pending'];
 
 export default function FeePendingSlips() {
-  const { settings, menu, loading: shellLoading, error: shellError, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
   const [dataLoading, setDataLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [registerNo, setRegisterNo] = useState('');
@@ -53,7 +52,6 @@ export default function FeePendingSlips() {
   };
 
   useEffect(() => {
-    if (shellLoading) return;
     const init = async () => {
       try {
         await loadSlips();
@@ -62,7 +60,7 @@ export default function FeePendingSlips() {
       }
     };
     init();
-  }, [shellLoading]);
+  }, []);
 
   const search = async (e) => {
     e.preventDefault();
@@ -73,9 +71,8 @@ export default function FeePendingSlips() {
     <FeePageShell
       settings={settings}
       menu={menu}
-      loading={shellLoading || dataLoading}
-      error={shellError}
-      onRetry={reload}
+      loading={dataLoading}
+      error={null}
       breadcrumbs={feeScreenBreadcrumbs('slips-pending')}
       title={META.title}
       legacy={META.legacy}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { printReportHtml } from '../../utils/printReport';
@@ -15,8 +15,7 @@ import {
 } from './PayrollReportLoading';
 
 export default function PayrollIndividualReport() {
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [busyLabel, setBusyLabel] = useState('Loading…');
@@ -72,12 +71,6 @@ export default function PayrollIndividualReport() {
   useEffect(() => {
     const init = async () => {
       try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
         await loadReport({}, { label: 'Loading individual payroll report…' });
       } catch (err) {
         setError(err.message || 'Unable to initialize payroll report');

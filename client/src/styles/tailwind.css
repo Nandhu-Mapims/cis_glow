@@ -1,0 +1,58 @@
+/*
+ * Tailwind entry point for newly-migrated pages. Coexists with `base/index.scss`
+ * (the Bootstrap-class-compatible framework) — pages convert one at a time per
+ * docs/redesign-checklist.md, so both must work side by side during the rollout.
+ *
+ * Prefixed with `tw:` (Tailwind v4 prefix syntax — classes are written as
+ * `tw:flex`, `tw:p-4`, `tw:bg-primary`). Required, not optional: Bootstrap's/our
+ * base framework's spacing scale (`p-3` = 1rem) and Tailwind's default spacing
+ * scale (`p-3` = 0.75rem) use the SAME bare class names for DIFFERENT values, so
+ * without a prefix, whichever stylesheet loads later would silently win and
+ * corrupt spacing on every not-yet-migrated page. The prefix keeps the two
+ * systems from colliding while both are active during the rollout.
+ *
+ * Colors/fonts/radii below point at the *same* --cis-* custom properties the rest
+ * of the app already uses, so Tailwind utilities (tw:bg-primary, tw:text-muted)
+ * stay correct when a user switches theme presets at runtime (theme/applyTheme.js).
+ */
+@import 'tailwindcss' prefix(tw);
+
+@theme {
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+
+  --color-primary: var(--cis-primary);
+  --color-primary-hover: var(--cis-primary-hover);
+  --color-primary-soft: var(--cis-primary-soft);
+  --color-accent: var(--cis-accent);
+  --color-accent-hover: var(--cis-accent-hover);
+  --color-accent-soft: var(--cis-accent-soft);
+
+  --color-surface: var(--cis-surface);
+  --color-bg: var(--cis-bg);
+  --color-bg-subtle: var(--cis-bg-subtle);
+  --color-border: var(--cis-border);
+  --color-border-strong: var(--cis-border-strong);
+
+  --color-ink: var(--cis-text);
+  --color-muted: var(--cis-text-muted);
+  --color-subtle: var(--cis-text-subtle);
+
+  --color-danger: var(--cis-danger);
+  --color-danger-soft: var(--cis-danger-soft);
+  --color-warning: var(--cis-warning);
+  --color-warning-soft: var(--cis-warning-soft);
+  --color-success: var(--cis-success);
+  --color-success-soft: var(--cis-success-soft);
+  --color-info: var(--cis-info);
+  --color-info-soft: var(--cis-info-soft);
+
+  --radius-sm: var(--cis-radius-sm);
+  --radius-md: var(--cis-radius);
+  --radius-lg: var(--cis-radius-lg);
+  --radius-card: var(--cis-card-radius);
+
+  --shadow-sm: var(--cis-shadow-sm);
+  --shadow-md: var(--cis-shadow);
+  --shadow-lg: var(--cis-shadow-lg);
+}

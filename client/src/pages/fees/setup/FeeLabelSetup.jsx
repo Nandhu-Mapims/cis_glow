@@ -136,7 +136,7 @@ export default function FeeLabelSetup() {
                       title="Delete"
                       onClick={() => setDeleteId(row.id)}
                     >
-                      <i className="bi bi-trash" />
+                      <i className="fa fa-trash" />
                     </button>
                   ) : null}
                 </td>

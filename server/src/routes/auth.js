@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { prisma } from '../config/prisma.js';
 import { config } from '../config/index.js';
 import { authMiddleware } from '../middleware/auth.js';
@@ -8,6 +9,23 @@ import { decrypt, normalizeUsername } from '../services/password.js';
 import { createSessionId, signToken } from '../utils/jwt.js';
 
 const router = Router();
+
+// First line of defense in front of the DB-backed failed-attempt throttle below:
+// caps raw request volume per IP so a flood of login POSTs can't hammer the DB/CPU
+// before the business-logic (5-failed-attempts-per-5-min) check even runs.
+const loginRequestLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many login attempts. Please wait a moment and try again.' },
+  // Use the raw socket address rather than req.ip: app.set('trust proxy', true)
+  // makes req.ip trust a client-supplied X-Forwarded-For header, which would let
+  // this limiter be bypassed by spoofing the header. This also sidesteps
+  // express-rate-limit's fatal ERR_ERL_PERMISSIVE_TRUST_PROXY check, which only
+  // fires for its default (req.ip-based) key generator.
+  keyGenerator: (req) => req.socket.remoteAddress || 'unknown',
+});
 
 async function getInstitutionTimezone() {
   const setup = await prisma.basic_setup_tb.findFirst({ where: { del: 1 } });
@@ -28,15 +46,14 @@ function formatTimestamp(timeZone) {
 }
 
 function buildUserProfile(user, sessionId) {
-  const photoPath = user.photo ? `img/member/${user.photo}` : 'img/profile-avatar.jpg';
   return {
     id: user.id,
     memberId: user.member_id,
     memberName: user.member_name,
     email: user.address_email,
     accessType: user.access_type,
-    photo: user.photo,
-    photoUrl: `/legacy/${photoPath}`,
+    photo: user.photo || null,
+    photoUrl: user.photo ? `/legacy/img/member/${user.photo}` : null,
     resetPasswordRequired: Boolean(user.reset_password),
     sessionId,
   };
@@ -56,7 +73,7 @@ async function resolveFirstMenuLink(userId) {
   return rows[0]?.sub_menu_link || 'dashboard.php';
 }
 
-router.post('/login', async (req, res) => {
+router.post('/login', loginRequestLimiter, async (req, res) => {
   try {
     const usernameInput = normalizeUsername(req.body.a_username || req.body.username);
     const passwordInput = String(req.body.a_password || req.body.password || '').trim();

@@ -1,5 +1,4 @@
-import { Link, useParams } from 'react-router-dom';
-import { useShellData } from '../../hooks/useShellData';
+import { Link, useOutletContext, useParams } from 'react-router-dom';
 import FeeBankSetup from './setup/FeeBankSetup';
 import FeeFineSetup from './setup/FeeFineSetup';
 import FeeLabelSetup from './setup/FeeLabelSetup';
@@ -28,7 +27,7 @@ export default function FeeSetupPage() {
   const meta = FEE_SETUP_SCREEN_META[screen];
   const SetupComponent = SETUP_COMPONENTS[screen];
 
-  const { settings, menu, loading, error, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
 
   if (!meta) {
     return (
@@ -43,17 +42,16 @@ export default function FeeSetupPage() {
     <FeePageShell
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={error}
-      onRetry={reload}
+      loading={false}
+      error={null}
       dashboardTitle={meta.title}
       breadcrumbs={feeHomeBreadcrumbs(FEE_SETUP_BREADCRUMB, { label: meta.title })}
       title={meta.title}
       legacy={meta.legacy}
       actions={feeBackAction('/fees/setup')}
     >
-      <div className="card shadow-sm fee-setup-card">
-        <div className="card-body fee-setup-root">
+      <div className="card shadow-sm cis-setup-card fee-setup-card">
+        <div className="card-body cis-setup-root fee-setup-root">
           {SetupComponent ? <SetupComponent /> : <p className="text-muted mb-0">Form not available.</p>}
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useShellData } from '../../hooks/useShellData';
+import { useOutletContext } from 'react-router-dom';
 import { FEE_SCREEN_META } from './feeModuleMeta';
 import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
 import FeeCollectionPanel from './FeeCollectionPanel';
@@ -6,15 +6,14 @@ import FeeCollectionPanel from './FeeCollectionPanel';
 const META = FEE_SCREEN_META.collection;
 
 export default function FeeCollection() {
-  const { settings, menu, loading, error: shellError, reload } = useShellData();
+  const { settings, menu } = useOutletContext();
 
   return (
     <FeePageShell
       settings={settings}
       menu={menu}
-      loading={loading}
-      error={shellError}
-      onRetry={reload}
+      loading={false}
+      error={null}
       breadcrumbs={feeScreenBreadcrumbs('collection')}
       title={META.title}
       legacy={META.legacy}

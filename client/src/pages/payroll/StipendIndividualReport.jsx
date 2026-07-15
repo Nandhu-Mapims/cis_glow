@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { buildAttendanceReportPrintHtml } from '../../utils/attendanceReportPrint';
@@ -18,8 +18,7 @@ import './stipendIndividualReport.css';
 
 export default function StipendIndividualReport() {
   const reportRef = useRef(null);
-  const [settings, setSettings] = useState(null);
-  const [menu, setMenu] = useState([]);
+  const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [busyLabel, setBusyLabel] = useState('Loading…');
@@ -69,12 +68,6 @@ export default function StipendIndividualReport() {
   useEffect(() => {
     const init = async () => {
       try {
-        const [settingsRes, menuRes] = await Promise.all([
-          api.get('/api/settings/basic'),
-          api.get('/api/menu'),
-        ]);
-        setSettings(settingsRes.data);
-        setMenu(menuRes.data.menu || []);
         await loadReport({}, { label: 'Loading stipend individual report…' });
       } catch (err) {
         setError(err.message || 'Unable to initialize stipend individual report');
@@ -134,7 +127,7 @@ export default function StipendIndividualReport() {
           <div>
             <h3 className="dashboard-title mb-0">Stipend Individual Report</h3>
             <p className="text-muted small mb-0">
-              Month-wide payroll dashboard and salary statement bundle (legacy: individual report1)
+              Month-wide payroll dashboard and salary statement bundle.
             </p>
           </div>
           <div className="d-flex gap-2">

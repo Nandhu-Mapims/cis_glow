@@ -1,6 +1,7 @@
 import { prisma } from '../../config/prisma.js';
 import { convertNYear } from '../fees/feeHelpers.js';
 import { auditFields } from '../shared/moduleAudit.js';
+import { escapeSql } from '../../utils/sqlSafe.js';
 
 async function loadAcademicYears() {
   const rows = await prisma.$queryRaw`
@@ -117,13 +118,13 @@ export async function resolveCourseSlotMobiles(selectedKeys = [], mobileField = 
       FROM student_profile_tb AS A
       INNER JOIN student_academic_tb AS B ON A.id = B.s_id
       WHERE A.del = 1 AND B.del = 1
-        AND A.course_id = '${courseId}'
+        AND A.course_id = '${escapeSql(courseId)}'
         AND ${column} != ''
         AND (A.releaving_date > DATE(NOW()) OR A.releaving_date = '0000-00-00')
-        AND B.course_id = '${courseId}'
-        AND B.academic_year = '${acYear}'
-        AND B.current_year = '${year}'
-        AND B.academic_type = '${batch}'
+        AND B.course_id = '${escapeSql(courseId)}'
+        AND B.academic_year = '${escapeSql(acYear)}'
+        AND B.current_year = '${escapeSql(year)}'
+        AND B.academic_type = '${escapeSql(batch)}'
     `);
     for (const row of rows) {
       const mobile = String(row.mobile || '').trim();
