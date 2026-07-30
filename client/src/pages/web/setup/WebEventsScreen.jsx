@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import ConfirmModal from '../../../components/ConfirmModal';
+import { useToast } from '../../../components/ToastProvider';
 
 const STATUS_OPTIONS = [
   { value: 1, label: 'Confirm' },
@@ -167,9 +169,11 @@ export function WebEventAddScreen({ data, busy, onLoad, onSave }) {
 }
 
 export function WebEventEditScreen({ data, busy, onLoad, onSave }) {
+  const toast = useToast();
   const [eventId, setEventId] = useState('');
   const [search, setSearch] = useState('');
   const [form, setForm] = useState(emptyEvent());
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => { onLoad(); }, [onLoad]);
   useEffect(() => {
@@ -186,6 +190,19 @@ export function WebEventEditScreen({ data, busy, onLoad, onSave }) {
   const runSearch = async (e) => {
     e.preventDefault();
     await onLoad({ search, eventId: eventId || undefined });
+  };
+
+  const runDelete = async () => {
+    try {
+      await onSave({ action: 'delete', eventId });
+      toast.success('Event deleted');
+      setEventId('');
+      setForm(emptyEvent());
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Delete failed');
+    } finally {
+      setConfirmDelete(false);
+    }
   };
 
   return (
@@ -219,17 +236,23 @@ export function WebEventEditScreen({ data, busy, onLoad, onSave }) {
             eventTypes={data?.eventTypes || []}
             busy={busy}
             onSubmit={async (payload, files) => onSave({ ...payload, eventId }, files)}
-            onDelete={async () => {
-              if (!window.confirm('Delete this event?')) return;
-              await onSave({ action: 'delete', eventId });
-              setEventId('');
-              setForm(emptyEvent());
-            }}
+            onDelete={() => setConfirmDelete(true)}
           />
         ) : (
           <p className="text-muted">Select an event from the list to edit.</p>
         )}
       </div>
+
+      <ConfirmModal
+        show={confirmDelete}
+        title="Delete event?"
+        message="Delete this event? This cannot be undone."
+        confirmLabel="Delete Event"
+        tone="danger"
+        busy={busy}
+        onConfirm={runDelete}
+        onClose={() => setConfirmDelete(false)}
+      />
     </div>
   );
 }

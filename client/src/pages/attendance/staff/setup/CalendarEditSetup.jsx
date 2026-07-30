@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { toDateInputValue } from '../../../../utils/dateInputs';
 
 export default function CalendarEditSetup({ data, busy, onLoad, onSave }) {
   const [eid, setEid] = useState(data?.eid || '');
   const record = data?.record;
+  const [form, setForm] = useState(null);
+  const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
+
+  useEffect(() => { setForm(record ? { ...record } : null); }, [record]);
 
   return (
     <div>
@@ -15,13 +20,13 @@ export default function CalendarEditSetup({ data, busy, onLoad, onSave }) {
           </div>
         </div>
       </div>
-      {record && (
-        <form onSubmit={(e) => { e.preventDefault(); onSave({ ...record, eid: record.id, Submit: 'Update' }); }}>
+      {form && (
+        <form onSubmit={(e) => { e.preventDefault(); onSave({ ...form, eid: record.id, Submit: 'Update' }); }}>
           <div className="row g-3">
-            <div className="col-md-3"><label className="form-label">From</label><input className="form-control" name="from_date" defaultValue={record.from_date} /></div>
-            <div className="col-md-3"><label className="form-label">To</label><input className="form-control" name="to_date" defaultValue={record.to_date} /></div>
-            <div className="col-md-3"><label className="form-label">Staff ID</label><input className="form-control" name="staff_id" defaultValue={record.staff_id} /></div>
-            <div className="col-md-3"><label className="form-label">Comments</label><input className="form-control" name="comments" defaultValue={record.comments} /></div>
+            <div className="col-md-3"><label className="form-label">From</label><input type="date" className="form-control" value={toDateInputValue(form.from_date)} onChange={(e) => set('from_date', e.target.value)} /></div>
+            <div className="col-md-3"><label className="form-label">To</label><input type="date" className="form-control" value={toDateInputValue(form.to_date)} onChange={(e) => set('to_date', e.target.value)} /></div>
+            <div className="col-md-3"><label className="form-label">Staff ID</label><input className="form-control" value={form.staff_id || ''} onChange={(e) => set('staff_id', e.target.value)} /></div>
+            <div className="col-md-3"><label className="form-label">Comments</label><input className="form-control" value={form.comments || ''} onChange={(e) => set('comments', e.target.value)} /></div>
             <div className="col-12 d-flex gap-2">
               <button type="submit" className="btn btn-primary" disabled={busy}>Update</button>
               <button type="button" className="btn btn-outline-danger" disabled={busy} onClick={() => onSave({ eid: record.id, delete: true })}>Delete</button>

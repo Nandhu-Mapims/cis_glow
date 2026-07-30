@@ -255,8 +255,11 @@ async function getManualAtt(sid, staffId, attDate, totalDays) {
        ORDER BY FIELD(p_time, ${pTimeFilter.includes('Morning') ? "'Morning','Full Day'" : "'Evening','Full Day'"})`,
     );
     for (const row of rows) {
-      const scalStaffArray = String(row.staff_id || '').split(',');
-      if (!scalStaffArray.includes(staffId)) continue;
+      // Legacy staff_calendar_tb.staff_id lists carry stray whitespace / CR-LF
+      // between comma-separated ids (e.g. "...,30408,\r\n30365,..."). PHP's loose
+      // in_array() matches these via numeric coercion; trim so membership matches too.
+      const scalStaffArray = String(row.staff_id || '').split(',').map((x) => x.trim());
+      if (!scalStaffArray.includes(String(staffId).trim())) continue;
       const eventRows = await prisma.$queryRawUnsafe(
         `SELECT event_option FROM basic_event_tb WHERE del=1 AND event_name='${escapeSql(String(row.academic_events).replace(/\\/g, ''))}' ORDER BY id LIMIT 1`,
       );

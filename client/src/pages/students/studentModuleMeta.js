@@ -75,7 +75,7 @@ export const STUDENT_SCREEN_META = {
   'attachments-report': {
     title: 'Attachments — Report',
     legacy: 'student_attachments_report.php',
-    type: 'course-report',
+    type: 'attachments-report',
     hubSection: 'Documents & ID',
     icon: 'fa fa-list-alt',
   },

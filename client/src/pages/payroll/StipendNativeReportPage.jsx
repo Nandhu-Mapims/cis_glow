@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
+import ChipMultiSelect from '../../components/ChipMultiSelect';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { buildAttendanceReportPrintHtml } from '../../utils/attendanceReportPrint';
 import { printReportHtml } from '../../utils/printReport';
@@ -130,17 +131,15 @@ export default function StipendNativeReportPage({
               ))}
             </select>
           </div>
-          <div className="col-md-4">
+          <div className="col-md-8">
             <label className="form-label">Category</label>
-            <select className="form-select" multiple required value={searchCategory} onChange={(e) => setSearchCategory(Array.from(e.target.selectedOptions).map((o) => o.value))} size={5}>
-              {(data?.categoryOptions || []).map((group) => (
-                <optgroup key={group.group} label={group.group}>
-                  {(group.items || []).map((item) => (
-                    <option key={item.value} value={item.value}>{item.label}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+            <ChipMultiSelect
+              options={(data?.categoryOptions || []).flatMap((group) => (group.items || []).map((item) => ({ value: item.value, label: item.label, group: group.group })))}
+              value={searchCategory}
+              onChange={setSearchCategory}
+              emptySelectionText="No categories selected"
+              emptySearchText="No categories match your search."
+            />
           </div>
           {isStatement && (
             <div className="col-md-2">

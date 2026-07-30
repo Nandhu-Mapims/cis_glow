@@ -6,6 +6,43 @@
   gap: 1rem;
 }
 
+/* Attachments — Report */
+.cis-dt-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cis-text);
+}
+
+.cis-attachment-status {
+  min-width: 5.5rem;
+}
+
+.cis-attachment-action {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--cis-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.cis-attachment-action:hover { color: var(--cis-primary-hover); text-decoration: underline; }
+
+.cis-attachment-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--cis-radius-sm);
+  color: var(--cis-text-subtle);
+}
+
+.cis-attachment-action-icon:hover {
+  color: var(--cis-primary);
+  background: var(--cis-primary-soft);
+}
+
 .cis-student-profile-hero {
   display: flex;
   flex-wrap: wrap;
@@ -569,6 +606,13 @@
 .cis-student-report-output .report-html table {
   width: 100%;
   margin-bottom: 0;
+  /* Sticky <th> inside a border-collapse:collapse table (the global default —
+     see base/_reset.scss) doesn't reliably paint over content scrolled
+     underneath it — browsers can leave scrolled-past rows visible through
+     the header. `separate` + zero spacing fixes that without introducing
+     gaps between cells. */
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .cis-student-report-output .report-html thead th {

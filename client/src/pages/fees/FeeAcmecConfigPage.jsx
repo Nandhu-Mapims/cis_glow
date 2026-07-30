@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import { useTransientNotice } from '../../hooks/useTransientNotice';
+import { toDateInputValue } from '../../utils/dateInputs';
 import SetupAlerts from './setup/SetupAlerts';
 import { FEE_SCREEN_META } from './feeModuleMeta';
 import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
@@ -186,7 +187,7 @@ export default function FeeAcmecConfigPage() {
                     <div className="card-body">
                       <div className="mb-2">
                         <label className="form-label">Date</label>
-                        <input className="form-control" value={form.tfReceiptDate} onChange={(e) => patchForm('tfReceiptDate', e.target.value)} placeholder="dd-mm-yyyy" />
+                        <input type="date" className="form-control" value={toDateInputValue(form.tfReceiptDate)} onChange={(e) => patchForm('tfReceiptDate', e.target.value)} />
                       </div>
                       <div className="mb-2">
                         <label className="form-label">Receipt No.</label>

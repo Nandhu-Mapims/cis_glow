@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
+import { useToast } from '../../components/ToastProvider';
 import { printReportHtml } from '../../utils/printReport';
 import { FEE_SCREEN_META } from './feeModuleMeta';
 import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
@@ -87,6 +88,7 @@ function FeeDashboardSkeleton() {
 
 export default function FeeDashboard() {
   const { settings, menu } = useOutletContext();
+  const toast = useToast();
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
   const [attendanceDate, setAttendanceDate] = useState(todayIso);
@@ -100,9 +102,9 @@ export default function FeeDashboard() {
       const res = await api.post('/api/fees/dashboard/report', params);
       printReportHtml(res.data.html || '');
     } catch (err) {
-      window.alert(err.response?.data?.message || 'Unable to open fee drill-down report');
+      toast.error(err.response?.data?.message || 'Unable to open fee drill-down report');
     }
-  }, []);
+  }, [toast]);
 
   reportRef.current = openDrilldown;
 

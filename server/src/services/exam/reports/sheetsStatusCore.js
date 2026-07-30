@@ -9,7 +9,11 @@ const PAGE = 'term_sheets_status.php';
 function formatInputDate(value) {
   const text = String(value || '').trim();
   if (!text) return '';
-  const parsed = new Date(text.includes('-') && text.length === 10 ? text.split('-').reverse().join('-') : text);
+  // dd-mm-yyyy (legacy display format) needs flipping to ISO before Date()
+  // can parse it; yyyy-mm-dd (already ISO, e.g. from a native date input)
+  // must NOT be reversed — `new Date('25-07-2026')` parses as Invalid Date.
+  const iso = /^\d{2}-\d{2}-\d{4}$/.test(text) ? text.split('-').reverse().join('-') : text;
+  const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) return '';
   return parsed.toISOString().slice(0, 10);
 }

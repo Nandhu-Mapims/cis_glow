@@ -44,7 +44,7 @@ export default function MenuAuthSetup({ data, busy, onLoad, onSave }) {
             <label className="form-check">
               <input
                 type="checkbox"
-                className="form-check-input"
+                className="form-check-input me-2"
                 onChange={(e) => {
                   formToggleAll(e.target.checked);
                 }}
@@ -62,7 +62,7 @@ export default function MenuAuthSetup({ data, busy, onLoad, onSave }) {
                     <label className="form-check">
                       <input
                         type="checkbox"
-                        className="form-check-input"
+                        className="form-check-input me-2"
                         name="a_auth"
                         value={item.menuId}
                         defaultChecked={checkedIds.has(String(item.menuId))}

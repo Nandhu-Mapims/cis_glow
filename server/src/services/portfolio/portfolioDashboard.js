@@ -121,6 +121,7 @@ export async function loadPortfolioDashboard(memberId, fields = {}, audit = {}) 
       const international = seminarIndex.get(`${courseId}\0${category}\0International`) || 0;
       seminarTable.push({
         course: courseLabel,
+        courseName: course.course_name,
         category,
         national,
         international,

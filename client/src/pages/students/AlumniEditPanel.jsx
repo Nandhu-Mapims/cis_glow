@@ -38,7 +38,9 @@ export default function AlumniEditPanel({ data, busy, onLoad, onSave }) {
 
   const handleSelectAlumni = async (id) => {
     setSelectedId(id);
-    await onLoad({ alumni_id: id });
+    // Carry the currently displayed (possibly filtered) list along so the server can
+    // echo it back instead of replacing it with the full unfiltered roster.
+    await onLoad({ alumni_id: id, alumniList: data?.alumniList });
   };
 
   const set = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));

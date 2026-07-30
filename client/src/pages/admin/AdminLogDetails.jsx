@@ -85,10 +85,14 @@ export default function AdminLogDetails() {
     operation: '',
   });
   const didInitRef = useRef(false);
+  // Remembers the exact fields of the last load (search or default view) so
+  // Prev/Next can re-request the same query at a different page.
+  const lastFieldsRef = useRef({});
 
   const loadDetails = useCallback(async (fields = {}) => {
     const isSearch = fields.Submit === 'Search';
     if (isSearch) setHasSearched(true);
+    lastFieldsRef.current = fields;
 
     setBusy(true);
     setError(null);
@@ -101,7 +105,7 @@ export default function AdminLogDetails() {
       }
       setData(res.data);
       if (res.data.searched) setHasSearched(true);
-      if (res.data.filters) {
+      if (isSearch && res.data.filters) {
         setFilters(filtersFromResponse(res.data.filters));
       }
     } catch (err) {
@@ -119,10 +123,9 @@ export default function AdminLogDetails() {
     const init = async () => {
       try {
         const userFromUrl = searchParams.get('user') || '';
-        const initialFields = {
-          from_date: defaultDateRange(),
-          ...(userFromUrl ? { user_name: userFromUrl, Submit: 'Search' } : {}),
-        };
+        const initialFields = userFromUrl
+          ? { from_date: defaultDateRange(), user_name: userFromUrl, Submit: 'Search' }
+          : {};
         if (userFromUrl) {
           setFilters((prev) => ({ ...prev, user_name: userFromUrl }));
           setHasSearched(true);
@@ -138,6 +141,10 @@ export default function AdminLogDetails() {
   const onSearch = async (event) => {
     event.preventDefault();
     await loadDetails({ ...filtersToFields(filters), Submit: 'Search' });
+  };
+
+  const goToPage = async (page) => {
+    await loadDetails({ ...lastFieldsRef.current, page });
   };
 
   const updateDateFrom = (value) => {
@@ -226,6 +233,7 @@ export default function AdminLogDetails() {
                         type="date"
                         className="form-control form-control-sm"
                         value={filters.date_from}
+                        max={filters.date_to || undefined}
                         onChange={(e) => updateDateFrom(e.target.value)}
                       />
                     </div>
@@ -331,6 +339,33 @@ export default function AdminLogDetails() {
                 </div>
               ) : (
                 <p className="text-muted mb-0">Use the filters and click Search to load session traces.</p>
+              )}
+
+              {showResults && (data?.rows?.length > 0 || (data?.page ?? 1) > 1) && (
+                <div className="d-flex justify-content-between align-items-center mt-2">
+                  <span className="text-muted small">
+                    Page {data?.page ?? 1}
+                    {data?.rows?.length ? ` · ${data.rows.length} rows` : ''}
+                  </span>
+                  <div className="btn-group btn-group-sm">
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary"
+                      disabled={busy || (data?.page ?? 1) <= 1}
+                      onClick={() => goToPage((data?.page ?? 1) - 1)}
+                    >
+                      Prev
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary"
+                      disabled={busy || !data?.hasMore}
+                      onClick={() => goToPage((data?.page ?? 1) + 1)}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>

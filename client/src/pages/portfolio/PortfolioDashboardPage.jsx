@@ -1,8 +1,25 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import { Breadcrumbs, PageHeader, PageLoading } from '../../components/PageShell';
 import DashboardLayout from '../../layouts/DashboardLayout';
+
+const COURSE_GROUP_ORDER = ['U.G', 'P.G'];
+
+/** Group rows by courseName ('U.G' / 'P.G'), preserving row order within each group. */
+function groupByCourseName(rows) {
+  const groups = new Map();
+  for (const row of rows) {
+    const key = row.courseName || 'Other';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(row);
+  }
+  const orderedKeys = [
+    ...COURSE_GROUP_ORDER.filter((key) => groups.has(key)),
+    ...[...groups.keys()].filter((key) => !COURSE_GROUP_ORDER.includes(key)),
+  ];
+  return orderedKeys.map((key) => ({ courseName: key, rows: groups.get(key) }));
+}
 
 function readFormYears(form) {
   return {
@@ -170,13 +187,20 @@ export default function PortfolioDashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {(data.publicationRows || []).map((row) => (
-                  <tr key={`${row.course}-${row.courseName}`}>
-                    <td>{row.course}</td>
-                    {(data.publicationTypes || []).map((t) => (
-                      <td key={t} className="text-center">{row.counts?.[t] ?? 0}</td>
+                {groupByCourseName(data.publicationRows || []).map((group) => (
+                  <Fragment key={group.courseName}>
+                    <tr className="table-secondary">
+                      <th colSpan={(data.publicationTypes || []).length + 1}>{group.courseName}</th>
+                    </tr>
+                    {group.rows.map((row) => (
+                      <tr key={`${group.courseName}-${row.course}`}>
+                        <td>{row.course}</td>
+                        {(data.publicationTypes || []).map((t) => (
+                          <td key={t} className="text-center">{row.counts?.[t] ?? 0}</td>
+                        ))}
+                      </tr>
                     ))}
-                  </tr>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
@@ -194,13 +218,20 @@ export default function PortfolioDashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {(data.seminarRows || []).map((row, i) => (
-                  <tr key={i}>
-                    <td>{row.course}</td>
-                    <td>{row.category}</td>
-                    <td className="text-center">{row.national}</td>
-                    <td className="text-center">{row.international}</td>
-                  </tr>
+                {groupByCourseName(data.seminarRows || []).map((group) => (
+                  <Fragment key={group.courseName}>
+                    <tr className="table-secondary">
+                      <th colSpan={4}>{group.courseName}</th>
+                    </tr>
+                    {group.rows.map((row, i) => (
+                      <tr key={`${group.courseName}-${row.course}-${row.category}-${i}`}>
+                        <td>{row.course}</td>
+                        <td>{row.category}</td>
+                        <td className="text-center">{row.national}</td>
+                        <td className="text-center">{row.international}</td>
+                      </tr>
+                    ))}
+                  </Fragment>
                 ))}
               </tbody>
             </table>

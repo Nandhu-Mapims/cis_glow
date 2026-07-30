@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useOutletContext } from 'react-router-dom';
+import { Link, useLocation, useOutletContext, useSearchParams } from 'react-router-dom';
+import api from '../../api/client';
 import { printReportHtml } from '../../utils/printReport';
 import AlumniEditPanel from './AlumniEditPanel';
 import AlumniIdCardPanel from './AlumniIdCardPanel';
@@ -10,6 +11,7 @@ import PromotePanel from './PromotePanel';
 import StudentPageShell, { STUDENT_BREADCRUMB_HUB } from './StudentPageShell';
 import { STUDENT_SCREEN_META } from './studentModuleMeta';
 import { useStudentScreenApi } from './useStudentModuleApi';
+import DataTable from '../../components/DataTable';
 
 const SAVE_SCREENS = new Set([
   'photo-upload',
@@ -21,10 +23,32 @@ const SAVE_SCREENS = new Set([
   'collage-image',
 ]);
 
-function StudentAttachmentsPanel({ data, busy, onLoad, onSave, searchMore, readOnly }) {
+const ATTACHMENT_UPLOAD_ACCEPT = '.jpg,.jpeg,.png,.gif,.doc,.docx,.pdf';
+
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function StudentAttachmentsPanel({ data, busy, onLoad, onSave, searchMore, readOnly, autoLoadStudentId }) {
   const [q, setQ] = useState('');
   const catalog = data?.catalog;
   const [items, setItems] = useState([]);
+  const [fileUrls, setFileUrls] = useState({});
+  const [uploadingIndex, setUploadingIndex] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
+
+  // Deep-link support: the attachments report links straight to a student's
+  // upload/view screen via ?studentId=, instead of forcing a manual re-search.
+  useEffect(() => {
+    if (autoLoadStudentId) onLoad({ studentId: autoLoadStudentId });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoLoadStudentId]);
+
   useEffect(() => {
     if (catalog?.types) {
       setItems(catalog.types.map((t) => ({
@@ -33,8 +57,28 @@ function StudentAttachmentsPanel({ data, busy, onLoad, onSave, searchMore, readO
         attachFile: t.attachFile || '',
         recordId: t.recordId,
       })));
+      setFileUrls(Object.fromEntries(catalog.types.map((t, i) => [i, t.fileUrl || null])));
     }
   }, [catalog]);
+
+  const handleFile = async (index, file) => {
+    if (!file || !catalog) return;
+    setUploadingIndex(index);
+    setUploadError(null);
+    try {
+      const dataBase64 = await readFileAsBase64(file);
+      const res = await api.post(`/api/students/${catalog.studentId}/attachments/upload`, {
+        filename: file.name,
+        dataBase64,
+      });
+      setItems((p) => p.map((r, j) => (j === index ? { ...r, attachFile: res.data.filename } : r)));
+      setFileUrls((p) => ({ ...p, [index]: res.data.url }));
+    } catch (err) {
+      setUploadError(err.response?.data?.message || 'Upload failed');
+    } finally {
+      setUploadingIndex(null);
+    }
+  };
 
   return (
     <div>
@@ -51,6 +95,8 @@ function StudentAttachmentsPanel({ data, busy, onLoad, onSave, searchMore, readO
       {catalog && (
         <form onSubmit={(e) => { e.preventDefault(); if (!readOnly) onSave({ studentId: catalog.studentId, items }); }}>
           <p><strong>Student #{catalog.studentId}</strong></p>
+          {!readOnly && <p className="text-muted small">Supported: jpg, png, gif, doc, docx, pdf</p>}
+          {uploadError && <div className="alert alert-danger py-2">{uploadError}</div>}
           <div className="table-responsive cis-dt-wrap">
             <table className="cis-dt-table table-sm">
               <thead><tr><th>Attachment</th><th>Number</th><th>File</th></tr></thead>
@@ -62,9 +108,17 @@ function StudentAttachmentsPanel({ data, busy, onLoad, onSave, searchMore, readO
                       <input className="form-control form-control-sm" readOnly={readOnly} value={items[i]?.attachNo || ''} onChange={(e) => setItems((p) => p.map((r, j) => j === i ? { ...r, attachNo: e.target.value } : r))} />
                     </td>
                     <td>
-                      {t.fileUrl ? <a href={t.fileUrl} target="_blank" rel="noreferrer">{t.attachFile || 'View'}</a> : null}
+                      {fileUrls[i]
+                        ? <a href={fileUrls[i]} target="_blank" rel="noreferrer">{items[i]?.attachFile || 'View'}</a>
+                        : <span className="text-muted small">No file</span>}
                       {!readOnly && (
-                        <input className="form-control form-control-sm mt-1" value={items[i]?.attachFile || ''} onChange={(e) => setItems((p) => p.map((r, j) => j === i ? { ...r, attachFile: e.target.value } : r))} />
+                        <input
+                          type="file"
+                          className="form-control form-control-sm mt-1"
+                          accept={ATTACHMENT_UPLOAD_ACCEPT}
+                          disabled={uploadingIndex === i}
+                          onChange={(e) => handleFile(i, e.target.files?.[0])}
+                        />
                       )}
                     </td>
                   </tr>
@@ -72,8 +126,138 @@ function StudentAttachmentsPanel({ data, busy, onLoad, onSave, searchMore, readO
               </tbody>
             </table>
           </div>
-          {!readOnly && <button type="submit" className="btn btn-primary" disabled={busy}>Save Attachments</button>}
+          {!readOnly && <button type="submit" className="btn btn-primary" disabled={busy || uploadingIndex !== null}>Save Attachments</button>}
         </form>
+      )}
+    </div>
+  );
+}
+
+const ATTACHMENT_STATUS = {
+  pending: { label: 'Pending', className: 'bg-danger-soft' },
+  in_review: { label: 'In Review', className: 'bg-info-soft' },
+  complete: { label: 'Complete', className: 'bg-success-soft' },
+};
+
+function AttachmentStatusBadge({ status }) {
+  const meta = ATTACHMENT_STATUS[status] || ATTACHMENT_STATUS.pending;
+  return <span className={`badge cis-attachment-status ${meta.className}`}>{meta.label}</span>;
+}
+
+function AttachmentsReportPanel({ data, busy, onGenerate }) {
+  const [searchBy, setSearchBy] = useState('roll_no');
+  const [searchInput, setSearchInput] = useState('');
+  const [searchCourse, setSearchCourse] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onGenerate({ search_by: searchBy, search_input: searchInput, search_course: searchCourse, Submit: 'Generate' });
+  };
+
+  const columns = [
+    { key: 'sno', header: 'S.No', width: '4rem', render: (row, displayIndex) => displayIndex + 1 },
+    { key: 'registerNo', header: 'Register No', primary: true, sortable: true, searchField: true, numeric: true, render: (row) => row.registerNo },
+    { key: 'name', header: 'Full Name', sortable: true, searchField: true, render: (row) => row.name },
+    { key: 'fileCount', header: 'File Count', align: 'center', sortable: true, numeric: true, render: (row) => row.fileCount },
+    { key: 'status', header: 'Status', align: 'center', sortable: true, sortValue: (row) => row.status, render: (row) => <AttachmentStatusBadge status={row.status} /> },
+    {
+      key: 'actions',
+      header: 'Actions',
+      align: 'right',
+      hideOnMobile: true,
+      render: (row) => (
+        <div className="d-flex justify-content-end gap-2">
+          {row.fileCount === 0 ? (
+            <Link to={`/students/attachments-upload?studentId=${row.id}`} className="cis-attachment-action">Upload</Link>
+          ) : (
+            <Link to={`/students/attachments-view?studentId=${row.id}`} className="cis-attachment-action">View All</Link>
+          )}
+          <Link to={`/students/${row.id}`} className="cis-attachment-action-icon" title="Open student profile" aria-label="Open student profile">
+            <i className="fa fa-eye" aria-hidden="true" />
+          </Link>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="cis-page">
+      <section className="cis-formsection">
+        <header className="cis-formsection-head">
+          <h2 className="cis-formsection-title"><i className="fa fa-filter me-2" aria-hidden="true" />Report Filters</h2>
+        </header>
+        <form className="cis-formsection-body row g-3" onSubmit={handleSubmit}>
+          <div className="col-md-3">
+            <label className="form-label" htmlFor="ar-search-by">Search by</label>
+            <select
+              id="ar-search-by"
+              className="form-select"
+              value={searchBy}
+              onChange={(e) => {
+                setSearchBy(e.target.value);
+                setSearchInput('');
+                setSearchCourse('');
+              }}
+            >
+              <option value="roll_no">Register No</option>
+              <option value="batch">Batch</option>
+            </select>
+          </div>
+          {searchBy === 'roll_no' && (
+            <div className="col-md-5">
+              <label className="form-label" htmlFor="ar-search-input">Register nos / batch value</label>
+              <input
+                id="ar-search-input"
+                className="form-control"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Register nos (comma) or batch value"
+              />
+            </div>
+          )}
+          {searchBy === 'batch' && (
+            <div className="col-md-5">
+              <label className="form-label" htmlFor="ar-search-course">Course / batch</label>
+              <select id="ar-search-course" className="form-select" value={searchCourse} onChange={(e) => setSearchCourse(e.target.value)}>
+                <option value="">Course / batch</option>
+                {(data?.courses || []).flatMap((c) => (c.batchOptions || []).map((b) => (
+                  <option key={b.value} value={b.value}>{b.label}</option>
+                )))}
+              </select>
+            </div>
+          )}
+          <div className="col-md-4 d-flex align-items-end">
+            <button type="submit" className="btn btn-primary text-nowrap w-100" disabled={busy}>
+              <i className="fa fa-refresh me-1" aria-hidden="true" />
+              Generate Report
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {data?.students && (
+        <section className="card cis-student-report-output">
+          <div className="card-header d-flex align-items-center justify-content-between">
+            <h2 className="cis-dt-title mb-0">Student Attachments Report</h2>
+            <span className="cis-dt-count">
+              {data.students.length}
+              {data.students.length === 1 ? ' student' : ' students'}
+            </span>
+          </div>
+          <div className="card-body">
+            <DataTable
+              columns={columns}
+              rows={data.students}
+              getRowKey={(row) => row.id}
+              loading={busy}
+              caption="Student Attachments Report"
+              searchable={data.students.length > 8}
+              searchPlaceholder="Filter by register no or name…"
+              pageSize={10}
+              empty={{ icon: 'fa fa-folder-open-o', title: 'No students found', message: 'Adjust the filters and generate the report again.' }}
+            />
+          </div>
+        </section>
       )}
     </div>
   );
@@ -89,32 +273,220 @@ function formFieldsFromDom(formEl, state) {
   return { ...state, ...fromForm };
 }
 
-function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
+function PhotoBulkUploadFields({ busy, onSave }) {
+  const [items, setItems] = useState([]);
+  const [results, setResults] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [inputKey, setInputKey] = useState(0);
+
+  const handleFiles = async (e) => {
+    const files = [...(e.target.files || [])];
+    setResults(null);
+    const read = await Promise.all(files.map((f) => new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve({ name: f.name, data: reader.result });
+      reader.readAsDataURL(f);
+    })));
+    setItems(read);
+  };
+
+  const handleSave = async () => {
+    if (!items.length) return;
+    setSaving(true);
+    try {
+      const result = await onSave({ files: items });
+      if (result?.results) setResults(result.results);
+      if (result?.success) {
+        setItems([]);
+        setInputKey((k) => k + 1);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="col-12 cis-photo-bulk-upload mt-3 pt-3 border-top">
+      <p className="cis-screen-filters-head mb-2">Bulk upload — file name is the register no (e.g. 24CSE001.jpg)</p>
+      <div className="row g-3">
+        <div className="col-md-8">
+          <input
+            key={inputKey}
+            type="file"
+            className="form-control"
+            accept=".png,.jpg,.jpeg"
+            multiple
+            onChange={handleFiles}
+          />
+          {items.length > 0 && <p className="small text-muted mt-1 mb-0">{items.length} file(s) selected</p>}
+        </div>
+        <div className="col-md-4 d-flex align-items-start">
+          <button
+            type="button"
+            className="btn btn-primary w-100"
+            disabled={busy || saving || !items.length}
+            onClick={handleSave}
+          >
+            {saving ? 'Uploading…' : `Upload ${items.length || ''} photo${items.length === 1 ? '' : 's'}`.trim()}
+          </button>
+        </div>
+      </div>
+      {results && (
+        <ul className="list-unstyled small mt-2 mb-0">
+          {results.map((r, i) => (
+            <li key={`${r.name}-${i}`} className={r.success ? 'text-success' : 'text-danger'}>
+              {r.name} {r.success ? `→ saved as ${r.savedAs}` : `— ${r.error}`}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function PhotoUploadFields({ busy, searchMore, onSave }) {
+  const [regNo, setRegNo] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const [matches, setMatches] = useState([]);
+  const [student, setStudent] = useState(null);
+  const [file, setFile] = useState(null);
+
+  const runSearch = async () => {
+    const q = regNo.trim();
+    if (q.length < 3) {
+      setSearchError('Type at least 3 digits of the register no.');
+      return;
+    }
+    setSearching(true);
+    setSearchError(null);
+    setMatches([]);
+    setStudent(null);
+    try {
+      const res = await searchMore({ by: 'roll', q });
+      const list = Array.isArray(res) ? res : res?.students || [];
+      if (!list.length) setSearchError('No student found for that register no.');
+      else if (list.length === 1) setStudent(list[0]);
+      else setMatches(list);
+    } catch {
+      setSearchError('Unable to search for that student.');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const pickStudent = (s) => {
+    setStudent(s);
+    setMatches([]);
+  };
+
+  const handleFile = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) { setFile(null); return; }
+    const reader = new FileReader();
+    reader.onload = () => setFile({ name: f.name, data: reader.result });
+    reader.readAsDataURL(f);
+  };
+
+  const handleSave = async () => {
+    if (!student || !file) return;
+    const result = await onSave({ registerNo: student.registerNo, file });
+    if (result?.success) {
+      setFile(null);
+      setRegNo('');
+      setStudent(null);
+    }
+  };
+
+  return (
+    <>
+      <div className="col-md-5">
+        <label className="form-label">Register no</label>
+        <div className="d-flex gap-2">
+          <input
+            className="form-control"
+            value={regNo}
+            placeholder="Register no (min 3 digits)"
+            onChange={(e) => setRegNo(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); runSearch(); } }}
+          />
+          <button type="button" className="btn btn-outline-primary text-nowrap" disabled={busy || searching || regNo.trim().length < 3} onClick={runSearch}>
+            {searching ? 'Searching…' : 'Find student'}
+          </button>
+        </div>
+        {searchError && <p className="text-danger small mt-1 mb-0">{searchError}</p>}
+        {matches.length > 0 && (
+          <ul className="list-group mt-1">
+            {matches.map((m) => (
+              <li key={m.id} className="list-group-item list-group-item-action p-2">
+                <button type="button" className="btn btn-link btn-sm p-0 text-decoration-none" onClick={() => pickStudent(m)}>
+                  {m.name} ({m.registerNo})
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {student && (
+          <p className="small mt-1 mb-0">
+            Selected: <strong>{student.name}</strong> ({student.registerNo})
+          </p>
+        )}
+      </div>
+      <div className="col-md-5">
+        <label className="form-label">Photo (PNG/JPG, any file name)</label>
+        <input type="file" className="form-control" accept=".png,.jpg,.jpeg" disabled={!student} onChange={handleFile} />
+      </div>
+      <div className="col-md-2 d-flex align-items-end">
+        <button type="button" className="btn btn-primary w-100" disabled={busy || !student || !file} onClick={handleSave}>
+          Save
+        </button>
+      </div>
+    </>
+  );
+}
+
+function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy, searchMore }) {
   const [fields, setFields] = useState({});
   const set = (k, v) => setFields((prev) => ({ ...prev, [k]: v }));
 
+  const searchBy = fields.search_by || 'roll_no';
   const studentSearch = (
     <>
       <div className="col-md-2">
         <label className="form-label">Search by</label>
-        <select className="form-select" name="search_by" onChange={(e) => set('search_by', e.target.value)} defaultValue="roll_no">
+        <select className="form-select" name="search_by" value={searchBy} onChange={(e) => set('search_by', e.target.value)}>
           <option value="roll_no">Register No</option>
           <option value="batch">Batch</option>
         </select>
       </div>
-      <div className="col-md-4">
-        <label className="form-label">Register nos / batch value</label>
-        <input className="form-control" name="search_input" placeholder="Register nos (comma) or batch value" onChange={(e) => set('search_input', e.target.value)} />
-      </div>
-      <div className="col-md-3">
-        <label className="form-label">Course / batch</label>
-        <select className="form-select" name="search_course" onChange={(e) => set('search_course', e.target.value)} defaultValue="">
-          <option value="">Course / batch</option>
-          {(data?.courses || []).flatMap((c) => (c.batchOptions || []).map((b) => (
-            <option key={b.value} value={b.value}>{b.label}</option>
-          )))}
-        </select>
-      </div>
+      {searchBy === 'roll_no' && (
+        <div className="col-md-4">
+          <label className="form-label">Register nos / batch value</label>
+          <input
+            className="form-control"
+            name="search_input"
+            placeholder="Register no (min 3 digits) or comma-separated list"
+            value={fields.search_input || ''}
+            onChange={(e) => set('search_input', e.target.value)}
+          />
+        </div>
+      )}
+      {searchBy === 'batch' && (
+        <div className="col-md-3">
+          <label className="form-label">Course / batch</label>
+          <select
+            className="form-select"
+            name="search_course"
+            value={fields.search_course || ''}
+            onChange={(e) => set('search_course', e.target.value)}
+          >
+            <option value="">Course / batch</option>
+            {(data?.courses || []).flatMap((c) => (c.batchOptions || []).map((b) => (
+              <option key={b.value} value={b.value}>{b.label}</option>
+            )))}
+          </select>
+        </div>
+      )}
     </>
   );
 
@@ -154,27 +526,20 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
         </div>
       )}
       {meta.type === 'upload' && (
-        <div className="col-md-6">
-          <label className="form-label">PNG/JPG (register_no.ext)</label>
-          <input type="file" className="form-control" accept=".png,.jpg,.jpeg" multiple onChange={async (e) => {
-            const files = await Promise.all([...e.target.files].map((f) => new Promise((resolve) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve({ name: f.name, data: reader.result });
-              reader.readAsDataURL(f);
-            })));
-            set('files', files);
-          }} />
-        </div>
+        <>
+          <PhotoUploadFields busy={busy} searchMore={searchMore} onSave={onSave} />
+          <PhotoBulkUploadFields busy={busy} onSave={onSave} />
+        </>
       )}
       {meta.type === 'alumni-search' && (
         <>
           <div className="col-md-2">
             <label className="form-label">From date</label>
-            <input type="date" className="form-control" onChange={(e) => set('from_date', e.target.value)} />
+            <input type="date" className="form-control" value={fields.from_date || ''} max={fields.to_date || undefined} onChange={(e) => set('from_date', e.target.value)} />
           </div>
           <div className="col-md-2">
             <label className="form-label">To date</label>
-            <input type="date" className="form-control" onChange={(e) => set('to_date', e.target.value)} />
+            <input type="date" className="form-control" value={fields.to_date || ''} min={fields.from_date || undefined} onChange={(e) => set('to_date', e.target.value)} />
           </div>
           <div className="col-md-2">
             <label className="form-label">Find</label>
@@ -199,6 +564,7 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
               name="from_date"
               className="form-control"
               value={fields.from_date ?? data?.filters?.from_date ?? ''}
+              max={fields.to_date ?? data?.filters?.to_date ?? undefined}
               onChange={(e) => set('from_date', e.target.value)}
             />
           </div>
@@ -209,6 +575,7 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
               name="to_date"
               className="form-control"
               value={fields.to_date ?? data?.filters?.to_date ?? ''}
+              min={fields.from_date ?? data?.filters?.from_date ?? undefined}
               onChange={(e) => set('to_date', e.target.value)}
             />
           </div>
@@ -314,7 +681,7 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
           </div>
         </>
       )}
-      {!['attachments', 'attachments-view', 'collage-image', 'alumni-form', 'promote-form'].includes(meta.type) && (
+      {!['attachments', 'attachments-view', 'collage-image', 'alumni-form', 'promote-form', 'upload'].includes(meta.type) && (
         <div className="col-md-2 d-flex align-items-end">
           <button type="submit" className="btn btn-primary w-100" disabled={busy}>
             {SAVE_SCREENS.has(screen) ? 'Save' : meta.type === 'alumni-filter' ? 'Search' : 'Generate'}
@@ -327,6 +694,8 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
 
 export default function StudentScreenPage() {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const studentIdParam = searchParams.get('studentId');
   const pathSlug = location.pathname.replace(/^\/students\//, '');
   const screen = STUDENT_SCREEN_META[pathSlug] ? pathSlug : null;
   const meta = screen ? STUDENT_SCREEN_META[screen] : null;
@@ -400,7 +769,9 @@ export default function StudentScreenPage() {
         </>
       ) : null}
     >
-      {screen === 'alumni-edit' ? (
+      {screen === 'attachments-report' ? (
+        <AttachmentsReportPanel data={data} busy={busy} onGenerate={load} />
+      ) : screen === 'alumni-edit' ? (
         <AlumniEditPanel data={data} busy={busy} onLoad={load} onSave={save} />
       ) : screen === 'alumni-id-card' ? (
         <AlumniIdCardPanel data={data} busy={busy} onGenerate={load} />
@@ -418,7 +789,7 @@ export default function StudentScreenPage() {
             <AddressLabelPanel data={data} busy={busy} onGenerate={load} />
           )}
           {screen !== 'promote' && screen !== 'address-label' && screen !== 'alumni-id-card' && screen !== 'collage-generate' && screen !== 'collage-image' && meta.type !== 'attachments' && meta.type !== 'attachments-view' && meta.type !== 'collage-image' && (
-            <ScreenFilters screen={screen} meta={meta} data={data} busy={busy} onGenerate={load} onSave={save} />
+            <ScreenFilters screen={screen} meta={meta} data={data} busy={busy} onGenerate={load} onSave={save} searchMore={searchMore} />
           )}
           {(screen === 'attachments-upload' || screen === 'attachments-view') && (
             <StudentAttachmentsPanel
@@ -428,6 +799,7 @@ export default function StudentScreenPage() {
               onSave={save}
               searchMore={searchMore}
               readOnly={screen === 'attachments-view'}
+              autoLoadStudentId={studentIdParam}
             />
           )}
           {meta.type === 'academic-form' && data?.academics?.length > 0 && (
@@ -445,7 +817,7 @@ export default function StudentScreenPage() {
         </div>
       </div>
       )}
-      {data?.reportHtml && meta.type !== 'upload' && screen !== 'alumni-id-card' && (
+      {data?.reportHtml && meta.type !== 'upload' && screen !== 'alumni-id-card' && screen !== 'attachments-report' && (
         <div className="card cis-student-report-output">
           <div className="card-body report-html" dangerouslySetInnerHTML={{ __html: data.reportHtml }} />
         </div>

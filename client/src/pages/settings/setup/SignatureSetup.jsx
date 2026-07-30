@@ -3,7 +3,17 @@ import ConfirmModal from '../../fees/setup/ConfirmModal';
 import SetupAlerts from '../../fees/setup/SetupAlerts';
 
 function emptyRow() {
-  return { key: `new-${Date.now()}`, refName: '', designation: '', order: 1, enabled: true, existingFile: '' };
+  return { key: `new-${Date.now()}`, refName: '', designation: '', order: 1, enabled: true, existingFile: '', existingFileUrl: '', file: null };
+}
+
+async function filePayload(file, field) {
+  const data = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  return { field, name: file.name, data };
 }
 
 export default function SignatureSetup({ data, busy, onLoad, onSave }) {
@@ -33,13 +43,18 @@ export default function SignatureSetup({ data, busy, onLoad, onSave }) {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    const files = [];
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].file) files.push(await filePayload(rows[i].file, `sig_${i}`));
+    }
     await onSave({
       action: 'update',
       category,
       rows: rows.map(({ id, refName, designation, enabled, existingFile }) => ({
         id, refName, designation, enabled, existingFile,
       })),
-    });
+    }, files);
+    setRows((prev) => prev.map((row) => ({ ...row, file: null })));
   };
 
   const handleDelete = async () => {
@@ -76,7 +91,20 @@ export default function SignatureSetup({ data, busy, onLoad, onSave }) {
                     <td><input type="checkbox" checked={row.enabled} onChange={(e) => updateRow(index, { enabled: e.target.checked })} /></td>
                     <td><input className="form-control" value={row.refName} onChange={(e) => updateRow(index, { refName: e.target.value })} /></td>
                     <td><input className="form-control" value={row.designation} onChange={(e) => updateRow(index, { designation: e.target.value })} /></td>
-                    <td className="text-muted small">{row.existingFile || '—'}</td>
+                    <td className="d-flex align-items-center gap-3">
+                      {row.existingFileUrl ? (
+                        <div>
+                          <img src={row.existingFileUrl} alt={row.existingFile} style={{ height: 100 }} />
+                        </div>
+                      ) : null}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/gif"
+                        className="form-control form-control-sm"
+                        onChange={(e) => updateRow(index, { file: e.target.files?.[0] || null })}
+                      />
+                      {row.file ? <div className="small text-muted">{row.file.name}</div> : null}
+                    </td>
                     <td>{row.id ? <button type="button" className="btn btn-sm btn-danger" onClick={() => setDeleteId(row.id)}>Delete</button> : null}</td>
                   </tr>
                 ))}

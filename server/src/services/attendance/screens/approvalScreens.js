@@ -6,6 +6,18 @@ import { htmlTable, loadStaffCategories, parseDateRange, searchStaffByCategory }
 
 const STATUS_LABELS = { 0: 'Pending', 1: 'Approved', 2: 'Rejected', 3: 'Cancelled' };
 
+/** Unlike most screens, the legacy approval pages (staff_leave_approve.php et
+ * al.) don't default an empty date filter to "today" — they only add a
+ * `from_date >= / <=` clause when the operator actually typed one, so an
+ * empty filter shows every request regardless of date. `parseDateRange`
+ * (used elsewhere) always fills in today's date, which silently hid every
+ * non-today request on these screens. */
+function parseOptionalDateRange(fields) {
+  const fromDate = toIsoDate(fields.from_date || fields.fromDate) || '';
+  const toDate = toIsoDate(fields.to_date || fields.toDate) || '';
+  return { fromDate, toDate };
+}
+
 async function loadPendingRequests(table, fromDate, toDate, status, staffIds = []) {
   let staffFilter = '';
   if (staffIds?.length) {
@@ -13,14 +25,31 @@ async function loadPendingRequests(table, fromDate, toDate, status, staffIds = [
   }
   const statusVal = status === 'all' ? null : Number(status ?? 0);
   const statusSql = statusVal == null ? '' : ` AND A.status=${statusVal}`;
+  let dateSql = '';
+  if (fromDate) dateSql += ` AND DATE(A.from_date) >= '${escapeSql(fromDate)}'`;
+  if (toDate) dateSql += ` AND DATE(A.from_date) <= '${escapeSql(toDate)}'`;
   return prisma.$queryRawUnsafe(
-    `SELECT A.*, B.staff_id AS emp_id, B.staff_name, B.staff_initial, B.staff_title
+    `SELECT A.*, B.staff_id AS emp_id, B.staff_name, B.staff_initial, B.staff_title, B.att_category
      FROM ${table} AS A
      INNER JOIN staff_profile_tb AS B ON A.staff_id=B.id
-     WHERE A.del=1 AND B.del=1 AND DATE(A.from_date) BETWEEN '${escapeSql(fromDate)}' AND '${escapeSql(toDate)}'
+     WHERE A.del=1 AND B.del=1${dateSql}
        ${statusSql}${staffFilter}
      ORDER BY A.from_date DESC LIMIT 200`,
   );
+}
+
+async function loadStatusCounts(table) {
+  const counts = await prisma.$queryRawUnsafe(
+    `SELECT status, COUNT(*) AS cnt FROM ${table} WHERE del=1 GROUP BY status`,
+  );
+  const byStatus = { 0: 0, 1: 0, 2: 0, 3: 0 };
+  let total = 0;
+  for (const row of counts) {
+    const n = Number(row.cnt);
+    byStatus[Number(row.status)] = n;
+    total += n;
+  }
+  return { total, pending: byStatus[0], approved: byStatus[1], rejected: byStatus[2], cancelled: byStatus[3] };
 }
 
 async function loadRequestDetail(tableMore, requestId) {
@@ -30,7 +59,7 @@ async function loadRequestDetail(tableMore, requestId) {
 }
 
 export async function loadLeaveApproveScreen(memberId, fields = {}, audit = {}) {
-  const { fromDate, toDate } = parseDateRange(fields);
+  const { fromDate, toDate } = parseOptionalDateRange(fields);
   const status = fields.a_status ?? '0';
   const requests = await loadPendingRequests('att_leave_request', fromDate, toDate, status, fields.a_staff);
   const categories = await loadStaffCategories();
@@ -39,18 +68,21 @@ export async function loadLeaveApproveScreen(memberId, fields = {}, audit = {}) 
   const rid = parseOptionalId(fields.rid);
   if (rid) {
     const header = requests.find((r) => Number(r.id) === rid) || (await prisma.$queryRawUnsafe(
-      `SELECT A.*, B.staff_id AS emp_id, B.staff_name FROM att_leave_request A
+      `SELECT A.*, B.staff_id AS emp_id, B.staff_name, B.att_category FROM att_leave_request A
        INNER JOIN staff_profile_tb B ON A.staff_id=B.id WHERE A.id=${rid} LIMIT 1`,
     ))[0];
     const more = await loadRequestDetail('att_leave_request_more', rid);
-    detail = { header, more };
+    let balances = null;
+    if (header) {
+      const lp = await getLPTime(header.att_category);
+      balances = await getAvailableLeave(header.staff_id, header.from_date, lp, '', [rid]);
+    }
+    detail = { header, more, balances };
   }
 
-  const counts = await prisma.$queryRawUnsafe(
-    `SELECT status, COUNT(*) AS cnt FROM att_leave_request WHERE del=1 GROUP BY status`,
-  );
+  const counts = await loadStatusCounts('att_leave_request');
 
-  await logStaffAttSetup('staff_leave_approve.php', 'View', 'Successful', fromDate, memberId, audit);
+  await logStaffAttSetup('staff_leave_approve.php', 'View', 'Successful', fromDate || 'all', memberId, audit);
   return {
     from_date: formatDateDisplay(fromDate),
     to_date: formatDateDisplay(toDate),
@@ -108,7 +140,7 @@ export async function saveLeaveApproveScreen(payload, memberId, audit = {}) {
 }
 
 export async function loadPermissionApproveScreen(memberId, fields = {}, audit = {}) {
-  const { fromDate, toDate } = parseDateRange(fields);
+  const { fromDate, toDate } = parseOptionalDateRange(fields);
   const status = fields.a_status ?? '0';
   const requests = await loadPendingRequests('att_permission_request', fromDate, toDate, status, fields.a_staff);
 
@@ -121,7 +153,9 @@ export async function loadPermissionApproveScreen(memberId, fields = {}, audit =
     ))[0];
   }
 
-  await logStaffAttSetup('staff_permission_approve.php', 'View', 'Successful', fromDate, memberId, audit);
+  const counts = await loadStatusCounts('att_permission_request');
+
+  await logStaffAttSetup('staff_permission_approve.php', 'View', 'Successful', fromDate || 'all', memberId, audit);
   return {
     from_date: formatDateDisplay(fromDate),
     to_date: formatDateDisplay(toDate),
@@ -138,6 +172,7 @@ export async function loadPermissionApproveScreen(memberId, fields = {}, audit =
       statusLabel: STATUS_LABELS[Number(r.status)] || r.status,
       comments: r.comments || '',
     })),
+    statusCounts: counts,
     detail,
   };
 }
@@ -158,7 +193,7 @@ export async function savePermissionApproveScreen(payload, memberId, audit = {})
 }
 
 export async function loadDefaulterApproveScreen(memberId, fields = {}, audit = {}) {
-  const { fromDate, toDate } = parseDateRange(fields);
+  const { fromDate, toDate } = parseOptionalDateRange(fields);
   const status = fields.a_status ?? '0';
   const requests = await loadPendingRequests('att_defaulter', fromDate, toDate, status, fields.a_staff);
 
@@ -178,7 +213,9 @@ export async function loadDefaulterApproveScreen(memberId, fields = {}, audit = 
     detail = { header, more, balances };
   }
 
-  await logStaffAttSetup('staff_defaulter_approve.php', 'View', 'Successful', fromDate, memberId, audit);
+  const counts = await loadStatusCounts('att_defaulter');
+
+  await logStaffAttSetup('staff_defaulter_approve.php', 'View', 'Successful', fromDate || 'all', memberId, audit);
   return {
     from_date: formatDateDisplay(fromDate),
     to_date: formatDateDisplay(toDate),
@@ -193,6 +230,7 @@ export async function loadDefaulterApproveScreen(memberId, fields = {}, audit = 
       statusLabel: STATUS_LABELS[Number(r.status)] || r.status,
       comments: r.comments || '',
     })),
+    statusCounts: counts,
     detail,
   };
 }
@@ -229,77 +267,147 @@ export async function saveDefaulterApproveScreen(payload, memberId, audit = {}) 
   return { success: true, message: 'Defaulter request updated.', ...(await loadDefaulterApproveScreen(memberId, payload, { ...audit, skipLog: true })) };
 }
 
+/** The legacy Request/Status filters are checkbox groups (`a_request[]`,
+ * `a_status[]`) — POST sends a single string when exactly one box is
+ * checked and an array when multiple are, same as this API's `fields`. This
+ * normalizes either shape back to an array, falling back to "all checked"
+ * (the legacy page's default) only when nothing was sent at all. */
+function normalizeCheckboxList(value, fallback) {
+  if (Array.isArray(value)) return value.length ? value : fallback;
+  if (value) return [value];
+  return fallback;
+}
+
+function formatDateTimeDisplay(value) {
+  if (!value) return '';
+  const raw = String(value);
+  if (raw.startsWith('0000-00-00')) return '';
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return '';
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${dd}-${mm}-${d.getFullYear()} ${hh}:${min}`;
+}
+
+function dateRangeLabel(from, to) {
+  const f = formatDateDisplay(from);
+  const t = formatDateDisplay(to);
+  if (!f) return '';
+  if (!t || t === f) return f;
+  return `${f} - ${t}`;
+}
+
 export async function loadSmrAcknowledgeScreen(memberId, fields = {}, audit = {}) {
   const { fromDate, toDate } = parseDateRange(fields);
-  const data = await buildLpdReportData(fromDate, toDate, ['leave', 'permission', 'defaulter'], ['0', '1', '2']);
+  const data = await buildLpdReportData(fromDate, toDate, ['leave', 'permission', 'defaulter'], ['p', '1', '2']);
   await logStaffAttSetup('staff_leave_acknowledge.php', 'View', 'Successful', fromDate, memberId, audit);
   return { ...data, from_date: formatDateDisplay(fromDate), to_date: formatDateDisplay(toDate) };
 }
 
 export async function loadLpdReportScreen(memberId, fields = {}, audit = {}) {
   const { fromDate, toDate } = parseDateRange(fields);
-  const types = fields.a_request || ['leave', 'permission', 'defaulter'];
-  const statuses = fields.a_status || ['0', '1', '2'];
+  const types = normalizeCheckboxList(fields.a_request, ['leave', 'permission', 'defaulter']);
+  const statuses = normalizeCheckboxList(fields.a_status, ['p', '1', '2']);
   const data = await buildLpdReportData(fromDate, toDate, types, statuses);
   await logStaffAttSetup('staff_lpd_report.php', fields.Submit ? 'Generate' : 'View', 'Successful', fromDate, memberId, audit);
   return { ...data, from_date: formatDateDisplay(fromDate), to_date: formatDateDisplay(toDate), a_request: types, a_status: statuses };
 }
 
+/** Legacy status checkbox values are 'p' (Pending → status 0), '1'
+ * (Approved), '2' (Rejected) — not the raw numeric status codes. */
 async function buildLpdReportData(fromDate, toDate, types, statuses) {
-  const statusSql = statuses.length
-    ? ` AND status IN (${statuses.map((s) => Number(s)).join(',')})` : '';
-  const sections = [];
+  const statusNums = statuses.map((s) => (s === 'p' ? 0 : Number(s))).filter((n) => !Number.isNaN(n));
+  const statusSql = statusNums.length ? ` AND status IN (${statusNums.join(',')})` : '';
+  const rows = [];
 
   if (types.includes('leave')) {
-    const rows = await prisma.$queryRawUnsafe(
-      `SELECT A.request_id, A.staff_id, B.staff_id AS emp_id, B.staff_name, A.from_date, A.to_date, A.status, A.comments,
-              DATE(A.created_dt) AS created_dt
+    const leaveRows = await prisma.$queryRawUnsafe(
+      `SELECT A.request_id, A.from_date, A.to_date, A.leave_type, A.status, A.comments, A.created_dt,
+              B.staff_id AS emp_id, B.staff_name, B.staff_initial, B.staff_title
        FROM att_leave_request AS A INNER JOIN staff_profile_tb AS B ON A.staff_id=B.id
        WHERE A.del=1 AND DATE(A.created_dt) BETWEEN '${escapeSql(fromDate)}' AND '${escapeSql(toDate)}'${statusSql}
-       ORDER BY A.created_dt DESC LIMIT 500`,
+       ORDER BY A.created_dt ASC LIMIT 500`,
     );
-    sections.push({ type: 'Leave', rows });
-  }
-  if (types.includes('permission')) {
-    const rows = await prisma.$queryRawUnsafe(
-      `SELECT A.request_id, A.staff_id, B.staff_id AS emp_id, B.staff_name, A.p_type, A.from_date, A.to_date, A.status,
-              DATE(A.created_dt) AS created_dt
-       FROM att_permission_request AS A INNER JOIN staff_profile_tb AS B ON A.staff_id=B.id
-       WHERE A.del=1 AND DATE(A.created_dt) BETWEEN '${escapeSql(fromDate)}' AND '${escapeSql(toDate)}'${statusSql}
-       ORDER BY A.created_dt DESC LIMIT 500`,
-    );
-    sections.push({ type: 'Permission', rows });
-  }
-  if (types.includes('defaulter')) {
-    const rows = await prisma.$queryRawUnsafe(
-      `SELECT A.id, A.staff_id, B.staff_id AS emp_id, B.staff_name, A.from_date, A.to_date, A.status, A.comments,
-              DATE(A.created_dt) AS created_dt
-       FROM att_defaulter AS A INNER JOIN staff_profile_tb AS B ON A.staff_id=B.id
-       WHERE A.del=1 AND DATE(A.created_dt) BETWEEN '${escapeSql(fromDate)}' AND '${escapeSql(toDate)}'${statusSql}
-       ORDER BY A.created_dt DESC LIMIT 500`,
-    );
-    sections.push({ type: 'Defaulter', rows });
-  }
-
-  const bodyRows = [];
-  for (const sec of sections) {
-    for (const r of sec.rows) {
-      bodyRows.push([
-        sec.type,
-        r.request_id || r.id,
-        r.emp_id,
-        r.staff_name,
-        formatDateDisplay(r.from_date),
-        formatDateDisplay(r.to_date),
-        STATUS_LABELS[Number(r.status)] || r.status,
-        r.p_type || '',
-        formatDateDisplay(r.created_dt),
-      ]);
+    for (const r of leaveRows) {
+      rows.push({
+        type: 'Leave',
+        requestLabel: `LR${r.request_id}`,
+        createdAt: formatDateTimeDisplay(r.created_dt),
+        staffId: r.emp_id,
+        staffName: `${r.staff_title || ''} ${r.staff_initial || ''} ${r.staff_name || ''}`.trim(),
+        dateRange: dateRangeLabel(r.from_date, r.to_date),
+        subLabel: r.leave_type || '',
+        status: Number(r.status),
+        comments: r.comments || '',
+      });
     }
   }
 
+  if (types.includes('permission')) {
+    const permRows = await prisma.$queryRawUnsafe(
+      `SELECT A.request_id, A.from_date, A.to_date, A.p_type, A.status, A.comments, A.created_dt,
+              B.staff_id AS emp_id, B.staff_name, B.staff_initial, B.staff_title
+       FROM att_permission_request AS A INNER JOIN staff_profile_tb AS B ON A.staff_id=B.id
+       WHERE A.del=1 AND DATE(A.created_dt) BETWEEN '${escapeSql(fromDate)}' AND '${escapeSql(toDate)}'${statusSql}
+       ORDER BY A.created_dt ASC LIMIT 500`,
+    );
+    for (const r of permRows) {
+      rows.push({
+        type: 'Permission',
+        requestLabel: `PR${r.request_id}`,
+        createdAt: formatDateTimeDisplay(r.created_dt),
+        staffId: r.emp_id,
+        staffName: `${r.staff_title || ''} ${r.staff_initial || ''} ${r.staff_name || ''}`.trim(),
+        dateRange: formatDateDisplay(r.from_date),
+        subLabel: r.p_type ? String(r.p_type).replace(/^./, (c) => c.toUpperCase()) : '',
+        status: Number(r.status),
+        comments: r.comments || '',
+      });
+    }
+  }
+
+  if (types.includes('defaulter')) {
+    const defRows = await prisma.$queryRawUnsafe(
+      `SELECT A.request_id, A.from_date, A.to_date, A.leave_stype, A.leave_auth, A.status, A.comments, A.created_dt,
+              B.staff_id AS emp_id, B.staff_name, B.staff_initial, B.staff_title
+       FROM att_defaulter AS A INNER JOIN staff_profile_tb AS B ON A.staff_id=B.id
+       WHERE A.del=1 AND DATE(A.created_dt) BETWEEN '${escapeSql(fromDate)}' AND '${escapeSql(toDate)}'${statusSql}
+       ORDER BY A.created_dt ASC LIMIT 500`,
+    );
+    for (const r of defRows) {
+      rows.push({
+        type: 'Defaulter',
+        requestLabel: `DR${r.request_id}`,
+        createdAt: formatDateTimeDisplay(r.created_dt),
+        staffId: r.emp_id,
+        staffName: `${r.staff_title || ''} ${r.staff_initial || ''} ${r.staff_name || ''}`.trim(),
+        dateRange: dateRangeLabel(r.from_date, r.to_date),
+        subLabel: [r.leave_stype, r.leave_auth].filter(Boolean).join(' | '),
+        status: Number(r.status),
+        comments: r.comments || '',
+      });
+    }
+  }
+
+  rows.forEach((r, idx) => {
+    r.serial = idx + 1;
+    r.statusLabel = STATUS_LABELS[r.status] || String(r.status);
+  });
+
   return {
-    sections,
-    reportHtml: htmlTable(['Type', 'Req#', 'Staff ID', 'Name', 'From', 'To', 'Status', 'P.Type', 'Created'], bodyRows),
+    rows,
+    reportHtml: htmlTable(
+      ['#', 'R.ID', 'Staff', 'Date & Request', 'Status', 'Remarks'],
+      rows.map((r) => [
+        r.serial,
+        `${r.type}: <strong>${r.requestLabel}</strong><br><small>@${r.createdAt}</small>`,
+        `<strong>${r.staffName}</strong><br>${r.staffId}`,
+        `<strong>${r.dateRange}${r.subLabel ? ` | ${r.subLabel}` : ''}</strong>`,
+        r.statusLabel,
+        r.comments,
+      ]),
+    ),
   };
 }

@@ -1,7 +1,7 @@
 import { prisma } from '../../config/prisma.js';
 import { escapeSql } from '../../utils/sqlSafe.js';
 import { auditFields, logModulePage } from '../shared/moduleAudit.js';
-import { buildReasonString, CERTIFICATE_COURSE_JOIN, CERTIFICATE_REGISTER_NO_EXPR, CERTIFICATE_STUDENT_JOIN, fmtDateExpr, lookupStudent, nextApplicationNo } from './certificateShared.js';
+import { buildReasonString, CERTIFICATE_COURSE_JOIN, CERTIFICATE_REGISTER_NO_EXPR, CERTIFICATE_STUDENT_JOIN, fmtDateExpr, lookupStudent, nextApplicationNo, receiptBlankColumnsSql } from './certificateShared.js';
 
 const ADD_PAGE = 'certificate_receipt_add.php';
 const EDIT_PAGE = 'certificate_receipt_edit.php';
@@ -45,15 +45,16 @@ export async function saveCertificateReceiptAdd(payload, memberId, audit = {}) {
   const appNo = await nextApplicationNo();
   const studentId = student ? String(student.id) : '';
 
+  const { columnsSql, valuesSql } = receiptBlankColumnsSql();
   await prisma.$executeRawUnsafe(`
     INSERT INTO certificate_receipt_tb (
-      application_no, application_date, student_id, register_no, apply_for,
+      application_no, application_date, generated_date, student_id, register_no, apply_for,
       application_fee, apply_reason, address_type, relation_type, status,
-      created_dt, created_ip, created_by, del
+      created_dt, created_ip, created_by, del, ${columnsSql}
     ) VALUES (
-      ${appNo}, '${escapeSql(applicationDate)}', '${escapeSql(studentId)}', '${escapeSql(registerNo)}',
+      ${appNo}, '${escapeSql(applicationDate)}', '0000-00-00', '${escapeSql(studentId)}', '${escapeSql(registerNo)}',
       '${escapeSql(applyFor)}', '${escapeSql(applicationFee)}', '${escapeSql(reasonString)}',
-      0, 0, 0, NOW(), '${escapeSql(create.created_ip)}', '${escapeSql(memberId)}', 1
+      0, 0, 0, NOW(), '${escapeSql(create.created_ip)}', '${escapeSql(memberId)}', 1, ${valuesSql}
     )
   `);
 

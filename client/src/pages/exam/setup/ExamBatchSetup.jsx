@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ReportPrintBar from '../../../components/ReportPrintBar';
+import { FormSection } from '../../../components/FormShell';
 import { CourseYearSelector, ExamSetupShell } from './ExamSelectors';
 import { useExamSetupApi } from './useExamSetupApi';
 
@@ -77,55 +78,63 @@ export default function ExamBatchSetup() {
 
   return (
     <ExamSetupShell notice={notice} error={error} busy={busy}>
-      <CourseYearSelector
-        wide
-        options={data?.courseYearOptions}
-        value={courseKey}
-        onChange={onCourseChange}
-        disabled={busy}
-      />
+      <FormSection
+        id="exam-batch-filters"
+        title="Batch Setup"
+        description="Select the course, academic year and semester, then set the number of batches."
+        grid={false}
+      >
+        <CourseYearSelector
+          wide
+          options={data?.courseYearOptions}
+          value={courseKey}
+          onChange={onCourseChange}
+          disabled={busy}
+        />
 
-      {data?.selection && duration ? (
-        <div className="mb-3 row g-2">
-          <label className="col-sm-2 col-form-label">Year</label>
-          <div className="col-sm-10">
-            {yearHeader ? <div className="text-muted small mb-2">{yearHeader}</div> : null}
-            <div className="d-flex flex-wrap gap-3">
-              {Array.from({ length: duration }, (_, i) => i + 1).map((yr) => (
-                <label key={yr}>
-                  <input
-                    type="radio"
-                    name="semester"
-                    value={yr}
-                    checked={semester === yr}
-                    onChange={() => onSemesterChange(yr)}
-                  />
-                  {' '}{yr}
-                </label>
-              ))}
+        {data?.selection && duration ? (
+          <div className="mb-3 row g-2">
+            <label className="col-sm-2 col-form-label">Year</label>
+            <div className="col-sm-10">
+              {yearHeader ? <div className="text-muted small mb-2">{yearHeader}</div> : null}
+              <div className="d-flex flex-wrap gap-3">
+                {Array.from({ length: duration }, (_, i) => i + 1).map((yr) => (
+                  <label key={yr} className="form-check d-inline-flex align-items-center gap-1 mb-0 border rounded px-2 py-1">
+                    <input
+                      type="radio"
+                      className="form-check-input mt-0"
+                      name="semester"
+                      value={yr}
+                      checked={semester === yr}
+                      onChange={() => onSemesterChange(yr)}
+                    />
+                    <span className="form-check-label">{yr}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      {semester ? (
-        <div className="mb-3 row g-2 align-items-center">
-          <label className="col-sm-2 col-form-label">Batch</label>
-          <div className="col-sm-1">
-            <input className="form-control" value={totalBatch} onChange={(e) => setTotalBatch(e.target.value)} />
+        {semester ? (
+          <div className="mb-0 row g-2 align-items-center">
+            <label className="col-sm-2 col-form-label">Batch</label>
+            <div className="col-sm-1">
+              <input className="form-control" value={totalBatch} onChange={(e) => setTotalBatch(e.target.value)} />
+            </div>
+            <div className="col-sm-2">
+              <button type="button" className="btn btn-info" onClick={onGo} disabled={busy}>Go</button>
+            </div>
           </div>
-          <div className="col-sm-2">
-            <button type="button" className="btn btn-info" onClick={onGo} disabled={busy}>Go</button>
-          </div>
-        </div>
-      ) : null}
+        ) : null}
+      </FormSection>
 
       <ReportPrintBar html={data?.printHtml} />
 
       {data?.students?.length && totalBatch ? (
         <form onSubmit={handleSave}>
-          <div className="table-responsive">
-            <table className="table table-bordered table-sm">
+          <div className="cis-dt-scroll">
+            <table className="table table-bordered table-sm cis-dt-table">
               <thead className="table-secondary">
                 <tr>
                   <th>#</th>
@@ -156,7 +165,7 @@ export default function ExamBatchSetup() {
               </tbody>
             </table>
           </div>
-          <button type="submit" className="btn btn-danger" disabled={busy}>Save</button>
+          <button type="submit" className="btn btn-danger mt-3" disabled={busy}>Save</button>
         </form>
       ) : null}
     </ExamSetupShell>

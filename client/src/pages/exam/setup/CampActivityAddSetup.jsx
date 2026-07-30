@@ -102,11 +102,11 @@ export default function CampActivityAddSetup() {
         <div className="mb-3 row g-2">
           <label className="col-sm-2 col-form-label">From Date</label>
           <div className="col-sm-3">
-            <input className="form-control" required placeholder="dd-mm-yyyy hh:mm" value={form.fromDate} onChange={(e) => setField('fromDate', e.target.value)} />
+            <input type="datetime-local" className="form-control" required value={form.fromDate} onChange={(e) => setField('fromDate', e.target.value)} />
           </div>
           <label className="col-sm-1 col-form-label">To Date</label>
           <div className="col-sm-3">
-            <input className="form-control" required placeholder="dd-mm-yyyy hh:mm" value={form.toDate} onChange={(e) => setField('toDate', e.target.value)} />
+            <input type="datetime-local" className="form-control" required value={form.toDate} onChange={(e) => setField('toDate', e.target.value)} />
           </div>
         </div>
 

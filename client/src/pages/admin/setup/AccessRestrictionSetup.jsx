@@ -86,7 +86,7 @@ export default function AccessRestrictionSetup({ data, busy, onLoad, onSave }) {
               <label className="form-check">
                 <input
                   type="checkbox"
-                  className="form-check-input"
+                  className="form-check-input me-2"
                   checked={access.localAccess}
                   onChange={(e) => setAccess((a) => ({ ...a, localAccess: e.target.checked }))}
                 />
@@ -102,7 +102,7 @@ export default function AccessRestrictionSetup({ data, busy, onLoad, onSave }) {
               {access.randomKeys.map((val, idx) => (
                 <input
                   key={idx}
-                  className="form-control mt-2"
+                  className="form-control mt-2 me-2"
                   placeholder={`k${idx + 1}`}
                   value={val}
                   onChange={(e) => setAccess((a) => {
@@ -118,7 +118,7 @@ export default function AccessRestrictionSetup({ data, busy, onLoad, onSave }) {
               <label className="form-check">
                 <input
                   type="checkbox"
-                  className="form-check-input"
+                  className="form-check-input me-2"
                   checked={access.dayBase}
                   onChange={(e) => setAccess((a) => ({
                     ...a,
@@ -133,7 +133,7 @@ export default function AccessRestrictionSetup({ data, busy, onLoad, onSave }) {
                   <label key={day.value} className="form-check">
                     <input
                       type="checkbox"
-                      className="form-check-input"
+                      className="form-check-input me-2"
                       checked={day.checked}
                       onChange={(e) => setAccess((a) => {
                         const days = [...a.days];
@@ -147,13 +147,13 @@ export default function AccessRestrictionSetup({ data, busy, onLoad, onSave }) {
               </div>
               <div className="d-flex gap-2 mt-2">
                 <input
-                  className="form-control"
+                  className="form-control me-2"
                   placeholder="From HH:MM"
                   value={access.allowFromTime}
                   onChange={(e) => setAccess((a) => ({ ...a, allowFromTime: e.target.value }))}
                 />
                 <input
-                  className="form-control"
+                  className="form-control me-2"
                   placeholder="To HH:MM"
                   value={access.allowToTime}
                   onChange={(e) => setAccess((a) => ({ ...a, allowToTime: e.target.value }))}
@@ -165,7 +165,7 @@ export default function AccessRestrictionSetup({ data, busy, onLoad, onSave }) {
               <label className="form-check">
                 <input
                   type="checkbox"
-                  className="form-check-input"
+                  className="form-check-input me-2"
                   checked={access.dateBase}
                   onChange={(e) => setAccess((a) => ({
                     ...a,

@@ -142,6 +142,25 @@ function approvalReloadFields(payload, status) {
   return reload;
 }
 
+// Per-day LE/OD breakdown (stu_leave_request_more) — a multi-day leave request gets one
+// row per date, each independently markable as LE (loss of pay) or OD (on duty), matching
+// stu_leave_approval.php's per-day radio list.
+async function loadLeaveRequestMoreRows(rid) {
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT id, req_date, r_session, r_att, m_att
+     FROM stu_leave_request_more
+     WHERE del=1 AND request_id=${rid}
+     ORDER BY req_date ASC, id ASC`,
+  );
+  return rows.map((r) => ({
+    id: Number(r.id),
+    date: formatDateDisplay(r.req_date),
+    session: r.r_session || 'fullday',
+    requestedType: r.r_att || '',
+    markedType: (r.m_att || r.r_att || 'LE').toUpperCase(),
+  }));
+}
+
 export async function loadSmrLeaveScreen(memberId, fields = {}, audit = {}, legacy = 'stu_leave_approval.php') {
   const status = fields.a_status ?? '0';
   const [rows, summary] = await Promise.all([
@@ -154,7 +173,7 @@ export async function loadSmrLeaveScreen(memberId, fields = {}, audit = {}, lega
   const rid = parseOptionalId(fields.rid);
   if (rid) {
     const header = rows.find((r) => Number(r.id) === rid) || await loadStudentRequestHeader('stu_leave_request', rid);
-    if (header) detail = { header: mapRequestRow(header) };
+    if (header) detail = { header: mapRequestRow(header), more: await loadLeaveRequestMoreRows(rid) };
   }
 
   await logStudentAtt(legacy, 'View', 'Successful', fields.from_date || 'all', memberId, audit);
@@ -177,9 +196,15 @@ export async function saveSmrLeaveScreen(payload, memberId, audit = {}, legacy =
      WHERE request_id=${rid}`,
   );
   for (const row of payload.more || []) {
+    const mAtt = escapeSql(String(row.m_att || '').toUpperCase() === 'OD' ? 'OD' : 'LE');
+    // Day weight follows r_session (fullday=1, half-day=0.5), same as legacy's $l_lmt —
+    // OD gets the day counted against od_days, anything else (LE) against lop_days.
     await prisma.$executeRawUnsafe(
-      `UPDATE stu_leave_request_more SET m_att='${escapeSql(String(row.m_att || ''))}',
-       od_days=${Number(row.od_days || 0)}, lop_days=${Number(row.lop_days || 0)}, status=${status},
+      `UPDATE stu_leave_request_more SET
+       m_att='${mAtt}',
+       od_days = IF('${mAtt}'='OD', IF(LOWER(r_session)='fullday','1','0.5'), '0'),
+       lop_days = IF('${mAtt}'='OD', '0', IF(LOWER(r_session)='fullday','1','0.5')),
+       status=${status},
        updated_dt=NOW(), updated_by='${escapeSql(memberId)}'
        WHERE id=${Number(row.id)} AND request_id=${rid}`,
     );
@@ -213,7 +238,7 @@ export async function loadSmrDeptLeaveScreen(memberId, fields = {}, audit = {}) 
   if (rid) {
     const header = rows.find((r) => Number(r.id) === rid)
       || await loadStudentRequestHeader('stu_leave_request', rid, courseIds);
-    if (header) detail = { header: mapRequestRow(header) };
+    if (header) detail = { header: mapRequestRow(header), more: await loadLeaveRequestMoreRows(rid) };
   }
 
   await logStudentAtt('student_leave_approval.php', 'View', 'Successful', fields.from_date || 'all', memberId, audit);
@@ -274,6 +299,34 @@ export async function saveSmrPermissionScreen(payload, memberId, audit = {}) {
   };
 }
 
+// Per-day FN/AN breakdown (stu_att_defaulter_more) — one row per date, each with a
+// forenoon and/or afternoon mark (P/La/Pe/AB/OD), matching stu_defaulter_approval.php's
+// two radio groups per day. `r_session` says which half-day(s) apply: 'fullday' shows
+// both, 'forenoon'/'afternoon' shows only one. a_matt/a_eatt are the originally recorded
+// marks (read-only reference); m_att/e_att are what the approver can override.
+async function loadDefaulterMoreRows(rid) {
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT id, CAST(req_date AS CHAR) AS req_date, r_session, a_matt, a_eatt, m_att, e_att
+     FROM stu_att_defaulter_more
+     WHERE del=1 AND request_id=${rid}
+     ORDER BY req_date ASC, id ASC`,
+  );
+  return rows.map((r) => {
+    const session = (r.r_session || 'fullday').toLowerCase();
+    return {
+      id: Number(r.id),
+      date: formatDateDisplay(r.req_date),
+      session,
+      showForenoon: session === 'fullday' || session === 'forenoon',
+      showAfternoon: session === 'fullday' || session === 'afternoon',
+      requestedForenoon: (r.a_matt || '').toUpperCase(),
+      requestedAfternoon: (r.a_eatt || '').toUpperCase(),
+      forenoonMark: (r.m_att || r.a_matt || '').toUpperCase(),
+      afternoonMark: (r.e_att || r.a_eatt || '').toUpperCase(),
+    };
+  });
+}
+
 export async function loadSmrDefaulterScreen(memberId, fields = {}, audit = {}) {
   const status = fields.a_status ?? '0';
   const { fromDate, toDate } = parseApprovalDateRange(fields);
@@ -297,7 +350,7 @@ export async function loadSmrDefaulterScreen(memberId, fields = {}, audit = {}) 
   const rid = parseOptionalId(fields.rid);
   if (rid) {
     const header = rows.find((r) => Number(r.id) === rid) || await loadStudentRequestHeader('stu_att_defaulter', rid);
-    if (header) detail = { header: mapRequestRow(header) };
+    if (header) detail = { header: mapRequestRow(header), more: await loadDefaulterMoreRows(rid) };
   }
 
   await logStudentAtt('stu_defaulter_approval.php', 'View', 'Successful', fields.from_date || 'all', memberId, audit);
@@ -320,6 +373,22 @@ export async function saveSmrDefaulterScreen(payload, memberId, audit = {}) {
      updated_dt=NOW(), updated_by='${escapeSql(memberId)}', updated_ip='${escapeSql(update.updated_ip)}'
      WHERE request_id=${rid}`,
   );
+  for (const row of payload.more || []) {
+    const mAtt = escapeSql(String(row.m_att || ''));
+    const eAtt = escapeSql(String(row.e_att || ''));
+    // Only AB (absent) and OD (on duty) count against pay/duty days — half a day per
+    // session — matching stu_defaulter_approval.php's exact formula. P/La/Pe are purely
+    // informational marks with no day-count effect.
+    await prisma.$executeRawUnsafe(
+      `UPDATE stu_att_defaulter_more SET
+       m_att='${mAtt}',
+       e_att='${eAtt}',
+       od_days = (IF(LOWER('${mAtt}')='od',0.5,0) + IF(LOWER('${eAtt}')='od',0.5,0)),
+       lop_days = (IF(LOWER('${mAtt}')='ab',0.5,0) + IF(LOWER('${eAtt}')='ab',0.5,0)),
+       updated_dt=NOW(), updated_by='${escapeSql(memberId)}'
+       WHERE id=${Number(row.id)} AND request_id=${rid}`,
+    );
+  }
   await logStudentAtt('stu_defaulter_approval.php', 'Update', 'Successful', String(rid), memberId, audit);
   const reloadFields = approvalReloadFields(payload, status);
   return {

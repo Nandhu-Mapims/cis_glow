@@ -1,10 +1,13 @@
 import { prisma } from '../../../config/prisma.js';
 import { parseId } from '../../../utils/sqlSafe.js';
 import { auditFields, logSettingsSetup } from '../setupAudit.js';
+import { saveLegacyBinaryFile } from '../../web/webUpload.js';
 
 const PAGE = 'salary_signature.php';
 
 const CATEGORY_OPTIONS = [{ value: 'progress card', label: 'Progress Card' }];
+const SIGNATURE_FOLDER = 'stf_signature';
+const IMG_EXT = new Set(['jpeg', 'jpg', 'gif', 'png']);
 
 function mapRow(row) {
   return {
@@ -14,6 +17,7 @@ function mapRow(row) {
     order: row.staff_order,
     enabled: row.staff_order === 1,
     existingFile: row.staff_name || '',
+    existingFileUrl: row.staff_name ? `/legacy/files/${SIGNATURE_FOLDER}/${row.staff_name}` : '',
   };
 }
 
@@ -61,6 +65,7 @@ export async function saveSignatureSetup(payload, memberId, audit = {}) {
   if (!category) return { success: false, message: 'Category is required' };
 
   const rows = Array.isArray(payload.rows) ? payload.rows : [];
+  const files = Array.isArray(payload.files) ? payload.files : [];
   const { create, update } = auditFields(memberId, audit);
 
   await prisma.signature_setup.updateMany({
@@ -68,11 +73,23 @@ export async function saveSignatureSetup(payload, memberId, audit = {}) {
     data: { del: 0, ...update },
   });
 
-  for (const row of rows) {
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
     const refName = String(row.refName || '').trim();
     const designation = String(row.designation || '').trim();
     const order = row.enabled ? 1 : 0;
-    const existingFile = String(row.existingFile || '').trim();
+    let existingFile = String(row.existingFile || '').trim();
+    const file = files.find((f) => f.field === `sig_${i}`);
+    if (file) {
+      const uploaded = await saveLegacyBinaryFile({
+        folder: SIGNATURE_FOLDER,
+        file,
+        maxBytes: 2 * 1024 * 1024,
+        allowedExt: IMG_EXT,
+      });
+      if (uploaded.error) return { success: false, message: uploaded.error };
+      existingFile = uploaded.filename;
+    }
     if (!row.id) {
       if (!refName && !designation) continue;
       await prisma.signature_setup.create({

@@ -454,7 +454,13 @@
 
   & + & { border-top: 0; }
 
-  &.active { background: var(--cis-primary-soft); color: var(--cis-primary); border-color: var(--cis-border); }
+  &.active {
+    background: rgba(var(--cis-primary-rgb), 0.09);
+    color: var(--cis-primary);
+    border-color: rgba(var(--cis-primary-rgb), 0.25);
+    box-shadow: inset 3px 0 0 var(--cis-primary);
+    font-weight: 600;
+  }
   &.disabled { color: var(--cis-text-subtle); }
 }
 

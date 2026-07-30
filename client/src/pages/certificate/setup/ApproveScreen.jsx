@@ -56,8 +56,8 @@ export default function ApproveScreen({ data, busy, onLoad, onSave }) {
         <div className="card shadow-sm exam-setup-card">
           <div className="card-header bg-white fw-semibold">Filter</div>
           <div className="card-body">
-            <div className="row g-3 align-items-end">
-              <div className="col-md-3">
+            <div className="row g-3">
+              <div className="col-md-4">
                 <label className="form-label">Search By</label>
                 <input
                   className="form-control"
@@ -66,17 +66,20 @@ export default function ApproveScreen({ data, busy, onLoad, onSave }) {
                   onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                 />
               </div>
-              <div className="col-md-2">
+              <div className="col-md-4">
                 <label className="form-label">From Date</label>
-                <input type="date" className="form-control" value={filters.fromDate} onChange={(e) => setFilters({ ...filters, fromDate: e.target.value })} />
+                <input type="date" className="form-control" value={filters.fromDate} max={filters.toDate || undefined} onChange={(e) => setFilters({ ...filters, fromDate: e.target.value })} />
               </div>
-              <div className="col-md-2">
+              <div className="col-md-4">
                 <label className="form-label">To Date</label>
-                <input type="date" className="form-control" value={filters.toDate} onChange={(e) => setFilters({ ...filters, toDate: e.target.value })} />
+                <input type="date" className="form-control" value={filters.toDate} min={filters.fromDate || undefined} onChange={(e) => setFilters({ ...filters, toDate: e.target.value })} />
               </div>
-              <div className="col-md-5">
+            </div>
+
+            <div className="row g-3 align-items-center mt-1">
+              <div className="col-md-8 ms-4">
                 <label className="form-label d-block">Status</label>
-                <div className="d-flex flex-wrap gap-3 align-items-center">
+                <div className="d-flex flex-wrap gap-5 align-items-center">
                   {[
                     { value: '0', label: 'Pending' },
                     { value: '1', label: 'Approved' },
@@ -93,8 +96,10 @@ export default function ApproveScreen({ data, busy, onLoad, onSave }) {
                       {opt.label}
                     </label>
                   ))}
-                  <button type="button" className="btn btn-info text-white" disabled={busy} onClick={() => runSearch()}>Search</button>
                 </div>
+              </div>
+              <div className="col-md text-md-end">
+                <button type="button" className="btn btn-info text-white" disabled={busy} onClick={() => runSearch()}>Search</button>
               </div>
             </div>
 

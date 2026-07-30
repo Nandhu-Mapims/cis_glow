@@ -44,6 +44,21 @@ export async function loadAttachmentScategorySetup(memberId, fields = {}, audit 
 }
 
 export async function saveAttachmentScategorySetup(payload, memberId, audit = {}) {
+  if (payload.action === 'delete') {
+    const id = parseId(payload.id);
+    const { update } = auditFields(memberId, audit);
+    await prisma.staff_attachment_mscategory.update({
+      where: { id },
+      data: { del: 0, ...update },
+    });
+    await logStaffModule(PAGE, 'Delete', 'Successful', String(id), memberId, audit);
+    return {
+      success: true,
+      message: 'Your details are deleted...',
+      ...(await loadAttachmentScategorySetup(memberId, { mainCategoryId: payload.mainCategoryId, subCategoryId: payload.subCategoryId }, { ...audit, skipLog: true })),
+    };
+  }
+
   const mainId = parseId(payload.mainCategoryId);
   const subId = parseId(payload.subCategoryId);
   if (!mainId || !subId) return { success: false, message: 'Category and sub-category are required' };

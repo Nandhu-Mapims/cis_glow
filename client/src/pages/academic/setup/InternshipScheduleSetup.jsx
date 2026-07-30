@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import SetupAlerts from '../../fees/setup/SetupAlerts';
+import { toDateInputValue } from '../../../utils/dateInputs';
 import { useAcademicSetupApi } from './useAcademicSetupApi';
 import {
   CurriculumFilterCard,
@@ -83,7 +84,7 @@ export default function InternshipScheduleSetup() {
             <div className="table-responsive">
               <table className="table table-bordered table-sm mb-0">
                 <thead>
-                  <tr><th>Department</th><th>From</th><th>To</th><th>Time</th><th>Room No</th></tr>
+                  <tr><th>Department</th><th>From</th><th>To</th><th>Time</th><th>Room No</th><th /></tr>
                 </thead>
                 <tbody>
                   {rows.map((row, i) => (
@@ -96,8 +97,8 @@ export default function InternshipScheduleSetup() {
                           ))}
                         </select>
                       </td>
-                      <td><input className="form-control form-control-sm" value={row.fromDate} onChange={(e) => updateRow(i, { fromDate: e.target.value })} /></td>
-                      <td><input className="form-control form-control-sm" value={row.toDate} onChange={(e) => updateRow(i, { toDate: e.target.value })} /></td>
+                      <td><input type="date" className="form-control form-control-sm" value={toDateInputValue(row.fromDate)} onChange={(e) => updateRow(i, { fromDate: e.target.value })} /></td>
+                      <td><input type="date" className="form-control form-control-sm" value={toDateInputValue(row.toDate)} onChange={(e) => updateRow(i, { toDate: e.target.value })} /></td>
                       <td className="text-nowrap">
                         <input className="form-control form-control-sm d-inline-block" style={{ width: '5.5rem' }} value={row.fromTime} onChange={(e) => updateRow(i, { fromTime: e.target.value })} />
                         {' – '}
@@ -118,6 +119,11 @@ export default function InternshipScheduleSetup() {
                             </optgroup>
                           ))}
                         </select>
+                      </td>
+                      <td>
+                        <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setRows((prev) => prev.filter((_, j) => j !== i))}>
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}

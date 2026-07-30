@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ConfirmModal from '../../fees/setup/ConfirmModal';
+import { DragHandle, useDragReorder } from '../../../hooks/useDragReorder';
 
 export function MachineAccessScreen({ data, busy, onLoad, onSave }) {
   const [staffCategory, setStaffCategory] = useState('');
@@ -378,32 +379,45 @@ function CategoryPicker({ categories, value, onChange, label = 'Category' }) {
 export function AttMenuScreen({ data, busy, onLoad, onSave }) {
   const [menuCategory, setMenuCategory] = useState('');
   const [rows, setRows] = useState([]);
+  const { dragHandleProps, rowDropProps, rowClassName } = useDragReorder(rows, setRows);
   useEffect(() => { onLoad(); }, [onLoad]);
   useEffect(() => {
     if (data?.menuCategory) setMenuCategory(data.menuCategory);
     if (data?.rows) setRows(data.rows);
   }, [data]);
   const updateRow = (index, patch) => setRows((r) => r.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+  const deleteRow = (i) => {
+    const row = rows[i];
+    if (row.rowId) onSave({ menuCategory, action: 'delete', rowId: row.rowId });
+    else setRows((p) => p.filter((_, j) => j !== i));
+  };
   return (
     <div>
       <CategoryPicker categories={data?.categories} value={menuCategory} onChange={(v) => { setMenuCategory(v); onLoad({ menuCategory: v }); }} />
       <table className="table table-sm table-bordered">
-        <thead><tr><th>On</th><th>Order</th><th>Title</th><th>URL</th><th>Icon</th><th /></tr></thead>
+        <thead><tr><th style={{ width: '2rem' }} aria-hidden="true" /><th>On</th><th>Order</th><th>Title</th><th>URL</th><th>Icon</th><th /></tr></thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={row.rowId || `new-${i}`}>
+            <tr key={row.rowId || `new-${i}`} className={rowClassName(i)} {...rowDropProps(i)}>
+              <td className="text-center"><DragHandle {...dragHandleProps(i)} /></td>
               <td><input type="checkbox" checked={row.enable} onChange={(e) => updateRow(i, { enable: e.target.checked })} /></td>
-              <td><input className="form-control form-control-sm" value={row.order} onChange={(e) => updateRow(i, { order: e.target.value })} /></td>
+              <td><input className="form-control form-control-sm" value={row.order} readOnly disabled title="Drag the row's handle to reorder" /></td>
               <td><input className="form-control form-control-sm" value={row.title} onChange={(e) => updateRow(i, { title: e.target.value })} /></td>
               <td><input className="form-control form-control-sm" value={row.url} onChange={(e) => updateRow(i, { url: e.target.value })} /></td>
               <td><input className="form-control form-control-sm" value={row.icon} onChange={(e) => updateRow(i, { icon: e.target.value })} /></td>
-              <td>{row.rowId ? <button type="button" className="btn btn-sm btn-outline-danger" disabled={busy} onClick={() => onSave({ menuCategory, action: 'delete', rowId: row.rowId })}>Del</button> : null}</td>
+              <td>
+                <button type="button" className="btn btn-sm btn-outline-danger" disabled={busy} title="Delete row" onClick={() => deleteRow(i)}>
+                  <i className="fa fa-trash" aria-hidden="true" />
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <button type="button" className="btn btn-sm btn-outline-secondary me-2" onClick={() => setRows([...rows, { enable: true, order: rows.length + 1, title: '', url: '', icon: '' }])}>Add row</button>
-      <button type="button" className="btn btn-primary" disabled={busy || !menuCategory} onClick={() => onSave({ menuCategory, rows })}>Save menu</button>
+      <div className="d-flex align-items-center gap-2">
+        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setRows([...rows, { enable: true, order: rows.length + 1, title: '', url: '', icon: '' }])}>Add row</button>
+        <button type="button" className="btn btn-primary btn-sm" disabled={busy || !menuCategory} onClick={() => onSave({ menuCategory, rows })}>Save menu</button>
+      </div>
     </div>
   );
 }
@@ -504,8 +518,8 @@ export function AnnouncementAddScreen({ data, busy, onLoad, onSave }) {
       <div className="mb-2"><label className="form-label">Title</label><input className="form-control" value={form.title || ''} onChange={(e) => setForm({ ...form, title: e.target.value })} required /></div>
       <div className="mb-2"><label className="form-label">Description</label><textarea className="form-control" rows={4} value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
       <div className="row g-2 mb-2">
-        <div className="col-md-4"><label className="form-label">From</label><input type="date" className="form-control" value={form.fromDate || ''} onChange={(e) => setForm({ ...form, fromDate: e.target.value })} /></div>
-        <div className="col-md-4"><label className="form-label">To</label><input type="date" className="form-control" value={form.toDate || ''} onChange={(e) => setForm({ ...form, toDate: e.target.value })} /></div>
+        <div className="col-md-4"><label className="form-label">From</label><input type="date" className="form-control" value={form.fromDate || ''} max={form.toDate || undefined} onChange={(e) => setForm({ ...form, fromDate: e.target.value })} /></div>
+        <div className="col-md-4"><label className="form-label">To</label><input type="date" className="form-control" value={form.toDate || ''} min={form.fromDate || undefined} onChange={(e) => setForm({ ...form, toDate: e.target.value })} /></div>
         <div className="col-md-4"><label className="form-label">Audience</label><select className="form-select" value={form.audience || 'all'} onChange={(e) => setForm({ ...form, audience: e.target.value })}><option value="all">All</option><option value="staff">Staff</option><option value="student">Student</option></select></div>
       </div>
       <div className="d-flex gap-3 mb-3">
@@ -541,8 +555,8 @@ export function AnnouncementEditScreen({ data, busy, onLoad, onSave }) {
           <div className="mb-2"><label className="form-label">Title</label><input className="form-control" value={form.title || ''} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
           <div className="mb-2"><label className="form-label">Description</label><textarea className="form-control" rows={4} value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
           <div className="row g-2 mb-2">
-            <div className="col-md-4"><label className="form-label">From</label><input type="date" className="form-control" value={form.fromDate || ''} onChange={(e) => setForm({ ...form, fromDate: e.target.value })} /></div>
-            <div className="col-md-4"><label className="form-label">To</label><input type="date" className="form-control" value={form.toDate || ''} onChange={(e) => setForm({ ...form, toDate: e.target.value })} /></div>
+            <div className="col-md-4"><label className="form-label">From</label><input type="date" className="form-control" value={form.fromDate || ''} max={form.toDate || undefined} onChange={(e) => setForm({ ...form, fromDate: e.target.value })} /></div>
+            <div className="col-md-4"><label className="form-label">To</label><input type="date" className="form-control" value={form.toDate || ''} min={form.fromDate || undefined} onChange={(e) => setForm({ ...form, toDate: e.target.value })} /></div>
             <div className="col-md-4"><label className="form-label">Audience</label><select className="form-select" value={form.audience || 'all'} onChange={(e) => setForm({ ...form, audience: e.target.value })}><option value="all">All</option><option value="staff">Staff</option><option value="student">Student</option></select></div>
           </div>
           <div className="d-flex gap-3 mb-3">

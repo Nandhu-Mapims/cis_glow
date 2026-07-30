@@ -1,14 +1,18 @@
+import { useState } from 'react';
+
 export default function IncidentReportSetup({ data, busy, onLoad }) {
+  const [fromDate, setFromDate] = useState(data?.fromDate || '');
+  const [toDate, setToDate] = useState(data?.toDate || '');
   if (!data) return null;
   return (
     <div>
       <form className="row g-2 mb-3" onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
-        onLoad({ fromDate: fd.get('fromDate'), toDate: fd.get('toDate'), search: fd.get('search') });
+        onLoad({ fromDate, toDate, search: fd.get('search') });
       }}>
-        <div className="col-md-3"><input type="date" name="fromDate" className="form-control" defaultValue={data.fromDate} /></div>
-        <div className="col-md-3"><input type="date" name="toDate" className="form-control" defaultValue={data.toDate} /></div>
+        <div className="col-md-3"><input type="date" name="fromDate" className="form-control" value={fromDate} max={toDate || undefined} onChange={(e) => setFromDate(e.target.value)} /></div>
+        <div className="col-md-3"><input type="date" name="toDate" className="form-control" value={toDate} min={fromDate || undefined} onChange={(e) => setToDate(e.target.value)} /></div>
         <div className="col-md-4"><input name="search" className="form-control" placeholder="Search" defaultValue={data.search || ''} /></div>
         <div className="col-md-2"><button type="submit" className="btn btn-primary w-100" disabled={busy}>Show</button></div>
       </form>

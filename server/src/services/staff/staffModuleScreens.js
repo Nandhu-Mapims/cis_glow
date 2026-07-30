@@ -23,6 +23,7 @@ import {
   uploadCertificatesFile,
   certificatesMore,
 } from './screens/gridScreens.js';
+import { searchStaff } from './staffShared.js';
 import {
   loadInspectionDetailsScreen,
   saveInspectionDetailsScreen,
@@ -83,6 +84,7 @@ const SCREEN_SAVERS = {
 
 const MORE_HANDLERS = {
   certificates: certificatesMore,
+  'photo-upload': async (query) => searchStaff({ by: query.by || 'name', q: query.q || '' }),
 };
 
 export function assertStaffScreen(screen) {

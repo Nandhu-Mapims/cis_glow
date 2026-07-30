@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import ConfirmModal from '../../../components/ConfirmModal';
+import { useToast } from '../../../components/ToastProvider';
 
 function PasswordFields({ busy, editId, onSave }) {
   const [password, setPassword] = useState('');
@@ -155,10 +157,10 @@ function AccountEditDetail({ data, busy, onLoad, onSave }) {
               </div>
             )}
           </div>
-          <div className="col-md-6">
-            <label className="form-label">Current Password</label>
+          <template className="col-md-6 d-none">
+            <label className="form-label">Your Secret Code</label>
             <div className="form-control-plaintext font-monospace">{user.currentPassword || '—'}</div>
-          </div>
+          </template>
         </div>
         <button type="submit" className="btn btn-danger mt-3" disabled={busy}>Save</button>
       </form>
@@ -173,12 +175,21 @@ function AccountEditDetail({ data, busy, onLoad, onSave }) {
   );
 }
 
-export default function AccountEditSetup({ data, busy, onLoad, onSave }) {
-  if (!data) return null;
+function AccountList({ data, busy, onLoad, onSave }) {
+  const toast = useToast();
+  const [pendingUser, setPendingUser] = useState(null);
 
-  if (data.mode === 'edit') {
-    return <AccountEditDetail data={data} busy={busy} onLoad={onLoad} onSave={onSave} />;
-  }
+  const confirmDelete = async () => {
+    if (!pendingUser) return;
+    try {
+      await onSave({ delete: 'Confirm', confirm: pendingUser.id, search: data.search, page: data.page });
+      toast.success(`Deleted user ${pendingUser.memberId}`);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Delete failed');
+    } finally {
+      setPendingUser(null);
+    }
+  };
 
   return (
     <div>
@@ -230,11 +241,7 @@ export default function AccountEditSetup({ data, busy, onLoad, onSave }) {
                     type="button"
                     className="btn btn-sm btn-outline-danger"
                     disabled={busy}
-                    onClick={() => {
-                      if (window.confirm('Delete this user?')) {
-                        onSave({ delete: 'Confirm', confirm: user.id, search: data.search, page: data.page });
-                      }
-                    }}
+                    onClick={() => setPendingUser(user)}
                   >
                     Delete
                   </button>
@@ -272,6 +279,27 @@ export default function AccountEditSetup({ data, busy, onLoad, onSave }) {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        show={Boolean(pendingUser)}
+        title="Delete user?"
+        message={pendingUser ? `Delete user account "${pendingUser.memberName}" (${pendingUser.memberId})? This cannot be undone.` : ''}
+        confirmLabel="Delete User"
+        tone="danger"
+        busy={busy}
+        onConfirm={confirmDelete}
+        onClose={() => setPendingUser(null)}
+      />
     </div>
   );
+}
+
+export default function AccountEditSetup({ data, busy, onLoad, onSave }) {
+  if (!data) return null;
+
+  if (data.mode === 'edit') {
+    return <AccountEditDetail data={data} busy={busy} onLoad={onLoad} onSave={onSave} />;
+  }
+
+  return <AccountList data={data} busy={busy} onLoad={onLoad} onSave={onSave} />;
 }

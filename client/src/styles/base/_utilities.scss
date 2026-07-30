@@ -278,6 +278,13 @@ $display-values: none, inline, inline-block, block, grid, table, table-cell, tab
 .bg-secondary { background-color: #5f5953 !important; color: #fff !important; }
 .bg-dark { background-color: #1f1718 !important; color: #fff !important; }
 
+// Soft tonal variants — status pills/badges on light backgrounds (not full-saturation bg-*)
+.bg-primary-soft { background-color: var(--cis-primary-soft) !important; color: var(--cis-primary) !important; }
+.bg-danger-soft { background-color: var(--cis-danger-soft) !important; color: var(--cis-danger) !important; }
+.bg-success-soft { background-color: var(--cis-success-soft) !important; color: var(--cis-success) !important; }
+.bg-warning-soft { background-color: var(--cis-warning-soft) !important; color: #7c4308 !important; }
+.bg-info-soft { background-color: var(--cis-info-soft) !important; color: var(--cis-info) !important; }
+
 .text-bg-light { background-color: var(--cis-bg-subtle) !important; color: var(--cis-text) !important; }
 .text-bg-primary { background-color: var(--cis-primary) !important; color: #fff !important; }
 .text-bg-secondary { background-color: #5f5953 !important; color: #fff !important; }

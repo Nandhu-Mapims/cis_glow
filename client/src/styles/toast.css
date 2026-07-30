@@ -1,0 +1,96 @@
+/* Toast notifications — built on existing --cis-* design tokens */
+
+.cis-toast-region {
+  position: fixed;
+  z-index: 1080;
+  top: calc(var(--cis-header-height, 64px) + 16px);
+  right: 16px;
+  left: 16px;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.cis-toast-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 380px;
+}
+
+.cis-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.75rem 0.875rem;
+  background: var(--cis-surface, #fff);
+  border: 1px solid var(--cis-border, #e5e1d8);
+  border-left: 3px solid var(--cis-text-subtle, #918a80);
+  border-radius: var(--cis-radius-sm, 8px);
+  box-shadow: var(--cis-shadow, 0 8px 24px rgba(26, 26, 26, 0.08));
+  animation: cis-toast-in 0.18s ease-out;
+}
+
+@keyframes cis-toast-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cis-toast { animation: none; }
+}
+
+.cis-toast--success { border-left-color: var(--cis-success, #059669); }
+.cis-toast--error { border-left-color: var(--cis-danger, #b71c1c); }
+.cis-toast--warning { border-left-color: var(--cis-warning, #d97706); }
+.cis-toast--info { border-left-color: var(--cis-info, #0284c7); }
+
+.cis-toast-icon {
+  margin-top: 0.125rem;
+  font-size: 1rem;
+  flex: none;
+}
+
+.cis-toast--success .cis-toast-icon { color: var(--cis-success, #059669); }
+.cis-toast--error .cis-toast-icon { color: var(--cis-danger, #b71c1c); }
+.cis-toast--warning .cis-toast-icon { color: var(--cis-warning, #d97706); }
+.cis-toast--info .cis-toast-icon { color: var(--cis-info, #0284c7); }
+
+.cis-toast-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.cis-toast-title {
+  font-size: var(--cis-text-meta, 0.8125rem);
+  color: var(--cis-text, #171513);
+}
+
+.cis-toast-msg {
+  font-size: var(--cis-text-meta, 0.8125rem);
+  color: var(--cis-text-muted, #5f5953);
+  word-break: break-word;
+}
+
+.cis-toast-close {
+  flex: none;
+  border: none;
+  background: transparent;
+  color: var(--cis-text-subtle, #918a80);
+  padding: 0.125rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.cis-toast-close:hover { color: var(--cis-text, #171513); }
+.cis-toast-close:focus-visible { outline: var(--cis-focus-ring); outline-offset: 1px; }
+
+@media (min-width: 640px) {
+  .cis-toast-region { left: auto; }
+}

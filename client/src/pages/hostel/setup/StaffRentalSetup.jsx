@@ -144,6 +144,7 @@ export default function StaffRentalSetup({ data, busy, onLoad, onSave }) {
                       type="date"
                       className="form-control"
                       value={stay.fromMonth || ''}
+                      max={stay.toMonth || undefined}
                       onChange={(e) => setStays((prev) => prev.map((row, i) => (i === index ? { ...row, fromMonth: e.target.value } : row)))}
                     />
                   </div>
@@ -153,6 +154,7 @@ export default function StaffRentalSetup({ data, busy, onLoad, onSave }) {
                       type="date"
                       className="form-control"
                       value={stay.toMonth || ''}
+                      min={stay.fromMonth || undefined}
                       onChange={(e) => setStays((prev) => prev.map((row, i) => (i === index ? { ...row, toMonth: e.target.value } : row)))}
                     />
                   </div>

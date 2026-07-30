@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ExamSetupShell } from './ExamSelectors';
+import { toDateTimeInputValue } from '../../../utils/dateInputs';
 import { useExamSetupApi } from './useExamSetupApi';
 
 async function readFilesAsBase64(fileList, fieldName) {
@@ -39,8 +40,8 @@ export default function CampActivityEditSetup() {
         editId: data.editId,
         eventTitle: data.eventTitle || '',
         eventTypes: data.selectedTypes || [],
-        fromDate: data.fromDate || '',
-        toDate: data.toDate || '',
+        fromDate: toDateTimeInputValue(data.fromDate),
+        toDate: toDateTimeInputValue(data.toDate),
         venue: data.venue || '',
         totalPatients: data.totalPatients || '',
         description: data.description || '',
@@ -158,11 +159,11 @@ export default function CampActivityEditSetup() {
           <div className="mb-3 row g-2">
             <label className="col-sm-2 col-form-label">From Date</label>
             <div className="col-sm-3">
-              <input className="form-control" required value={form.fromDate} onChange={(e) => setField('fromDate', e.target.value)} />
+              <input type="datetime-local" className="form-control" required value={form.fromDate} onChange={(e) => setField('fromDate', e.target.value)} />
             </div>
             <label className="col-sm-1 col-form-label">To Date</label>
             <div className="col-sm-3">
-              <input className="form-control" required value={form.toDate} onChange={(e) => setField('toDate', e.target.value)} />
+              <input type="datetime-local" className="form-control" required value={form.toDate} onChange={(e) => setField('toDate', e.target.value)} />
             </div>
           </div>
 

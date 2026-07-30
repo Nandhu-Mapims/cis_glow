@@ -392,6 +392,14 @@
   font-size: 0.8rem;
 }
 
+.cis-fee-page .fee-dashboard-root .cis-fee-dash-table {
+  /* Sticky <th> inside a border-collapse:collapse table (the global default)
+     doesn't reliably paint over content scrolled underneath — separate +
+     zero spacing keeps the sticky header fully opaque. */
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
 .cis-fee-page .fee-dashboard-root .cis-fee-dash-table thead th {
   position: sticky;
   top: 0;

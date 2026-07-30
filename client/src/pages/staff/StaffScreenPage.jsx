@@ -1,13 +1,217 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useOutletContext, useParams } from 'react-router-dom';
+import api from '../../api/client';
+import ChipMultiSelect from '../../components/ChipMultiSelect';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { printReportHtml } from '../../utils/printReport';
 import { STAFF_SCREEN_META } from './staffModuleMeta';
 import { useStaffScreenApi } from './useStaffModuleApi';
 
 const SAVE_SCREENS = new Set(['transport', 'photo-upload', 'certificates']);
+const CERTIFICATE_UPLOAD_ACCEPT = '.jpg,.jpeg,.png,.gif,.doc,.docx,.pdf';
+// Reports built as several independent per-entity tables (one <h5>+<table> block
+// per staff member) rather than one continuous list. Capping them at 68vh with a
+// sticky header per table (cis-staff-report-output) forces scrolling through a
+// cramped box with many redundant sticky headers — these read far better just
+// flowing in the page like any other long page content.
+const MULTI_SECTION_REPORT_SCREENS = new Set(['publication-dci', 'publication-tnmgrmu', 'attach-print']);
 
-function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function StaffPhotoUploadFields({ busy, searchMore, onSave }) {
+  const [staffId, setStaffId] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const [matches, setMatches] = useState([]);
+  const [staff, setStaff] = useState(null);
+  const [file, setFile] = useState(null);
+
+  const runSearch = async () => {
+    const q = staffId.trim();
+    if (q.length < 3) {
+      setSearchError('Type at least 3 characters of the staff ID or name.');
+      return;
+    }
+    setSearching(true);
+    setSearchError(null);
+    setMatches([]);
+    setStaff(null);
+    try {
+      const res = await searchMore({ by: 'name', q });
+      const list = Array.isArray(res) ? res : res?.staff || [];
+      if (!list.length) setSearchError('No staff found for that search.');
+      else if (list.length === 1) setStaff(list[0]);
+      else setMatches(list);
+    } catch {
+      setSearchError('Unable to search for that staff member.');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const pickStaff = (s) => {
+    setStaff(s);
+    setMatches([]);
+  };
+
+  const handleFile = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) { setFile(null); return; }
+    const reader = new FileReader();
+    reader.onload = () => setFile({ name: f.name, data: reader.result });
+    reader.readAsDataURL(f);
+  };
+
+  const handleSave = async () => {
+    if (!staff || !file) return;
+    const result = await onSave({ staffId: staff.staffId, file });
+    if (result?.success) {
+      setFile(null);
+      setStaffId('');
+      setStaff(null);
+    }
+  };
+
+  return (
+    <div className="col-12 cis-photo-upload-panel">
+      <p className="cis-screen-filters-head mb-2">Find a staff member, then upload their photo</p>
+      <div className="row g-3 align-items-start">
+        <div className="col-md-5">
+          <label className="form-label">Staff ID or name</label>
+          <div className="d-flex gap-2">
+            <input
+              className="form-control"
+              value={staffId}
+              placeholder="Staff ID or name (min 3 characters)"
+              onChange={(e) => setStaffId(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); runSearch(); } }}
+            />
+            <button type="button" className="btn btn-outline-primary text-nowrap" disabled={busy || searching || staffId.trim().length < 3} onClick={runSearch}>
+              {searching ? 'Searching…' : 'Find staff'}
+            </button>
+          </div>
+          {searchError && <p className="text-danger small mt-1 mb-0">{searchError}</p>}
+          {matches.length > 0 && (
+            <ul className="list-group mt-1 cis-photo-upload-matches">
+              {matches.map((m) => (
+                <li key={m.id} className="list-group-item list-group-item-action p-2">
+                  <button type="button" className="btn btn-link btn-sm p-0 text-decoration-none" onClick={() => pickStaff(m)}>
+                    {m.name} ({m.staffId})
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {staff && (
+            <p className="small mt-2 mb-0 cis-photo-upload-selected">
+              Selected: <strong>{staff.name}</strong> ({staff.staffId})
+            </p>
+          )}
+        </div>
+        <div className="col-md-5">
+          <label className="form-label">Photo (PNG/JPG, any file name)</label>
+          <input type="file" className="form-control" accept=".png,.jpg,.jpeg" disabled={!staff} onChange={handleFile} />
+        </div>
+        <div className="col-md-2">
+          <label className="form-label d-none d-md-block">&nbsp;</label>
+          <button type="button" className="btn btn-primary w-100" disabled={busy || !staff || !file} onClick={handleSave}>
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StaffPhotoBulkUploadFields({ busy, onSave }) {
+  const [items, setItems] = useState([]);
+  const [overwrite, setOverwrite] = useState(false);
+  const [results, setResults] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [inputKey, setInputKey] = useState(0);
+
+  const handleFiles = async (e) => {
+    const files = [...(e.target.files || [])];
+    setResults(null);
+    const read = await Promise.all(files.map((f) => new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve({ name: f.name, data: reader.result });
+      reader.readAsDataURL(f);
+    })));
+    setItems(read);
+  };
+
+  const handleSave = async () => {
+    if (!items.length) return;
+    setSaving(true);
+    try {
+      const result = await onSave({ files: items, overwriteExists: overwrite });
+      if (result?.results) setResults(result.results);
+      if (result?.success) {
+        setItems([]);
+        setInputKey((k) => k + 1);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="col-12 cis-photo-bulk-upload mt-4 pt-4 border-top">
+      <p className="cis-screen-filters-head mb-2">Bulk upload — file name is the staff ID (e.g. EMP0123.png)</p>
+      <div className="row g-3 align-items-end">
+        <div className="col-md-6">
+          <label className="form-label">PNG files</label>
+          <input
+            key={inputKey}
+            type="file"
+            className="form-control"
+            accept=".png"
+            multiple
+            onChange={handleFiles}
+          />
+          {items.length > 0 && <p className="small text-muted mt-1 mb-0">{items.length} file(s) selected</p>}
+        </div>
+        <div className="col-md-3">
+          <label className="form-label d-none d-md-block">&nbsp;</label>
+          <div className="form-check d-flex align-items-center gap-2 mb-0 cis-photo-upload-overwrite">
+            <input type="checkbox" className="form-check-input mt-0 flex-shrink-0" id="staff_photo_overwrite" checked={overwrite} onChange={(e) => setOverwrite(e.target.checked)} />
+            <label className="form-check-label" htmlFor="staff_photo_overwrite">Overwrite existing files</label>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <label className="form-label d-none d-md-block">&nbsp;</label>
+          <button
+            type="button"
+            className="btn btn-primary w-100"
+            disabled={busy || saving || !items.length}
+            onClick={handleSave}
+          >
+            {saving ? 'Uploading…' : `Upload ${items.length || ''} photo${items.length === 1 ? '' : 's'}`.trim()}
+          </button>
+        </div>
+      </div>
+      {results && (
+        <ul className="list-unstyled small mt-2 mb-0">
+          {results.map((r, i) => (
+            <li key={`${r.name}-${i}`} className={r.success ? 'text-success' : 'text-danger'}>
+              {r.name} {r.success ? '→ saved' : `— ${r.error}`}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy, searchMore }) {
   const todayIso = () => new Date().toISOString().slice(0, 10);
   const [fields, setFields] = useState(() => {
     if (meta.type === 'staff-search-report') return { search_by: 'roll_no' };
@@ -47,7 +251,7 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
               id="affidavit_only"
               onChange={(e) => set('affidavit', e.target.checked ? 1 : 0)}
             />
-            <label className="form-check-label" htmlFor="affidavit_only">Only Affidavit Attachments</label>
+            <label style={{ width: 'max-content' }} className="form-check-label ms-2" htmlFor="affidavit_only">Only Affidavit Attachments</label>
           </div>
         </div>
       )}
@@ -67,7 +271,7 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
                 id="affidavit_pub"
                 onChange={(e) => set('affidavit', e.target.checked ? 1 : 0)}
               />
-              <label className="form-check-label" htmlFor="affidavit_pub">Affidavit publications only</label>
+              <label style={{ width: 'max-content' }} className="form-check-label ms-2" htmlFor="affidavit_pub">Affidavit publications only</label>
             </div>
           </div>
         </>
@@ -76,11 +280,11 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
         <>
           <div className="col-md-2">
             <label className="form-label">From</label>
-            <input type="date" className="form-control" value={fields.from_date || ''} onChange={(e) => set('from_date', e.target.value)} required />
+            <input type="date" className="form-control" value={fields.from_date || ''} max={fields.to_date || undefined} onChange={(e) => set('from_date', e.target.value)} required />
           </div>
           <div className="col-md-2">
             <label className="form-label">To</label>
-            <input type="date" className="form-control" value={fields.to_date || ''} onChange={(e) => set('to_date', e.target.value)} required />
+            <input type="date" className="form-control" value={fields.to_date || ''} min={fields.from_date || undefined} onChange={(e) => set('to_date', e.target.value)} required />
           </div>
           <div className="col-md-3">
             <label className="form-label">Category</label>
@@ -98,34 +302,56 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
         </>
       )}
       {meta.type === 'category-report' && (
-        <div className="col-md-4"><label className="form-label">Category</label>
-          <select className="form-select" multiple onChange={(e) => set('search_category', Array.from(e.target.selectedOptions, (o) => o.value))}>
-            {(data?.categories || []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+        <div className="col-md-8">
+          <label className="form-label">Category</label>
+          <ChipMultiSelect
+            options={(data?.categories || []).map((c) => ({ value: c.id, label: c.name }))}
+            value={fields.search_category || []}
+            onChange={(next) => set('search_category', next)}
+            emptySelectionText="No categories selected"
+            emptySearchText="No categories match your search."
+          />
+          <button type="submit" className="btn btn-danger mt-2" disabled={busy}>
+            {SAVE_SCREENS.has(screen) ? 'Save' : 'Generate'}
+          </button>
         </div>
       )}
       {meta.type === 'dept-report' && (
-        <div className="col-md-4"><label className="form-label">Department</label>
-          <select className="form-select" multiple onChange={(e) => set('search_category', Array.from(e.target.selectedOptions, (o) => o.value))}>
-            {(data?.departments || []).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-          </select>
+        <div className="col-md-8">
+          <label className="form-label">Department</label>
+          <ChipMultiSelect
+            options={(data?.departments || []).map((d) => ({ value: d.id, label: d.name }))}
+            value={fields.search_category || []}
+            onChange={(next) => set('search_category', next)}
+            emptySelectionText="No departments selected"
+            emptySearchText="No departments match your search."
+          />
+          <button type="submit" className="btn btn-danger mt-2" disabled={busy}>
+            {SAVE_SCREENS.has(screen) ? 'Save' : 'Generate'}
+          </button>
         </div>
       )}
       {meta.type === 'attn-sheet' && (
         <>
-          <div className="col-md-3"><label className="form-label">Department</label>
+          <div className="col-md-4"><label className="form-label">Department</label>
             <select className="form-select" onChange={(e) => set('department_id', e.target.value)}>
               {(data?.departments || []).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
           </div>
-          <div className="col-md-2"><label className="form-label">Type</label>
+          <div className="col-md-3"><label className="form-label">Type</label>
             <select className="form-select" onChange={(e) => set('cat_search_type', e.target.value)} defaultValue="Faculty">
               <option value="Faculty">Faculty</option><option value="PGStudent">PG Student</option>
             </select>
           </div>
-          <div className="col-md-2 form-check mt-4">
-            <input type="checkbox" className="form-check-input" id="show_photo" defaultChecked onChange={(e) => set('show_photo', e.target.checked)} />
-            <label className="form-check-label" htmlFor="show_photo">Show photo</label>
+          <div className="col-md-2">
+            <span className="form-label d-block" aria-hidden="true">&nbsp;</span>
+            <div className="form-check d-flex align-items-center gap-2 mb-0">
+              <input type="checkbox" className="form-check-input mt-0 flex-shrink-0" id="show_photo" defaultChecked onChange={(e) => set('show_photo', e.target.checked)} />
+              <label className="form-check-label" htmlFor="show_photo">Show photo</label>
+            </div>
+          </div>
+          <div className="col-md-3 d-flex align-items-end justify-content-end">
+            <button type="submit" className="btn btn-danger px-4" disabled={busy}>Generate</button>
           </div>
         </>
       )}
@@ -139,19 +365,12 @@ function ScreenFilters({ screen, meta, data, onGenerate, onSave, busy }) {
         </>
       )}
       {meta.type === 'upload' && (
-        <div className="col-md-6">
-          <label className="form-label">PNG files (staffid.png)</label>
-          <input type="file" className="form-control" accept=".png" multiple onChange={async (e) => {
-            const files = await Promise.all([...e.target.files].map((f) => new Promise((resolve) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve({ name: f.name, data: reader.result });
-              reader.readAsDataURL(f);
-            })));
-            set('files', files);
-          }} />
-        </div>
+        <>
+          <StaffPhotoUploadFields busy={busy} searchMore={searchMore} onSave={onSave} />
+          <StaffPhotoBulkUploadFields busy={busy} onSave={onSave} />
+        </>
       )}
-      {meta.type !== 'auto-report' && meta.type !== 'certificates' && (
+      {meta.type !== 'auto-report' && meta.type !== 'certificates' && meta.type !== 'upload' && meta.type !== 'attn-sheet' && meta.type !== 'category-report' && meta.type !== 'dept-report' && (
         <div className="col-md-2 d-flex align-items-end">
           <button type="submit" className="btn btn-danger w-100" disabled={busy}>
             {SAVE_SCREENS.has(screen) ? 'Save' : 'Generate'}
@@ -178,7 +397,7 @@ function TransportGrid({ data, onSave, busy }) {
                 <td>
                   <select className="form-select form-select-sm" value={row.transportNumber || ''} onChange={(e) => setItems((p) => p.map((r, j) => j === i ? { ...r, transportNumber: e.target.value } : r))}>
                     <option value="">—</option>
-                    {(data?.transports || []).map((t) => <option key={t.id} value={t.transportNumber}>{t.transportRoute || t.transportNumber}</option>)}
+                    {(data?.transports || []).map((t) => <option key={t.id} value={t.id}>{t.transportRoute || t.transportNumber}</option>)}
                   </select>
                 </td>
               </tr>
@@ -318,6 +537,9 @@ function CertificatesPanel({ data, busy, onLoad, onSave, searchMore }) {
   const [selectedId, setSelectedId] = useState(null);
   const catalog = data?.catalog;
   const [items, setItems] = useState([]);
+  const [fileUrls, setFileUrls] = useState({});
+  const [uploadingIndex, setUploadingIndex] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
 
   useEffect(() => {
     if (data?.searchResults) setResults(data.searchResults);
@@ -335,8 +557,28 @@ function CertificatesPanel({ data, busy, onLoad, onSave, searchMore }) {
         attachFile: t.attachFile || '',
         recordId: t.recordId,
       })));
+      setFileUrls(Object.fromEntries(catalog.types.map((t, i) => [i, t.fileUrl || null])));
     }
   }, [catalog]);
+
+  const handleFile = async (index, file) => {
+    if (!file || !catalog) return;
+    setUploadingIndex(index);
+    setUploadError(null);
+    try {
+      const dataBase64 = await readFileAsBase64(file);
+      const res = await api.post('/api/staff/screens/certificates/upload', {
+        filename: file.name,
+        dataBase64,
+      });
+      setItems((p) => p.map((r, j) => (j === index ? { ...r, attachFile: res.data.filename } : r)));
+      setFileUrls((p) => ({ ...p, [index]: res.data.url }));
+    } catch (err) {
+      setUploadError(err.response?.data?.message || 'Upload failed');
+    } finally {
+      setUploadingIndex(null);
+    }
+  };
 
   const runSearch = async (searchQuery = q) => {
     setSearchNotice('');
@@ -406,7 +648,9 @@ function CertificatesPanel({ data, busy, onLoad, onSave, searchMore }) {
         {catalog?.types?.length > 0 && (
           <form onSubmit={(e) => { e.preventDefault(); onSave({ staffId: catalog.staffId, items }); }}>
             <p className="mb-1"><strong>{catalog.staffCode}</strong></p>
-            <p className="text-muted small mb-3">{catalog.departmentName} / {catalog.designationName}</p>
+            <p className="text-muted small mb-1">{catalog.departmentName} / {catalog.designationName}</p>
+            <p className="text-muted small mb-3">Supported: jpg, png, gif, doc, docx, pdf</p>
+            {uploadError && <div className="alert alert-danger py-2">{uploadError}</div>}
             <div className="table-responsive">
               <table className="table table-bordered table-sm">
                 <thead><tr><th>Attachment</th><th>Number</th><th>File</th></tr></thead>
@@ -416,17 +660,24 @@ function CertificatesPanel({ data, busy, onLoad, onSave, searchMore }) {
                       <td>{[t.mainCategory, t.subCategory, t.docCategory].filter(Boolean).join(' / ') || t.label || `Type ${t.attachId}`}</td>
                       <td><input className="form-control form-control-sm" value={items[i]?.attachNo || ''} onChange={(e) => setItems((p) => p.map((r, j) => j === i ? { ...r, attachNo: e.target.value } : r))} /></td>
                       <td>
-                        <input className="form-control form-control-sm" value={items[i]?.attachFile || ''} onChange={(e) => setItems((p) => p.map((r, j) => j === i ? { ...r, attachFile: e.target.value } : r))} />
-                        {t.fileUrl && (
-                          <a className="small d-block mt-1" href={t.fileUrl} target="_blank" rel="noreferrer">View file</a>
-                        )}
+                        {fileUrls[i]
+                          ? <a className="small d-block" href={fileUrls[i]} target="_blank" rel="noreferrer">{items[i]?.attachFile || 'View file'}</a>
+                          : <span className="text-muted small d-block">No file</span>}
+                        <input
+                          type="file"
+                          className="form-control form-control-sm mt-1"
+                          accept={CERTIFICATE_UPLOAD_ACCEPT}
+                          disabled={uploadingIndex === i}
+                          onChange={(e) => handleFile(i, e.target.files?.[0])}
+                        />
+                        {uploadingIndex === i && <span className="small text-muted">Uploading…</span>}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <button type="submit" className="btn btn-primary" disabled={busy}>Save Attachments</button>
+            <button type="submit" className="btn btn-primary" disabled={busy || uploadingIndex !== null}>Save Attachments</button>
           </form>
         )}
       </div>
@@ -496,7 +747,7 @@ export default function StaffScreenPage() {
       {error && <div className="alert alert-danger">{error}</div>}
       <div className="card shadow-sm mb-3"><div className="card-body">
         {meta.type !== 'transport-grid' && meta.type !== 'certificates' && meta.type !== 'inspection-grid' && (
-          <ScreenFilters screen={screen} meta={meta} data={data} busy={busy} onGenerate={load} onSave={save} />
+          <ScreenFilters screen={screen} meta={meta} data={data} busy={busy} onGenerate={load} onSave={save} searchMore={searchMore} />
         )}
         {screen === 'transport' && <TransportGrid data={data} onSave={save} busy={busy} />}
         {screen === 'certificates' && <CertificatesPanel data={data} busy={busy} onLoad={load} onSave={save} searchMore={searchMore} />}
@@ -511,7 +762,9 @@ export default function StaffScreenPage() {
                 ? ' inspection-cert-html'
                 : screen === 'appoint-order'
                   ? ' appoint-order-report-html report-html'
-                  : ' report-html'
+                  : MULTI_SECTION_REPORT_SCREENS.has(screen)
+                    ? ' report-html cis-staff-report-sections'
+                    : ' report-html cis-staff-report-output'
           }`} dangerouslySetInnerHTML={{ __html: data.reportHtml }} />
         </div>
       )}

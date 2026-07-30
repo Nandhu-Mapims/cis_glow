@@ -134,67 +134,87 @@ export async function buildStaffAttendanceWidgets({ memberId, academicDate }) {
     ))[0] ?? null;
   }
 
-  for (const row of staffRows) {
-    const stId = row.id;
-    const staffId = row.staff_id;
-    const attCategory = row.att_category;
-    const categoryName = row.category_sname ?? '';
-    const catId = row.cat_id;
+  // getLPTime() result only depends on att_category, and there are only a
+  // handful of distinct categories across all staff - resolve them once up
+  // front (sequentially, cheap) so the per-staff pass below never has to
+  // await a shared cache fill mid-flight.
+  const distinctCategories = [...new Set(staffRows.map((row) => String(row.att_category || '1')))];
+  for (const catKey of distinctCategories) {
+    const sourceRow = staffRows.find((row) => String(row.att_category || '1') === catKey);
+    // eslint-disable-next-line no-await-in-loop
+    lpCache.set(catKey, await getLPTime(sourceRow.att_category));
+  }
 
-    if (!categoryWiseAtt[catId]) {
-      categoryWiseAtt[catId] = initCategoryBucket(categoryName);
-    }
-    const bucket = categoryWiseAtt[catId];
-    bucket.total += 1;
+  // Each staff member's attendance is computed independently (getAttendance()
+  // + two leave-request lookups = ~10 sequential DB round trips per person).
+  // Running that fully sequentially for a few hundred staff turns into
+  // thousands of round trips and tens of seconds of wall time. The work has
+  // no cross-staff dependency once lpCache/calendarRow are warm, so fan it
+  // out in bounded concurrent batches instead - same queries, same results,
+  // just not one-at-a-time.
+  const CONCURRENCY = 20;
+  for (let i = 0; i < staffRows.length; i += CONCURRENCY) {
+    const chunk = staffRows.slice(i, i + CONCURRENCY);
+    // eslint-disable-next-line no-await-in-loop
+    await Promise.all(chunk.map(async (row) => {
+      const stId = row.id;
+      const staffId = row.staff_id;
+      const categoryName = row.category_sname ?? '';
+      const catId = row.cat_id;
 
-    const catKey = String(attCategory || '1');
-    if (!lpCache.has(catKey)) {
-      lpCache.set(catKey, await getLPTime(attCategory));
-    }
-    const latePermission = lpCache.get(catKey);
-    const attendanceStatus = await getAttendance(stId, staffId, academicDate, latePermission, 'actual', {
-      calendarRow,
-      jobCategory: row.job_category,
-    });
+      if (!categoryWiseAtt[catId]) {
+        categoryWiseAtt[catId] = initCategoryBucket(categoryName);
+      }
+      const bucket = categoryWiseAtt[catId];
+      bucket.total += 1;
 
-    let lApply = 0;
-    if (attendanceStatus.s !== 'H') {
-      bucket.w += 1;
+      const catKey = String(row.att_category || '1');
+      const latePermission = lpCache.get(catKey);
+      const attendanceStatus = await getAttendance(stId, staffId, academicDate, latePermission, 'actual', {
+        calendarRow,
+        jobCategory: row.job_category,
+      });
 
-      const forenoonLeave = await prisma.$queryRawUnsafe(
-        `SELECT status, id FROM att_leave_request_more
-         WHERE del = 1 AND req_date = '${d}' AND staff_id = '${escapeSql(String(stId))}'
-           AND (r_session = 'fullday' OR r_session = 'forenoon') AND status <= 1
-         LIMIT 1`,
-      );
-      if (forenoonLeave[0]?.id) {
-        bucket.f_leave += 1;
-        if (num(forenoonLeave[0].status) === 1) bucket.f_approve += 1;
-        lApply += 1;
+      let lApply = 0;
+      if (attendanceStatus.s !== 'H') {
+        bucket.w += 1;
+
+        const [forenoonLeave, afternoonLeave] = await Promise.all([
+          prisma.$queryRawUnsafe(
+            `SELECT status, id FROM att_leave_request_more
+             WHERE del = 1 AND req_date = '${d}' AND staff_id = '${escapeSql(String(stId))}'
+               AND (r_session = 'fullday' OR r_session = 'forenoon') AND status <= 1
+             LIMIT 1`,
+          ),
+          prisma.$queryRawUnsafe(
+            `SELECT status, id FROM att_leave_request_more
+             WHERE del = 1 AND req_date = '${d}' AND staff_id = '${escapeSql(String(stId))}'
+               AND (r_session = 'fullday' OR r_session = 'afternoon') AND status <= 1
+             LIMIT 1`,
+          ),
+        ]);
+        if (forenoonLeave[0]?.id) {
+          bucket.f_leave += 1;
+          if (num(forenoonLeave[0].status) === 1) bucket.f_approve += 1;
+          lApply += 1;
+        }
+        if (afternoonLeave[0]?.id) {
+          bucket.a_leave += 1;
+          if (num(afternoonLeave[0].status) === 1) bucket.a_approve += 1;
+          lApply += 1;
+        }
+        if (lApply === 0) bucket.la_total += 1;
       }
 
-      const afternoonLeave = await prisma.$queryRawUnsafe(
-        `SELECT status, id FROM att_leave_request_more
-         WHERE del = 1 AND req_date = '${d}' AND staff_id = '${escapeSql(String(stId))}'
-           AND (r_session = 'fullday' OR r_session = 'afternoon') AND status <= 1
-         LIMIT 1`,
-      );
-      if (afternoonLeave[0]?.id) {
-        bucket.a_leave += 1;
-        if (num(afternoonLeave[0].status) === 1) bucket.a_approve += 1;
-        lApply += 1;
-      }
-      if (lApply === 0) bucket.la_total += 1;
-    }
-
-    if (attendanceStatus.mt) bucket.in += 1;
-    if (attendanceStatus.et) bucket.out += 1;
-    if (attendanceStatus.m === 'la') bucket.late += 1;
-    if (attendanceStatus.m === 'pe') bucket.permission += 1;
-    if (attendanceStatus.e === 'la') bucket.o_late += 1;
-    if (attendanceStatus.e === 'pe') bucket.o_permission += 1;
-    if (attendanceStatus.m === 'a') bucket.f_absent += 1;
-    if (attendanceStatus.e === 'a') bucket.a_absent += 1;
+      if (attendanceStatus.mt) bucket.in += 1;
+      if (attendanceStatus.et) bucket.out += 1;
+      if (attendanceStatus.m === 'la') bucket.late += 1;
+      if (attendanceStatus.m === 'pe') bucket.permission += 1;
+      if (attendanceStatus.e === 'la') bucket.o_late += 1;
+      if (attendanceStatus.e === 'pe') bucket.o_permission += 1;
+      if (attendanceStatus.m === 'a') bucket.f_absent += 1;
+      if (attendanceStatus.e === 'a') bucket.a_absent += 1;
+    }));
   }
 
   const totalAttArray = initCategoryBucket('');

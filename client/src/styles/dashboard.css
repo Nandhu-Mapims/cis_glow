@@ -706,7 +706,7 @@
 
 .cis-dash-toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.5rem;
 }
@@ -859,8 +859,9 @@
 .cis-widget::before {
   content: '';
   position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
+  inset: 0 0 0 0;
+  /* width: 3px; */
+  height: 3px;
   background: var(--widget-accent);
   z-index: 1;
 }
@@ -1144,6 +1145,10 @@
   overflow: auto;
 }
 
+.cis-widget-body:has(table) {
+  padding-top: 0;
+}
+
 .cis-widget-body--empty {
   display: flex;
   align-items: center;
@@ -1234,33 +1239,103 @@
   border: none !important;
 }
 
-/* Bold dual KPI (staff attendance clock in/out) */
+/* Bold dual KPI (staff/pg/ug/internship attendance, hostel clock in/out) */
+.cis-widget:has(.weather-bg) {
+  border-color: color-mix(in srgb, var(--widget-accent) 20%, var(--cis-border));
+}
+
+/* The weather-bg box sits several block-level wrappers deep (col-sm-4 >
+   .panel > .dashboard-panel > .weather-bg) — flex:1 on weather-bg alone does
+   nothing unless every ancestor in that chain is also a stretched flex
+   column, so propagate it all the way down. */
+.cis-widget:has(.weather-bg) .cis-widget-body .col-sm-4,
+.cis-widget:has(.weather-bg) .cis-widget-body .panel,
+.cis-widget:has(.weather-bg) .cis-widget-body .dashboard-panel {
+  display: flex !important;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.cis-widget:has(.weather-bg) .cis-widget-icon {
+  border: none;
+  border-radius: 14px;
+  background: var(--widget-accent-soft);
+}
+
+.cis-widget:has(.weather-bg) .cis-widget-meta {
+  display: inline-block;
+  margin-top: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(5, 150, 105, 0.12);
+  color: #059669;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.cis-widget:has(.weather-bg) .cis-widget-badge {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.cis-widget:has(.weather-bg) .cis-widget-badge-value {
+  font-size: 1.4rem;
+  color: var(--cis-text);
+}
+
+.cis-widget:has(.weather-bg) .cis-widget-body {
+  display: flex !important;
+  flex-direction: column;
+}
+
 .cis-widget-body .weather-bg {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   border: 1px solid var(--cis-border) !important;
   border-radius: 14px !important;
   overflow: hidden;
   background: #fff !important;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0;
 }
 
-.cis-widget-body .weather-bg .panel-body,
+.cis-widget-body .weather-bg .panel-body {
+  display: flex !important;
+  flex: 1;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 .cis-widget-body .weather-bg .row {
   display: grid !important;
   grid-template-columns: 1fr 1fr;
+  flex: 1;
+  width: 100% !important;
   gap: 0;
   margin: 0 !important;
   padding: 0 !important;
 }
 
 .cis-widget-body .weather-bg .col-xs-6 {
-  padding: 1rem 1.1rem !important;
-  text-align: left !important;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100% !important;
+  padding: 1.4rem 1.1rem !important;
+  text-align: center !important;
   font-size: 0.6875rem !important;
   font-weight: 700 !important;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--cis-text-subtle) !important;
-  background: linear-gradient(180deg, #fff 0%, var(--cis-bg) 100%);
+  background: transparent !important;
 }
 
 .cis-widget-body .weather-bg .col-xs-6.border-left,
@@ -1269,9 +1344,9 @@
 }
 
 .cis-widget-body .weather-bg .degree {
-  margin-top: 0.35rem !important;
+  margin-top: 0.5rem !important;
   font-family: var(--font-display) !important;
-  font-size: 2rem !important;
+  font-size: 2.25rem !important;
   font-weight: 800 !important;
   letter-spacing: -0.04em;
   line-height: 1 !important;
@@ -1279,29 +1354,106 @@
   font-variant-numeric: tabular-nums;
 }
 
+.cis-widget-body .weather-bg .col-xs-6.border-left .degree,
+.cis-widget-body .weather-bg .border-left .degree {
+  color: #1e3a5f !important;
+}
+
+/* Footer bar under the dual-KPI block: "of X | Y" total + last sync, flat and inline */
+.cis-widget-body .weather-category {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0.85rem 1.1rem 0 !important;
+  border: none !important;
+  border-top: 1px solid var(--cis-border);
+  background: transparent !important;
+}
+
+.cis-widget-body .weather-category ul {
+  display: flex !important;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  grid-template-columns: none;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+.cis-widget-body .weather-category li,
+.cis-widget-body .weather-category > * {
+  display: flex !important;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.75rem;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-align: left !important;
+}
+
+.cis-widget-body .weather-category span {
+  font-family: var(--font-display) !important;
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+  color: var(--cis-text) !important;
+}
+
+.cis-widget-body .weather-category small {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.6875rem !important;
+  font-weight: 600 !important;
+  color: var(--cis-text-subtle) !important;
+}
+
+.cis-widget-body .weather-category small::before {
+  content: '\f017';
+  font-family: FontAwesome;
+  font-size: 0.75rem;
+  color: var(--cis-text-subtle);
+}
+
+.cis-widget-body .weather-category small br {
+  display: none;
+}
+
 .cis-widget-body table {
   width: 100% !important;
   margin: 0 !important;
+  margin-bottom: 1.1rem !important;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 0.75rem;
   background: #fff;
-}
-
-.cis-widget-body table.table-bordered,
-.cis-widget-body .table {
   border: 1px solid var(--cis-border) !important;
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
 }
 
+.cis-widget-body table:last-child {
+  margin-bottom: 0 !important;
+}
+
 /* In a scrollable body the table's own overflow:hidden would break the sticky
    header — relax it so column labels stay pinned while scrolling. */
-.cis-widget-body.is-scroll table.table-bordered,
-.cis-widget-body.is-scroll .table {
+.cis-widget-body.is-scroll table {
   overflow: visible;
   border-radius: 0;
+}
+
+.cis-widget-body table {
+  /* Sticky header cells inside a border-collapse:collapse table (the global
+     default) don't reliably paint over content scrolled underneath —
+     separate + zero spacing keeps them fully opaque. */
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .cis-widget-body table th,
@@ -1368,64 +1520,6 @@
 
 .cis-widget-body .cinfo:hover {
   text-decoration: underline;
-}
-
-/* KPI strip */
-.cis-widget-body .weather-category,
-.cis-widget-body footer.weather-category {
-  display: block !important;
-  margin: 0.85rem 0 0 !important;
-  padding: 0 !important;
-  list-style: none !important;
-  background: transparent !important;
-  border: none !important;
-}
-
-.cis-widget-body .weather-category ul {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 0.55rem;
-  margin: 0 !important;
-  padding: 0 !important;
-  list-style: none !important;
-}
-
-.cis-widget-body .weather-category li,
-.cis-widget-body .weather-category > * {
-  display: flex !important;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 0.25rem;
-  margin: 0 !important;
-  padding: 0.85rem 0.9rem !important;
-  border-radius: 14px !important;
-  background:
-    linear-gradient(135deg, #fff 0%, var(--cis-accent-soft) 100%) !important;
-  border: 1px solid rgba(var(--cis-accent-rgb), 0.45) !important;
-  text-align: left !important;
-  box-shadow: 0 4px 14px rgba(26, 26, 26, 0.04);
-}
-
-.cis-widget-body .weather-category span,
-.cis-widget-body .weather-category strong {
-  font-family: var(--font-display) !important;
-  font-size: 1.05rem !important;
-  font-weight: 800 !important;
-  color: var(--cis-primary) !important;
-  line-height: 1.2 !important;
-}
-
-.cis-widget-body .weather-category small {
-  font-size: 0.6875rem !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.02em;
-  text-transform: none !important;
-  color: var(--cis-text-muted) !important;
-  border: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  line-height: 1.35 !important;
 }
 
 .cis-widget-body .att_work_header {
@@ -1736,6 +1830,16 @@
   text-transform: uppercase;
   text-align: center !important;
   border-bottom: 1px solid var(--cis-border) !important;
+}
+
+.dashboard-widgets-row .legacy-widget-root .dashboard-panel-unit table {
+  /* Sticky header/column cells inside a border-collapse:collapse table (the
+     global default) don't reliably paint over content scrolled underneath —
+     separate + zero spacing keeps them fully opaque. Covers the sticky
+     thead rules below and the sticky first-column rules further down
+     (widget-slot--dci / --roster / --strength all share this table). */
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .dashboard-widgets-row .legacy-widget-root .dashboard-panel-unit thead tr:first-child th {

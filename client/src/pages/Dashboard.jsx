@@ -5,12 +5,19 @@ import { useAuth } from '../auth/AuthContext';
 import DashboardWidgetCard from '../components/DashboardWidgetCard';
 import { PageLoading } from '../components/PageShell';
 import DashboardLayout from '../layouts/DashboardLayout';
+import { cachedByDate, peekSessionCache } from '../utils/idbCache';
 
 // v2: widget payloads can now carry a separate `chart` field alongside `html`
 // (see widgetDispatcher.js) — bumped so a v1 cache with the old shape isn't replayed.
-const DASHBOARD_CACHE_KEY = 'cis_dashboard_cache_v2';
-const DASHBOARD_CACHE_TTL_MS = 90_000;
+const DASHBOARD_CACHE_VERSION = 'v2';
+// Today's panels can still change through the day, so we revalidate more eagerly than
+// the default session TTL; a past date's panels are settled history (see idbCache.js).
+const DASHBOARD_TODAY_TTL_MS = 90_000;
 const DATE_DEBOUNCE_MS = 400;
+
+function dashboardCacheKey(date) {
+  return `dashboard:${DASHBOARD_CACHE_VERSION}:${date}`;
+}
 
 const MODULE_JUMPS = [
   { to: '/students', label: 'Students', icon: 'fa fa-graduation-cap' },
@@ -22,26 +29,6 @@ const MODULE_JUMPS = [
   { to: '/payroll', label: 'Payroll', icon: 'fa fa-money' },
   { to: '/reports', label: 'Reports', icon: 'fa fa-bar-chart' },
 ];
-
-function readDashboardCache() {
-  try {
-    const raw = sessionStorage.getItem(DASHBOARD_CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed?.dashboard) return null;
-    return { ...parsed, stale: Date.now() - parsed.at > DASHBOARD_CACHE_TTL_MS };
-  } catch {
-    return null;
-  }
-}
-
-function writeDashboardCache(data) {
-  try {
-    sessionStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify({ at: Date.now(), ...data }));
-  } catch {
-    // ignore quota errors
-  }
-}
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -75,7 +62,9 @@ function greetingForHour(hour) {
 export default function Dashboard() {
   const { user } = useAuth();
   const { settings, menu } = useOutletContext();
-  const cached = readDashboardCache();
+  // Only "today" is synchronously peekable (sessionStorage); a past date's cached panels
+  // live in IndexedDB and only arrive once the load effect below has run.
+  const cached = peekSessionCache(dashboardCacheKey(todayIso()));
   const [dashboard, setDashboard] = useState(cached?.dashboard ?? null);
   const [loading, setLoading] = useState(!cached);
   const [loadError, setLoadError] = useState(null);
@@ -96,9 +85,11 @@ export default function Dashboard() {
   const loadedDateRef = useRef(cached?.attendanceDate ?? null);
   const academicYearsRef = useRef(academicYears);
   const dashboardRef = useRef(dashboard);
+  const settingsRef = useRef(settings);
 
   academicYearsRef.current = academicYears;
   dashboardRef.current = dashboard;
+  settingsRef.current = settings;
 
   const widgetCount = dashboard?.widgets?.length || 0;
   const memberName = user?.memberName || dashboard?.memberName || 'there';
@@ -126,74 +117,117 @@ export default function Dashboard() {
     const nextHtml = {};
     const nextCharts = {};
 
-    try {
-      const groups = Object.values(shell.widgetGroups);
-      const results = await Promise.all(
-        groups.map((widgetIds) => {
-          const hasStaffCurrent = widgetIds.includes('staff_current');
-          const params = {
-            w: widgetIds.join(','),
-            d: hasStaffCurrent ? date : dateUnix,
-            ugr: years.ugr,
-            uga: years.uga,
-            pgr: years.pgr,
-          };
-          if (hasStaffCurrent) {
-            params.c = '1';
-            params.t = new Date().toTimeString().slice(0, 5);
-          }
-          if (forceRefresh) params.cRefresh = 1;
-          return api.get('/api/dashboard/widgets', { params });
-        }),
-      );
+    const groups = Object.values(shell.widgetGroups);
+    // Widget groups are independent panels — one slow/heavy group (e.g. staff
+    // attendance on a date with lots of records) shouldn't take every other
+    // already-loaded panel down with it. allSettled + per-group fallback HTML
+    // keeps the rest of the dashboard usable and tells the user which panels
+    // specifically failed instead of wiping the whole grid.
+    const settled = await Promise.allSettled(
+      groups.map((widgetIds) => {
+        const hasStaffCurrent = widgetIds.includes('staff_current');
+        const params = {
+          w: widgetIds.join(','),
+          d: hasStaffCurrent ? date : dateUnix,
+          ugr: years.ugr,
+          uga: years.uga,
+          pgr: years.pgr,
+        };
+        if (hasStaffCurrent) {
+          params.c = '1';
+          params.t = new Date().toTimeString().slice(0, 5);
+        }
+        if (forceRefresh) params.cRefresh = 1;
+        return api.get('/api/dashboard/widgets', { params, timeout: 90000 })
+          .then((res) => ({ widgetIds, res }));
+      }),
+    );
 
-      results.forEach((res) => {
-        (res.data.widgets || []).forEach((widget) => {
+    const failedGroups = [];
+    settled.forEach((outcome, idx) => {
+      if (outcome.status === 'fulfilled') {
+        (outcome.value.res.data.widgets || []).forEach((widget) => {
           nextHtml[widget.id] = widget.html;
           if (widget.chart) nextCharts[widget.id] = widget.chart;
         });
-      });
+      } else {
+        failedGroups.push(...groups[idx]);
+      }
+    });
 
-      setWidgetHtml(nextHtml);
-      setWidgetCharts(nextCharts);
-      return { html: nextHtml, chart: nextCharts };
-    } catch (err) {
-      setWidgetError(err.response?.data?.message || 'Could not load dashboard widgets');
-      setWidgetHtml({});
-      setWidgetCharts({});
-      return { html: {}, chart: {} };
-    } finally {
-      setWidgetLoading(false);
+    setWidgetHtml(nextHtml);
+    setWidgetCharts(nextCharts);
+    setWidgetError(
+      failedGroups.length
+        ? `${failedGroups.length} panel${failedGroups.length > 1 ? 's' : ''} took too long to load and were skipped — try refreshing.`
+        : null,
+    );
+    setWidgetLoading(false);
+    return { html: nextHtml, chart: nextCharts };
+  }, []);
+
+  const applyPayload = useCallback((payload, announce = false) => {
+    if (!payload) return;
+    setDashboard(payload.dashboard);
+    setAttendanceDate(payload.attendanceDate);
+    setAcademicYears(payload.academicYears || academicYearsRef.current);
+    setWidgetHtml(payload.widgetHtml || {});
+    setWidgetCharts(payload.widgetCharts || {});
+    loadedDateRef.current = payload.attendanceDate;
+    if (announce) {
+      setStatusNotice(`Updated panels for ${formatDisplayDate(payload.attendanceDate)}`);
     }
   }, []);
 
-  const refreshForDate = useCallback(async (date, { force = false, announce = false } = {}) => {
+  // Fetches (or serves from cache) the dashboard shell + widgets for one attendance date.
+  // Today's panels are cached in sessionStorage with a short TTL (still changing through
+  // the day); any other date is cached in IndexedDB with a long TTL, since a closed day's
+  // panels aren't expected to change — see idbCache.js.
+  const loadForDate = useCallback(async (date, { dashboardOverride, force = false, announce = false } = {}) => {
     setWidgetLoading(true);
     setWidgetError(null);
     try {
-      const dashboardRes = await api.get('/api/dashboard', {
-        params: { attendanceDate: date },
-      });
-      setDashboard(dashboardRes.data);
-      const years = academicYearsRef.current;
-      const { html, chart } = await loadWidgets(dashboardRes.data, date, years, force);
-      loadedDateRef.current = date;
-      writeDashboardCache({
-        dashboard: dashboardRes.data,
-        attendanceDate: date,
-        academicYears: years,
-        widgetHtml: html,
-        widgetCharts: chart,
-      });
-      if (announce) {
-        setStatusNotice(`Updated panels for ${formatDisplayDate(date)}`);
-      }
+      const payload = await cachedByDate(
+        dashboardCacheKey(date),
+        date,
+        async () => {
+          const dashboardData = dashboardOverride
+            || (await api.get('/api/dashboard', { params: { attendanceDate: date } })).data;
+          const years = dashboardData.academicYears || academicYearsRef.current || {
+            ugr: settingsRef.current?.ugAcademicYear || '',
+            uga: settingsRef.current?.ugaAcademicYear || '',
+            pgr: settingsRef.current?.pgAcademicYear || '',
+          };
+          const { html, chart } = await loadWidgets(dashboardData, date, years, force);
+          return {
+            dashboard: dashboardData,
+            attendanceDate: date,
+            academicYears: years,
+            widgetHtml: html,
+            widgetCharts: chart,
+          };
+        },
+        {
+          ttlMs: force ? 0 : (date === todayIso() ? DASHBOARD_TODAY_TTL_MS : undefined),
+          onCache: (cachedPayload) => applyPayload(cachedPayload),
+          onFresh: (freshPayload) => applyPayload(freshPayload, announce),
+        },
+      );
+      bootstrappedRef.current = true;
+      setLoading(false);
+      return payload;
     } catch (err) {
-      setWidgetError(err.response?.data?.message || 'Could not refresh dashboard');
+      if (!dashboardRef.current) {
+        setLoadError(err.response?.data?.message || 'Could not load dashboard');
+      }
+      setWidgetError(err.response?.data?.message || 'Could not load dashboard');
+      bootstrappedRef.current = true;
+      setLoading(false);
+      return null;
     } finally {
       setWidgetLoading(false);
     }
-  }, [loadWidgets]);
+  }, [loadWidgets, applyPayload]);
 
   useEffect(() => {
     let cancelled = false;
@@ -203,37 +237,12 @@ export default function Dashboard() {
         setLoadError(null);
         const dashboardRes = await api.get('/api/dashboard');
         if (cancelled) return;
-
-        setDashboard(dashboardRes.data);
         const date = dashboardRes.data.attendanceDate || todayIso();
-        setAttendanceDate(date);
-        const years = dashboardRes.data.academicYears || {
-          ugr: settings?.ugAcademicYear || '',
-          uga: settings?.ugaAcademicYear || '',
-          pgr: settings?.pgAcademicYear || '',
-        };
-        setAcademicYears(years);
-        setLoading(false);
-        const { html, chart } = await loadWidgets(dashboardRes.data, date, years);
-        if (!cancelled) {
-          loadedDateRef.current = date;
-          writeDashboardCache({
-            dashboard: dashboardRes.data,
-            attendanceDate: date,
-            academicYears: years,
-            widgetHtml: html,
-            widgetCharts: chart,
-          });
-          bootstrappedRef.current = true;
-        }
+        await loadForDate(date, { dashboardOverride: dashboardRes.data });
       } catch (err) {
         if (!cancelled) {
-          if (!dashboardRef.current) {
-            setLoadError(err.response?.data?.message || 'Could not load dashboard');
-            setWidgetError(err.response?.data?.message || 'Could not load dashboard');
-          } else {
-            bootstrappedRef.current = true;
-          }
+          setLoadError(err.response?.data?.message || 'Could not load dashboard');
+          setWidgetError(err.response?.data?.message || 'Could not load dashboard');
           setLoading(false);
         }
       }
@@ -244,7 +253,7 @@ export default function Dashboard() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadWidgets]);
+  }, [loadForDate]);
 
   // Auto-load widgets when the user changes the attendance date.
   useEffect(() => {
@@ -252,12 +261,12 @@ export default function Dashboard() {
     if (loadedDateRef.current === attendanceDate) return undefined;
     if (dateRefreshTimer.current) clearTimeout(dateRefreshTimer.current);
     dateRefreshTimer.current = setTimeout(() => {
-      refreshForDate(attendanceDate, { announce: true });
+      loadForDate(attendanceDate, { announce: true });
     }, DATE_DEBOUNCE_MS);
     return () => {
       if (dateRefreshTimer.current) clearTimeout(dateRefreshTimer.current);
     };
-  }, [attendanceDate, refreshForDate]);
+  }, [attendanceDate, loadForDate]);
 
   useEffect(() => {
     if (!statusNotice) return undefined;
@@ -266,13 +275,13 @@ export default function Dashboard() {
   }, [statusNotice]);
 
   const handleManualRefresh = () => {
-    refreshForDate(attendanceDate, { force: true, announce: true });
+    loadForDate(attendanceDate, { force: true, announce: true });
   };
 
   const handleUseToday = () => {
     const today = todayIso();
     if (attendanceDate === today) {
-      refreshForDate(today, { force: true, announce: true });
+      loadForDate(today, { force: true, announce: true });
       return;
     }
     setAttendanceDate(today);

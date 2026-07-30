@@ -15,7 +15,7 @@
 
   /* Surfaces — warmer shell, clearer canvas */
   --cis-bg: #f7f6f3;
-  --cis-bg-subtle: #fff8e8;
+  --cis-bg-subtle: hsl(0, 0%, 98%);
   --cis-surface: #ffffff;
   --cis-surface-elevated: #ffffff;
   --cis-border: #e5e1d8;

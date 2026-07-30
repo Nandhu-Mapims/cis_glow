@@ -43,7 +43,18 @@ export function CertificateSetupScreen({ data, busy, onLoad, onSave }) {
                 </select>
               </td>
               <td><input className="form-control form-control-sm" value={s.details} onChange={(e) => setSub(i, { details: e.target.value })} /></td>
-              <td>{s.id ? <button type="button" className="btn btn-sm btn-outline-danger" disabled={busy} onClick={() => onSave({ action: 'delete', id: s.id, categoryId: form.categoryId })}>Del</button> : null}</td>
+              <td>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-danger"
+                  disabled={busy}
+                  onClick={() => (s.id
+                    ? onSave({ action: 'delete', id: s.id, categoryId: form.categoryId })
+                    : setForm((f) => ({ ...f, subcategories: f.subcategories.filter((_, j) => j !== i) })))}
+                >
+                  Del
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -106,8 +117,8 @@ export function ReceiptReportScreen({ data, busy, onLoad, onSave }) {
   return (
     <div>
       <div className="row g-2 mb-3">
-        <div className="col-md-3"><label className="form-label">From</label><input type="date" className="form-control" value={filters.fromDate} onChange={(e) => setFilters({ ...filters, fromDate: e.target.value })} /></div>
-        <div className="col-md-3"><label className="form-label">To</label><input type="date" className="form-control" value={filters.toDate} onChange={(e) => setFilters({ ...filters, toDate: e.target.value })} /></div>
+        <div className="col-md-3"><label className="form-label">From</label><input type="date" className="form-control" value={filters.fromDate} max={filters.toDate || undefined} onChange={(e) => setFilters({ ...filters, fromDate: e.target.value })} /></div>
+        <div className="col-md-3"><label className="form-label">To</label><input type="date" className="form-control" value={filters.toDate} min={filters.fromDate || undefined} onChange={(e) => setFilters({ ...filters, toDate: e.target.value })} /></div>
         <div className="col-md-3"><label className="form-label">Type</label>
           <select className="form-select" value={filters.searchType} onChange={(e) => setFilters({ ...filters, searchType: e.target.value })}>
             <option value="">All</option>
@@ -149,28 +160,81 @@ export function GenerateScreen({ data, busy, onLoad, onSave }) {
 }
 
 export function CertRequestScreen({ data, busy, onLoad, onSave }) {
-  const [form, setForm] = useState({ categoryId: '', subcategoryId: '', registerNo: '' });
+  const [form, setForm] = useState({ categoryId: '', subcategoryId: '', registerNo: '', photocopyList: [] });
   useEffect(() => { onLoad(); }, [onLoad]);
   useEffect(() => {
     if (data?.form) setForm((f) => ({ ...f, categoryId: data.form.categoryId || f.categoryId }));
   }, [data]);
+
+  const selectedSub = (data?.subcategories || []).find((s) => String(s.id) === String(form.subcategoryId));
+  const isPhotocopy = String(selectedSub?.format || '').toLowerCase() === 'photocopy';
+
+  const togglePhotocopyItem = (id) => {
+    setForm((f) => ({
+      ...f,
+      photocopyList: f.photocopyList.includes(id) ? f.photocopyList.filter((x) => x !== id) : [...f.photocopyList, id],
+    }));
+  };
+
+  const submit = (e) => {
+    e.preventDefault();
+    onSave(form).then(() => setForm((f) => ({ ...f, subcategoryId: '', registerNo: '', photocopyList: [] })));
+  };
+
+  const lr = data?.lastRequest;
+
   return (
-    <form className="row g-2" onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
-      <div className="col-md-4"><label className="form-label">Category</label>
-        <select className="form-select" value={form.categoryId} onChange={(e) => { const v = e.target.value; setForm({ ...form, categoryId: v }); onLoad({ categoryId: v }); }}>
-          {(data?.categories || []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+    <div className="row g-3">
+      <div className="col-md-8">
+        <form className="row g-2" onSubmit={submit}>
+          <div className="col-md-4"><label className="form-label">Category</label>
+            <select className="form-select" value={form.categoryId} onChange={(e) => { const v = e.target.value; setForm({ ...form, categoryId: v, subcategoryId: '', photocopyList: [] }); onLoad({ categoryId: v }); }}>
+              {(data?.categories || []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div className="col-md-4"><label className="form-label">Certificate</label>
+            <select className="form-select" value={form.subcategoryId} onChange={(e) => setForm({ ...form, subcategoryId: e.target.value, photocopyList: [] })} required>
+              <option value="">Select</option>
+              {(data?.subcategories || []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div className="col-md-4"><label className="form-label">Register No</label><input className="form-control" value={form.registerNo} onChange={(e) => setForm({ ...form, registerNo: e.target.value })} required /></div>
+          {isPhotocopy ? (
+            <div className="col-12">
+              <label className="form-label">Certificate For</label>
+              <div className="d-flex flex-wrap gap-3">
+                {(data?.photocopyItems || []).map((p) => (
+                  <label key={p.id} className="form-check">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      checked={form.photocopyList.includes(p.id)}
+                      onChange={() => togglePhotocopyItem(p.id)}
+                    />
+                    <span className="form-check-label ms-1">{p.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <div className="col-12"><button type="submit" className="btn btn-primary" disabled={busy}>Submit request</button></div>
+          <Alert data={data} />
+        </form>
       </div>
-      <div className="col-md-4"><label className="form-label">Certificate</label>
-        <select className="form-select" value={form.subcategoryId} onChange={(e) => setForm({ ...form, subcategoryId: e.target.value })} required>
-          <option value="">Select</option>
-          {(data?.subcategories || []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
+      <div className="col-md-4">
+        <div className="card"><div className="card-body">
+          <h6 className="card-title">Last Request</h6>
+          {lr ? (
+            <div>
+              <div className="fw-bold">CR{lr.applicationNo}</div>
+              <div>{lr.certificateName} @ {lr.applicationDate}</div>
+              <div className="fw-bold">{lr.studentName}</div>
+              <div>{lr.registerNo} | {lr.degreeName}{lr.departmentName}</div>
+            </div>
+          ) : <div className="text-muted small">No requests yet.</div>}
+        </div></div>
       </div>
-      <div className="col-md-4"><label className="form-label">Register No</label><input className="form-control" value={form.registerNo} onChange={(e) => setForm({ ...form, registerNo: e.target.value })} required /></div>
-      <div className="col-12"><button type="submit" className="btn btn-primary" disabled={busy}>Submit request</button></div>
-      <Alert data={data} />
-    </form>
+    </div>
   );
 }
 
@@ -255,27 +319,29 @@ export function TcDetailsScreen({ data, busy, onLoad, onSave }) {
                 <td><input type="date" className="form-control form-control-sm" value={s.admissionDate || ''} onChange={(e) => update(i, { admissionDate: e.target.value })} /></td>
                 <td><input type="date" className="form-control form-control-sm" value={s.leavingDate || ''} onChange={(e) => update(i, { leavingDate: e.target.value })} /></td>
                 <td><input type="date" className="form-control form-control-sm" value={s.issueDate || ''} onChange={(e) => update(i, { issueDate: e.target.value })} /></td>
-                <td className="text-nowrap">
-                  <label className="me-2">
-                    <input
-                      type="radio"
-                      className="form-check-input me-1"
-                      name={`reason_${s.id}`}
-                      checked={s.leavingReason === 'completed'}
-                      onChange={() => update(i, { leavingReason: 'completed', discontinuedYear: '' })}
-                    />
-                    Comp.
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      className="form-check-input me-1"
-                      name={`reason_${s.id}`}
-                      checked={s.leavingReason === 'discontinued'}
-                      onChange={() => update(i, { leavingReason: 'discontinued', discontinuedYear: s.discontinuedYear || '1' })}
-                    />
-                    Disc.
-                  </label>
+                <td style={{ minWidth: '9.5rem' }}>
+                  <div className="d-flex flex-column gap-1">
+                    <label className="form-check d-flex align-items-center gap-1 mb-0">
+                      <input
+                        type="radio"
+                        className="form-check-input mt-0"
+                        name={`reason_${s.id}`}
+                        checked={s.leavingReason === 'completed'}
+                        onChange={() => update(i, { leavingReason: 'completed', discontinuedYear: '' })}
+                      />
+                      <span className="form-check-label">Completed</span>
+                    </label>
+                    <label className="form-check d-flex align-items-center gap-1 mb-0">
+                      <input
+                        type="radio"
+                        className="form-check-input mt-0"
+                        name={`reason_${s.id}`}
+                        checked={s.leavingReason === 'discontinued'}
+                        onChange={() => update(i, { leavingReason: 'discontinued', discontinuedYear: s.discontinuedYear || '1' })}
+                      />
+                      <span className="form-check-label">Discontinued</span>
+                    </label>
+                  </div>
                 </td>
                 <td>
                   {s.leavingReason === 'discontinued' ? (
@@ -375,11 +441,11 @@ export function TcRequestEditScreen({ data, busy, onLoad, onSave }) {
           <div className="card-body">
             <div className="mb-3">
               <label className="form-label">From</label>
-              <input type="date" className="form-control" value={filters.fromDate} onChange={(e) => setFilters({ ...filters, fromDate: e.target.value })} />
+              <input type="date" className="form-control" value={filters.fromDate} max={filters.toDate || undefined} onChange={(e) => setFilters({ ...filters, fromDate: e.target.value })} />
             </div>
             <div className="mb-3">
               <label className="form-label">To</label>
-              <input type="date" className="form-control" value={filters.toDate} onChange={(e) => setFilters({ ...filters, toDate: e.target.value })} />
+              <input type="date" className="form-control" value={filters.toDate} min={filters.fromDate || undefined} onChange={(e) => setFilters({ ...filters, toDate: e.target.value })} />
             </div>
             <button type="button" className="btn btn-danger" disabled={busy} onClick={runSearch}>Search</button>
           </div>
@@ -697,7 +763,7 @@ export function InternshipPhotoScreen({ data, busy, onLoad, onSave }) {
                 checked={overwriteExists}
                 onChange={(e) => setOverwriteExists(e.target.checked)}
               />
-              <label className="form-check-label" htmlFor="overwriteExists">Overwrite Existing File</label>
+              <label className="form-check-label ms-1" htmlFor="overwriteExists">Overwrite Existing File</label>
             </div>
             <div className="small text-danger mt-3">
               <strong>NOTE:</strong><br />

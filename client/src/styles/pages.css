@@ -1428,6 +1428,14 @@
   background: #fff;
 }
 
+.sms-recipient-table {
+  /* Sticky <th> inside a border-collapse:collapse table (the global default)
+     doesn't reliably paint over content scrolled underneath — separate +
+     zero spacing keeps the sticky header fully opaque. */
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
 .sms-recipient-table thead th {
   position: sticky;
   top: 0;

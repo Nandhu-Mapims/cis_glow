@@ -451,7 +451,14 @@ function RowTable({ columns, rows, onChange, onAdd, onRemove, emptyRow }) {
                       {(c.options || []).map((o) => <option key={o.id} value={o.id}>{o.shortName || o.name}</option>)}
                     </select>
                   ) : (
-                    <input className="form-control form-control-sm" type={c.type || 'text'} value={row[c.key] || ''} onChange={(e) => onChange(i, c.key, e.target.value)} />
+                    <input
+                      className="form-control form-control-sm"
+                      type={c.type || 'text'}
+                      value={row[c.key] || ''}
+                      min={c.type === 'date' && c.minKey ? row[c.minKey] || undefined : undefined}
+                      max={c.type === 'date' && c.maxKey ? row[c.maxKey] || undefined : undefined}
+                      onChange={(e) => onChange(i, c.key, e.target.value)}
+                    />
                   )}
                 </td>
               ))}
@@ -522,8 +529,8 @@ export function ExperienceTab({ records, setRecords, options, variant, embedded 
     { key: 'location', label: 'Job title' },
     { key: 'institutionTypeId', label: 'Inst. type', type: 'select', options: exp.institutionTypes },
     { key: 'experienceTypeId', label: 'Exp. type', type: 'select', options: exp.experienceTypes },
-    { key: 'fromDate', label: 'From', type: 'date' },
-    { key: 'toDate', label: 'To', type: 'date' },
+    { key: 'fromDate', label: 'From', type: 'date', maxKey: 'toDate' },
+    { key: 'toDate', label: 'To', type: 'date', minKey: 'fromDate' },
     { key: 'description', label: 'Description' },
     { key: 'totalExperience', label: 'Total years' },
   ];

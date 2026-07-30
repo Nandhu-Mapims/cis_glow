@@ -93,6 +93,7 @@ const MORE_HANDLERS = {
     if (!query.studentId) return searchStudents({ by: query.by || 'roll', q: query.q || '' });
     return getStudentAttachmentCatalog(query.studentId);
   },
+  'photo-upload': async (query) => searchStudents({ by: query.by || 'roll', q: query.q || '', partial: true }),
 };
 
 export function assertStudentScreen(screen) {

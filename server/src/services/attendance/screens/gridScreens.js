@@ -3,6 +3,21 @@ import { escapeSql, parseId, parseOptionalId } from '../../../utils/sqlSafe.js';
 import { auditFields, formatDateDisplay, logStaffAttSetup, toIsoDate } from '../setupAudit.js';
 import { loadActiveStaffList, loadStaffCategories, searchStaffByCategory } from '../staffAttendanceShared.js';
 
+const HOLIDAY_ROSTER_WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+function countWeekdayOccurrences(dayName, fromIso, toIso) {
+  const target = String(dayName || '').toLowerCase();
+  if (!target || !fromIso || !toIso || fromIso === '0000-00-00' || toIso === '0000-00-00') return 0;
+  const start = new Date(`${fromIso}T00:00:00`);
+  const end = new Date(`${toIso}T00:00:00`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) return 0;
+  let count = 0;
+  for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    if (HOLIDAY_ROSTER_WEEKDAYS[d.getDay()] === target) count++;
+  }
+  return count;
+}
+
 export async function loadHolidayRosterScreen(memberId, fields = {}, audit = {}) {
   const configs = await prisma.$queryRawUnsafe(
     `SELECT id,
@@ -11,18 +26,54 @@ export async function loadHolidayRosterScreen(memberId, fields = {}, audit = {})
      FROM staff_hroster_config WHERE del=1 ORDER BY from_date DESC LIMIT 50`,
   );
 
-  const refId = parseOptionalId(fields.academic_date || fields.ref_id) || configs[0]?.id;
+  const rawRef = fields.academic_date ?? fields.ref_id ?? '';
+  const isNew = rawRef === 'new' || rawRef === 'Add New Date';
+  const refId = isNew ? null : parseOptionalId(rawRef);
+  const selectedConfig = refId ? configs.find((c) => Number(c.id) === refId) : null;
+
   let groups = [];
+  const staffLabels = {};
   if (refId) {
-    groups = await prisma.$queryRawUnsafe(
-      `SELECT id, att_group, category, staff_id, days,
-              CAST(from_time AS CHAR) AS from_time, CAST(to_time AS CHAR) AS to_time,
-              off_cal, total_working
-       FROM staff_hroster WHERE del=1 AND ref_id=${refId} ORDER BY att_group ASC`,
-    );
+    const rawGroups = await prisma.$queryRawUnsafe(`
+      SELECT att_group,
+             MIN(category) AS category,
+             MIN(staff_id) AS staff_id,
+             MIN(IF(from_date='0000-00-00','',CAST(from_date AS CHAR))) AS from_date,
+             MIN(IF(to_date='0000-00-00','',CAST(to_date AS CHAR))) AS to_date,
+             MIN(CAST(from_time AS CHAR)) AS from_time,
+             MIN(CAST(to_time AS CHAR)) AS to_time,
+             MIN(off_cal) AS off_cal,
+             GROUP_CONCAT(days SEPARATOR ',') AS days,
+             GROUP_CONCAT(id SEPARATOR ',') AS ids
+      FROM staff_hroster WHERE del=1 AND ref_id=${refId}
+      GROUP BY att_group ORDER BY att_group+0 ASC
+    `);
+
+    groups = rawGroups.map((g) => ({
+      attGroup: g.att_group,
+      ids: String(g.ids || '').split(',').filter(Boolean).map(Number),
+      category: g.category ? Number(g.category) : '',
+      staffIds: String(g.staff_id || '').split(',').filter(Boolean),
+      fromDate: formatDateDisplay(g.from_date),
+      toDate: formatDateDisplay(g.to_date),
+      fromTime: String(g.from_time || '').slice(0, 5),
+      toTime: String(g.to_time || '').slice(0, 5),
+      offCal: Number(g.off_cal) === 1,
+      days: String(g.days || '').split(',').filter(Boolean),
+    }));
+
+    const allStaffIds = [...new Set(groups.flatMap((g) => g.staffIds))].filter(Boolean).map(Number).filter((n) => !Number.isNaN(n));
+    if (allStaffIds.length) {
+      const rows = await prisma.$queryRawUnsafe(
+        `SELECT id, staff_id, staff_name, staff_initial, staff_title FROM staff_profile_tb WHERE id IN (${allStaffIds.join(',')})`,
+      );
+      rows.forEach((r) => {
+        staffLabels[String(r.id)] = `${r.staff_id} | ${`${r.staff_title || ''} ${r.staff_initial || ''} ${r.staff_name || ''}`.trim()}`;
+      });
+    }
   }
 
-  await logStaffAttSetup('staff_holiday_roster.php', 'View', 'Successful', String(refId || ''), memberId, audit);
+  await logStaffAttSetup('staff_holiday_roster.php', 'View', 'Successful', String(refId || rawRef || ''), memberId, audit);
   return {
     configs: configs.map((c) => ({
       id: Number(c.id),
@@ -30,75 +81,110 @@ export async function loadHolidayRosterScreen(memberId, fields = {}, audit = {})
       to_date: formatDateDisplay(c.to_date),
       label: `${formatDateDisplay(c.from_date)} — ${formatDateDisplay(c.to_date)}`,
     })),
-    ref_id: refId,
+    ref_id: isNew ? 'new' : (refId || ''),
+    h_from_date: selectedConfig ? formatDateDisplay(selectedConfig.from_date) : '',
+    h_to_date: selectedConfig ? formatDateDisplay(selectedConfig.to_date) : '',
     groups,
+    staffLabels,
     categories: await loadStaffCategories(),
-    h_from_date: fields.h_from_date || '',
-    h_to_date: fields.h_to_date || '',
   };
 }
 
 export async function saveHolidayRosterScreen(payload, memberId, audit = {}) {
   const { create, update } = auditFields(memberId, audit);
 
-  if (payload.delete_group_id) {
-    await prisma.$executeRawUnsafe(
-      `UPDATE staff_hroster SET del=0, updated_dt=NOW(), updated_by='${escapeSql(memberId)}' WHERE id=${Number(payload.delete_group_id)}`,
-    );
-  } else if (payload.config) {
-    const c = payload.config;
-    const fromDate = toIsoDate(c.from_date || c.h_from_date);
-    const toDate = toIsoDate(c.to_date || c.h_to_date);
-    let refId = parseId(c.id);
+  if (payload.delete_group_id !== undefined && payload.delete_group_id !== null && payload.delete_group_id !== '') {
+    const refId = parseOptionalId(payload.ref_id);
     if (refId) {
       await prisma.$executeRawUnsafe(`
-        UPDATE staff_hroster_config SET from_date='${escapeSql(fromDate)}', to_date='${escapeSql(toDate)}',
-          updated_dt=NOW(), updated_by='${escapeSql(memberId)}', updated_ip='${escapeSql(update.updated_ip)}'
-        WHERE id=${refId}
+        UPDATE staff_hroster SET del=0, updated_dt=NOW(), updated_ip='${escapeSql(update.updated_ip)}', updated_by='${escapeSql(memberId)}'
+        WHERE del=1 AND ref_id=${refId} AND att_group='${escapeSql(String(payload.delete_group_id))}'
       `);
-    } else {
-      await prisma.$executeRawUnsafe(`
-        INSERT INTO staff_hroster_config (from_date, to_date, created_dt, created_by, created_ip, del)
-        VALUES ('${escapeSql(fromDate)}', '${escapeSql(toDate)}', NOW(), '${escapeSql(memberId)}', '${escapeSql(create.created_ip)}', 1)
-      `);
-      const inserted = await prisma.$queryRawUnsafe(`SELECT LAST_INSERT_ID() AS id`);
-      refId = Number(inserted[0]?.id);
     }
+    await logStaffAttSetup('staff_holiday_roster.php', 'Delete', 'Successful', `${payload.ref_id} - ${payload.delete_group_id}`, memberId, audit);
+    return { success: true, message: 'Roster group deleted.', ...(await loadHolidayRosterScreen(memberId, { academic_date: payload.ref_id }, { ...audit, skipLog: true })) };
+  }
 
-    if (payload.group && refId) {
-      const g = payload.group;
-      if (g.id) {
+  const c = payload.config || {};
+  const fromDate = toIsoDate(c.from_date);
+  const toDate = toIsoDate(c.to_date);
+  if (!fromDate || !toDate) {
+    return { success: false, message: 'From date and To date are required.' };
+  }
+
+  let refId = parseId(c.id);
+  if (refId) {
+    await prisma.$executeRawUnsafe(`
+      UPDATE staff_hroster_config SET from_date='${escapeSql(fromDate)}', to_date='${escapeSql(toDate)}',
+        updated_dt=NOW(), updated_by='${escapeSql(memberId)}', updated_ip='${escapeSql(update.updated_ip)}'
+      WHERE id=${refId}
+    `);
+  } else {
+    await prisma.$executeRawUnsafe(`
+      INSERT INTO staff_hroster_config (from_date, to_date, created_dt, created_by, created_ip, del)
+      VALUES ('${escapeSql(fromDate)}', '${escapeSql(toDate)}', NOW(), '${escapeSql(memberId)}', '${escapeSql(create.created_ip)}', 1)
+    `);
+    const inserted = await prisma.$queryRawUnsafe(`SELECT LAST_INSERT_ID() AS id`);
+    refId = Number(inserted[0]?.id);
+  }
+
+  const groups = Array.isArray(payload.groups) ? payload.groups : [];
+  if (refId && groups.length) {
+    const maxRow = await prisma.$queryRawUnsafe(
+      `SELECT MAX(CAST(att_group AS UNSIGNED)) AS maxGroup FROM staff_hroster WHERE del=1 AND ref_id=${refId}`,
+    );
+    let nextGroup = Number(maxRow[0]?.maxGroup || 0);
+
+    for (const g of groups) {
+      const staffIds = (Array.isArray(g.staffIds) ? g.staffIds : []).map(String).filter(Boolean);
+      const days = (Array.isArray(g.days) ? g.days : []).map((d) => String(d).toLowerCase()).filter((d) => HOLIDAY_ROSTER_WEEKDAYS.includes(d));
+      if (!staffIds.length || !days.length) continue;
+
+      let attGroup = String(g.attGroup || '').trim();
+      if (attGroup) {
         await prisma.$executeRawUnsafe(`
-          UPDATE staff_hroster SET att_group='${escapeSql(String(g.att_group || ''))}',
-            category='${escapeSql(String(g.category || ''))}', staff_id='${escapeSql(String(g.staff_id || ''))}',
-            days='${escapeSql(String(g.days || ''))}',
-            from_time='${escapeSql(String(g.from_time || '09:00'))}:00',
-            to_time='${escapeSql(String(g.to_time || '17:00'))}:00',
-            off_cal=${Number(g.off_cal || 0)}, total_working=${Number(g.total_working || 0)},
-            updated_dt=NOW(), updated_by='${escapeSql(memberId)}'
-          WHERE id=${Number(g.id)}
+          UPDATE staff_hroster SET del=0, updated_dt=NOW(), updated_ip='${escapeSql(update.updated_ip)}', updated_by='${escapeSql(memberId)}'
+          WHERE del=1 AND ref_id=${refId} AND att_group='${escapeSql(attGroup)}'
         `);
       } else {
+        nextGroup += 1;
+        attGroup = String(nextGroup);
+      }
+
+      const rowFromDate = toIsoDate(g.fromDate) || fromDate;
+      const rowToDate = toIsoDate(g.toDate) || toDate;
+      const rowFromTime = escapeSql(String(g.fromTime || '09:00'));
+      const rowToTime = escapeSql(String(g.toTime || '17:00'));
+      const category = escapeSql(String(g.category || ''));
+      const staffCombined = escapeSql(staffIds.join(','));
+      const offCal = g.offCal ? 1 : 0;
+
+      const inRange = new Date(`${rowFromDate}T00:00:00`) >= new Date(`${fromDate}T00:00:00`)
+        && new Date(`${rowToDate}T00:00:00`) <= new Date(`${toDate}T00:00:00`)
+        && new Date(`${rowFromDate}T00:00:00`) <= new Date(`${rowToDate}T00:00:00`);
+      if (!inRange) continue;
+
+      for (const day of days) {
+        const totalWorking = countWeekdayOccurrences(day, rowFromDate, rowToDate);
         await prisma.$executeRawUnsafe(`
-          INSERT INTO staff_hroster (ref_id, att_group, category, staff_id, days, from_time, to_time, off_cal, total_working,
+          INSERT INTO staff_hroster (ref_id, att_group, category, staff_id, from_date, to_date, days, from_time, to_time, total_working, off_cal,
             created_dt, created_by, created_ip, del)
-          VALUES (${refId}, '${escapeSql(String(g.att_group || ''))}', '${escapeSql(String(g.category || ''))}',
-            '${escapeSql(String(g.staff_id || ''))}', '${escapeSql(String(g.days || ''))}',
-            '${escapeSql(String(g.from_time || '09:00'))}:00', '${escapeSql(String(g.to_time || '17:00'))}:00',
-            ${Number(g.off_cal || 0)}, ${Number(g.total_working || 0)},
+          VALUES (${refId}, '${escapeSql(attGroup)}', '${category}', '${staffCombined}', '${escapeSql(rowFromDate)}', '${escapeSql(rowToDate)}',
+            '${escapeSql(day)}', '${rowFromTime}:00', '${rowToTime}:00', ${totalWorking}, ${offCal},
             NOW(), '${escapeSql(memberId)}', '${escapeSql(create.created_ip)}', 1)
         `);
       }
     }
   }
 
-  await logStaffAttSetup('staff_holiday_roster.php', 'Update', 'Successful', String(payload.ref_id || ''), memberId, audit);
-  return { success: true, message: 'Holiday roster saved.', ...(await loadHolidayRosterScreen(memberId, { academic_date: payload.ref_id }, { ...audit, skipLog: true })) };
+  await logStaffAttSetup('staff_holiday_roster.php', 'Update', 'Successful', String(refId || ''), memberId, audit);
+  return { success: true, message: 'Holiday roster saved.', ...(await loadHolidayRosterScreen(memberId, { academic_date: refId }, { ...audit, skipLog: true })) };
 }
 
 export async function holidayRosterMore(query = {}) {
   const categoryId = query.category || query.job_category;
-  const staff = await searchStaffByCategory(categoryId, query.term);
+  const limit = query.limit ? Number(query.limit) : 50;
+  const staff = await searchStaffByCategory(categoryId, query.term, limit);
   return { staff };
 }
 

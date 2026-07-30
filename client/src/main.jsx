@@ -17,6 +17,8 @@ import './styles/student.css';
 import './styles/staff.css';
 import './styles/fees.css';
 import './styles/theme-control.css';
+import './styles/toast.css';
+import './styles/command-palette.css';
 import App from './App.jsx';
 
 initThemeFromStorage();

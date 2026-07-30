@@ -1,6 +1,8 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import api from '../../../api/client';
+import ChipMultiSelect from '../../../components/ChipMultiSelect';
 import HtmlRichTextEditor from '../../../components/HtmlRichTextEditor';
+import { DragHandle, useDragReorder } from '../../../hooks/useDragReorder';
 import { printReportHtml, printTaskManageReportSection } from '../../../utils/printReport';
 
 function tvAcademicYears() {
@@ -116,28 +118,46 @@ function fileToPayload(file) {
 
 export function RowSetupScreen({ data, busy, onLoad, onSave, columns }) {
   const [rows, setRows] = useState([]);
+  const sortable = columns.some((c) => c.key === 'order');
+  const { dragHandleProps, rowDropProps, rowClassName } = useDragReorder(rows, setRows);
   useEffect(() => { onLoad(); }, [onLoad]);
   useEffect(() => { if (data?.rows) setRows(data.rows); }, [data]);
   const update = (i, patch) => setRows((r) => r.map((row, j) => (j === i ? { ...row, ...patch } : row)));
+  const deleteRow = (i) => {
+    const row = rows[i];
+    if (row.id) onSave({ action: 'delete', id: row.id });
+    else setRows((p) => p.filter((_, j) => j !== i));
+  };
   return (
     <div>
       <table className="table table-sm table-bordered">
-        <thead><tr>{columns.map((c) => <th key={c.key}>{c.label}</th>)}<th /></tr></thead>
+        <thead><tr>{sortable ? <th style={{ width: '2rem' }} aria-hidden="true" /> : null}{columns.map((c) => <th key={c.key}>{c.label}</th>)}<th /></tr></thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={row.id || `new-${i}`}>
+            <tr key={row.id || `new-${i}`} className={sortable ? rowClassName(i) : undefined} {...(sortable ? rowDropProps(i) : {})}>
+              {sortable ? <td className="text-center"><DragHandle {...dragHandleProps(i)} /></td> : null}
               {columns.map((c) => (
                 <td key={c.key}>
-                  <input className="form-control form-control-sm" value={row[c.key] ?? ''} onChange={(e) => update(i, { [c.key]: e.target.value })} />
+                  {c.key === 'order' && sortable ? (
+                    <input className="form-control form-control-sm" value={row[c.key] ?? ''} readOnly disabled title="Drag the row's handle to reorder" />
+                  ) : (
+                    <input className="form-control form-control-sm" value={row[c.key] ?? ''} onChange={(e) => update(i, { [c.key]: e.target.value })} />
+                  )}
                 </td>
               ))}
-              <td>{row.id ? <button type="button" className="btn btn-sm btn-outline-danger" disabled={busy} onClick={() => onSave({ action: 'delete', id: row.id })}>Del</button> : null}</td>
+              <td>
+                <button type="button" className="btn btn-sm btn-outline-danger" disabled={busy} title="Delete row" onClick={() => deleteRow(i)}>
+                  <i className="fa fa-trash" aria-hidden="true" />
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <button type="button" className="btn btn-sm btn-outline-secondary me-2" onClick={() => setRows([...rows, Object.fromEntries(columns.map((c) => [c.key, '']))])}>Add row</button>
-      <button type="button" className="btn btn-primary" disabled={busy} onClick={() => onSave({ rows })}>Save</button>
+      <div className="d-flex align-items-center gap-2">
+        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setRows([...rows, Object.fromEntries(columns.map((c) => [c.key, '']))])}>Add row</button>
+        <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => onSave({ rows })}>Save</button>
+      </div>
     </div>
   );
 }
@@ -638,6 +658,7 @@ export function CommitteeMemberScreen({ data, busy, onLoad, onSave }) {
   const [rows, setRows] = useState([]);
   const [deleteId, setDeleteId] = useState(null);
   const savedRowsRef = useRef([]);
+  const { dragHandleProps, rowDropProps, rowClassName } = useDragReorder(rows, setRows);
 
   useEffect(() => { onLoad(); }, [onLoad]);
   useEffect(() => {
@@ -718,6 +739,7 @@ export function CommitteeMemberScreen({ data, busy, onLoad, onSave }) {
               <table className="table table-bordered committee-member-table mb-0">
                 <thead>
                   <tr>
+                    <th style={{ width: '2rem' }} aria-hidden="true" />
                     <th>Order</th>
                     <th>Staff</th>
                     <th>Designation</th>
@@ -729,14 +751,15 @@ export function CommitteeMemberScreen({ data, busy, onLoad, onSave }) {
                 </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={row.id || `new-${i}`}>
+            <tr key={row.id || `new-${i}`} className={rowClassName(i)} {...rowDropProps(i)}>
+                      <td className="text-center"><DragHandle {...dragHandleProps(i)} /></td>
                       <td className="committee-member-order">
                         <input
                           className="form-control form-control-sm"
                           value={row.order ?? ''}
-                          maxLength={3}
-                          disabled={busy}
-                          onChange={(e) => update(i, { order: e.target.value })}
+                          readOnly
+                          disabled
+                          title="Drag the row's handle to reorder"
                         />
                       </td>
                       <td>
@@ -779,6 +802,7 @@ export function CommitteeMemberScreen({ data, busy, onLoad, onSave }) {
                           type="date"
                           className="form-control form-control-sm"
                           value={row.fromDate || ''}
+                          max={row.toDate || undefined}
                           disabled={busy}
                           onChange={(e) => update(i, { fromDate: e.target.value })}
                         />
@@ -788,22 +812,21 @@ export function CommitteeMemberScreen({ data, busy, onLoad, onSave }) {
                           type="date"
                           className="form-control form-control-sm"
                           value={row.toDate || ''}
+                          min={row.fromDate || undefined}
                           disabled={busy}
                           onChange={(e) => update(i, { toDate: e.target.value })}
                         />
                       </td>
                       <td className="text-center">
-                        {row.id ? (
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-danger"
-                            disabled={busy}
-                            title="Delete"
-                            onClick={() => setDeleteId(row.id)}
-                          >
-                            <i className="fa fa-trash" aria-hidden="true" />
-                          </button>
-                        ) : null}
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-danger"
+                          disabled={busy}
+                          title="Delete"
+                          onClick={() => (row.id ? setDeleteId(row.id) : setRows((p) => p.filter((_, j) => j !== i)))}
+                        >
+                          <i className="fa fa-trash" aria-hidden="true" />
+                        </button>
                       </td>
             </tr>
           ))}
@@ -811,19 +834,15 @@ export function CommitteeMemberScreen({ data, busy, onLoad, onSave }) {
       </table>
             </div>
 
-            <div className="text-end mt-2">
+            <div className="committee-member-actions mt-3 d-flex align-items-center gap-2">
               <button
                 type="button"
-                className="btn btn-sm btn-info"
+                className="btn btn-sm btn-outline-secondary"
                 disabled={busy}
-                title="Add row"
                 onClick={addRow}
               >
-                +
+                Add row
               </button>
-            </div>
-
-            <div className="committee-member-actions mt-3">
               <button
                 type="button"
                 className="btn btn-danger d-inline-flex align-items-center gap-2"
@@ -839,7 +858,7 @@ export function CommitteeMemberScreen({ data, busy, onLoad, onSave }) {
               </button>
               <button
                 type="button"
-                className="btn btn-outline-secondary ms-2"
+                className="btn btn-outline-secondary"
                 disabled={busy || !committeeId}
                 onClick={handleReset}
               >
@@ -1172,11 +1191,11 @@ export function TaskAllocationScreen({ data, busy, onLoad, onSave }) {
           </div>
           <div>
             <label className="form-label">From Date</label>
-            <input type="date" className="form-control form-control-sm" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+            <input type="date" className="form-control form-control-sm" value={fromDate} max={toDate || undefined} onChange={(e) => setFromDate(e.target.value)} />
           </div>
           <div>
             <label className="form-label">To Date</label>
-            <input type="date" className="form-control form-control-sm" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+            <input type="date" className="form-control form-control-sm" value={toDate} min={fromDate || undefined} onChange={(e) => setToDate(e.target.value)} />
           </div>
           <div>
             <label className="form-label">Department</label>
@@ -1356,11 +1375,11 @@ export function TaskManageReportScreen({ data, busy, onLoad }) {
         <div className="row g-2 align-items-end">
           <div className="col-md-3">
             <label className="form-label">From Date</label>
-            <input type="date" className="form-control form-control-sm" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+            <input type="date" className="form-control form-control-sm" value={fromDate} max={toDate || undefined} onChange={(e) => setFromDate(e.target.value)} />
           </div>
           <div className="col-md-3">
             <label className="form-label">To Date</label>
-            <input type="date" className="form-control form-control-sm" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+            <input type="date" className="form-control form-control-sm" value={toDate} min={fromDate || undefined} onChange={(e) => setToDate(e.target.value)} />
           </div>
           <div className="col-md-3">
             <label className="form-label">Department</label>
@@ -1959,23 +1978,21 @@ export function ApproveRescheduleScreen({ data, busy, onLoad, onSave }) {
             </div>
             <div className="col-md-8">
               <label className="form-label">Department</label>
-              <select
-                className="form-select"
-                multiple
-                size={4}
+              <ChipMultiSelect
+                options={deptOptions.map((d) => ({ value: d.id, label: d.name, group: d.group }))}
                 value={detail.departments || []}
-                onChange={(e) => setDetail({ ...detail, departments: Array.from(e.target.selectedOptions, (o) => o.value) })}
-              >
-                {deptOptions.map((d) => <option key={`${d.group}-${d.id}`} value={d.id}>{d.name}</option>)}
-              </select>
+                onChange={(next) => setDetail({ ...detail, departments: next })}
+                emptySelectionText="No departments selected"
+                emptySearchText="No departments match your search."
+              />
             </div>
             <div className="col-md-6">
               <label className="form-label">From Date</label>
-              <input type="datetime-local" className="form-control" value={detail.fromDate || ''} onChange={(e) => setDetail({ ...detail, fromDate: e.target.value })} />
+              <input type="datetime-local" className="form-control" value={detail.fromDate || ''} max={detail.toDate || undefined} onChange={(e) => setDetail({ ...detail, fromDate: e.target.value })} />
             </div>
             <div className="col-md-6">
               <label className="form-label">To Date</label>
-              <input type="datetime-local" className="form-control" value={detail.toDate || ''} onChange={(e) => setDetail({ ...detail, toDate: e.target.value })} />
+              <input type="datetime-local" className="form-control" value={detail.toDate || ''} min={detail.fromDate || undefined} onChange={(e) => setDetail({ ...detail, toDate: e.target.value })} />
             </div>
             <div className="col-md-6">
               <label className="form-label">Location (In)</label>
@@ -2041,11 +2058,11 @@ export function ApproveRescheduleScreen({ data, busy, onLoad, onSave }) {
           <div className="row g-2 align-items-end">
             <div className="col-md-3">
               <label className="form-label">From Date</label>
-              <input type="date" className="form-control form-control-sm" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+              <input type="date" className="form-control form-control-sm" value={fromDate} max={toDate || undefined} onChange={(e) => setFromDate(e.target.value)} />
             </div>
             <div className="col-md-3">
               <label className="form-label">To Date</label>
-              <input type="date" className="form-control form-control-sm" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+              <input type="date" className="form-control form-control-sm" value={toDate} min={fromDate || undefined} onChange={(e) => setToDate(e.target.value)} />
             </div>
             <div className="col-md-3">
               <button type="button" className="btn btn-sm btn-info" disabled={busy} onClick={() => loadList({ page: 1 })}>Search</button>

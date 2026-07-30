@@ -229,9 +229,11 @@ export async function resolveStudentFilter(fields) {
   const course = String(fields.search_course || fields.searchCourse || '').trim();
 
   if (by === 'roll_no' && input) {
-    const rolls = input.split(',').map((s) => s.trim()).filter(Boolean);
+    // Partial match (min 3 chars) rather than exact — lets staff find a student from
+    // a fragment of the register no without needing to type/paste the full value.
+    const rolls = input.split(',').map((s) => s.trim()).filter((s) => s.length >= 3);
     if (!rolls.length) return [];
-    const clause = rolls.map((r) => `register_no='${escapeSql(r)}'`).join(' OR ');
+    const clause = rolls.map((r) => `register_no LIKE '%${escapeSql(r)}%'`).join(' OR ');
     return prisma.$queryRawUnsafe(
       `SELECT ${STUDENT_FILTER_SELECT} FROM student_profile_tb WHERE del = 1 AND ${ACTIVE} AND (${clause})
        ORDER BY register_no ASC`,

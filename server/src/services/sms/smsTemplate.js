@@ -1,4 +1,5 @@
 import { prisma } from '../../config/prisma.js';
+import { escapeSql } from '../../utils/sqlSafe.js';
 import { auditFields, logModulePage } from '../shared/moduleAudit.js';
 
 const PAGE = 'sms_template.php';
@@ -26,10 +27,16 @@ export async function saveSmsTemplate(payload, memberId, audit = {}) {
   const { create, update } = auditFields(memberId, audit);
 
   if (payload.action === 'delete') {
-    await prisma.sms_template_tb.update({
-      where: { id: Number(payload.id) },
-      data: { del: 0, ...update },
-    });
+    const id = Number(payload.id);
+    if (!id) return { success: false, message: 'Select a template to delete.' };
+    await prisma.$executeRawUnsafe(`
+      UPDATE sms_template_tb SET
+        del = 0,
+        updated_dt = NOW(),
+        updated_ip = '${escapeSql(update.updated_ip)}',
+        updated_by = '${escapeSql(String(update.updated_by))}'
+      WHERE id = ${id}
+    `);
     await logModulePage(PAGE, 'Delete', 'Successful', String(payload.id), memberId, audit);
     return {
       success: true,
@@ -46,10 +53,18 @@ export async function saveSmsTemplate(payload, memberId, audit = {}) {
   }
 
   if (payload.id) {
-    await prisma.sms_template_tb.update({
-      where: { id: Number(payload.id) },
-      data: { template_id: templateId, sms_template: content, sample_message: sample, del: 1, ...update },
-    });
+    const id = Number(payload.id);
+    await prisma.$executeRawUnsafe(`
+      UPDATE sms_template_tb SET
+        template_id = '${escapeSql(templateId)}',
+        sms_template = '${escapeSql(content)}',
+        sample_message = '${escapeSql(sample)}',
+        del = 1,
+        updated_dt = NOW(),
+        updated_ip = '${escapeSql(update.updated_ip)}',
+        updated_by = '${escapeSql(String(update.updated_by))}'
+      WHERE id = ${id}
+    `);
   } else {
     await prisma.sms_template_tb.create({
       data: { template_id: templateId, sms_template: content, sample_message: sample, ...create },

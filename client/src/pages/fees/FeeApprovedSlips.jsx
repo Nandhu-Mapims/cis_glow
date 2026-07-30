@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import { useTransientNotice } from '../../hooks/useTransientNotice';
@@ -6,6 +6,8 @@ import { printReportHtml } from '../../utils/printReport';
 import { FEE_SCREEN_META } from './feeModuleMeta';
 import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
 import { formatIndianMoneyDisplay } from './feeUiHelpers';
+import DataTable from '../../components/DataTable';
+import ConfirmModal from '../../components/ConfirmModal';
 
 const META = FEE_SCREEN_META['slips-approved'];
 
@@ -18,6 +20,7 @@ export default function FeeApprovedSlips() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [data, setData] = useState({ slips: [], pagination: { page: 1, totalPages: 1, total: 0 } });
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   const loadSlips = useCallback(async (nextPage = page, term = search) => {
     setBusy(true);
@@ -57,10 +60,11 @@ export default function FeeApprovedSlips() {
     await loadSlips(1, search);
   };
 
-  const onDelete = async (groupId) => {
-    if (!window.confirm(`Delete approved slip ${groupId}? This soft-deletes fee_slip_tb and student_fee rows.`)) {
-      return;
-    }
+  const requestDelete = (groupId) => setPendingDelete(groupId);
+
+  const confirmDelete = async () => {
+    const groupId = pendingDelete;
+    if (!groupId) return;
     setBusy(true);
     setError(null);
     setMessage('');
@@ -72,6 +76,7 @@ export default function FeeApprovedSlips() {
       setError(err.response?.data?.message || 'Delete failed');
     } finally {
       setBusy(false);
+      setPendingDelete(null);
     }
   };
 
@@ -89,6 +94,105 @@ export default function FeeApprovedSlips() {
   };
 
   const { slips, pagination } = data;
+
+  const columns = useMemo(() => [
+    {
+      key: 'registerNo',
+      header: 'Register No',
+      primary: true,
+      sortable: true,
+      searchField: true,
+      width: '10rem',
+      render: (row) => (
+        <Link to={`/fees/history?registerNo=${encodeURIComponent(row.registerNo)}`} onClick={(e) => e.stopPropagation()}>
+          {row.registerNo}
+        </Link>
+      ),
+    },
+    {
+      key: 'studentLabel',
+      header: 'Student',
+      sortable: true,
+      searchField: true,
+      render: (row) => row.studentLabel || '—',
+    },
+    {
+      key: 'groupId',
+      header: 'Slip ID',
+      hideOnMobile: true,
+      render: (row) => <span className="font-monospace small">{row.groupId}</span>,
+    },
+    {
+      key: 'paidDate',
+      header: 'Paid Date',
+      sortable: true,
+      render: (row) => row.paidDate || '—',
+    },
+    {
+      key: 'payBank',
+      header: 'Bank',
+      sortable: true,
+      hideOnMobile: true,
+      render: (row) => <span className="text-uppercase">{row.payBank || '—'}</span>,
+    },
+    {
+      key: 'receiptNos',
+      header: 'Receipts',
+      hideOnMobile: true,
+      render: (row) => row.receiptNos?.join(', ') || '—',
+    },
+    {
+      key: 'approved',
+      header: 'Approved',
+      hideOnMobile: true,
+      render: (row) => (
+        <>
+          {row.approvedBy || '—'}
+          {row.approvedAt ? <div className="text-muted small">{row.approvedAt}</div> : null}
+        </>
+      ),
+    },
+    {
+      key: 'amount',
+      header: 'Amount',
+      align: 'right',
+      numeric: true,
+      sortable: true,
+      sortValue: (row) => Number(row.amount) || 0,
+      render: (row) => formatIndianMoneyDisplay(row.amount),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      align: 'center',
+      render: () => <span className="badge bg-success-soft">Posted</span>,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      align: 'center',
+      render: (row) => (
+        <div className="d-flex gap-2 justify-content-center">
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-primary"
+            disabled={busy}
+            onClick={(e) => { e.stopPropagation(); onReprint(row); }}
+          >
+            Reprint
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-danger"
+            disabled={busy}
+            onClick={(e) => { e.stopPropagation(); requestDelete(row.groupId); }}
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+  ], [busy]);
 
   return (
     <FeePageShell
@@ -123,72 +227,22 @@ export default function FeeApprovedSlips() {
         </div>
       </form>
 
-      {busy && !slips.length && (
-        <div className="text-muted small mb-2">
-          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
-          Loading slips…
-        </div>
-      )}
-
-      {slips.length > 0 ? (
-        <div className="row g-3">
-          {slips.map((slip) => (
-            <div className="col-md-6 col-xl-4" key={slip.groupId}>
-              <section className="card shadow-sm h-100 cis-fee-slip-card cis-fee-slip-card--approved">
-                <div className="cis-fee-slip-card-header">
-                  <div>
-                    <span className="badge cis-fee-slip-chip cis-fee-slip-chip--approved">Posted</span>
-                    <Link to={`/fees/history?registerNo=${encodeURIComponent(slip.registerNo)}`}>
-                      {slip.registerNo}
-                    </Link>
-                    <div className="cis-fee-slip-card-subtitle">{slip.studentLabel}</div>
-                  </div>
-                  <div className="cis-fee-slip-card-amount">{formatIndianMoneyDisplay(slip.amount)}</div>
-                </div>
-                <ul className="list-group list-group-flush">
-                  <li className="list-group-item d-flex justify-content-between">
-                    <span>Slip ID</span>
-                    <span className="font-monospace small">{slip.groupId}</span>
-                  </li>
-                  <li className="list-group-item d-flex justify-content-between">
-                    <span>Paid date</span>
-                    <span>{slip.paidDate || '—'}</span>
-                  </li>
-                  <li className="list-group-item d-flex justify-content-between">
-                    <span>Bank</span>
-                    <span className="text-uppercase">{slip.payBank || '—'}</span>
-                  </li>
-                  <li className="list-group-item">
-                    <div className="small text-muted mb-1">Receipts</div>
-                    <div className="small">{slip.receiptNos?.join(', ') || '—'}</div>
-                  </li>
-                  <li className="list-group-item">
-                    <div className="small text-muted mb-1">Approved</div>
-                    <div className="small">{slip.approvedBy} @ {slip.approvedAt}</div>
-                  </li>
-                </ul>
-                <div className="cis-fee-slip-card-footer d-flex gap-2">
-                  <button type="button" className="btn btn-sm btn-outline-primary flex-grow-1" disabled={busy} onClick={() => onReprint(slip)}>
-                    Reprint
-                  </button>
-                  <button type="button" className="btn btn-sm btn-outline-danger" disabled={busy} onClick={() => onDelete(slip.groupId)}>
-                    Delete
-                  </button>
-                </div>
-              </section>
-            </div>
-          ))}
-        </div>
-      ) : (
-        !busy && (
-          <div className="card shadow-sm cis-fee-empty-state">
-            <div className="card-body">
-              <i className="fa fa-check-circle" aria-hidden="true" />
-              <p className="mb-0">No approved slips found.</p>
-            </div>
-          </div>
-        )
-      )}
+      <DataTable
+        columns={columns}
+        rows={slips}
+        getRowKey={(row) => row.groupId}
+        loading={busy && !slips.length}
+        error={null}
+        empty={{
+          icon: 'fa fa-check-circle',
+          title: 'No approved slips',
+          message: 'No approved slips found.',
+        }}
+        caption="Approved fee slips"
+        searchable={slips.length > 8}
+        searchPlaceholder="Filter approved slips by register no or name…"
+        initialSort={{ key: 'paidDate', dir: 'desc' }}
+      />
 
       {pagination.totalPages > 1 && (
         <nav className="cis-fee-pager d-flex justify-content-between align-items-center mt-3" aria-label="Approved slips pagination">
@@ -201,6 +255,18 @@ export default function FeeApprovedSlips() {
           </div>
         </nav>
       )}
+
+      <ConfirmModal
+        show={Boolean(pendingDelete)}
+        title="Delete approved slip?"
+        message={pendingDelete ? `Delete approved slip ${pendingDelete}? This soft-deletes fee_slip_tb and student_fee rows.` : ''}
+        confirmLabel="Delete slip"
+        cancelLabel="Cancel"
+        tone="danger"
+        busy={busy}
+        onConfirm={confirmDelete}
+        onClose={() => setPendingDelete(null)}
+      />
     </FeePageShell>
   );
 }

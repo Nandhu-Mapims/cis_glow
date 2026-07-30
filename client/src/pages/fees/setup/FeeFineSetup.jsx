@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import SetupAlerts from './SetupAlerts';
+import { toDateInputValue } from '../../../utils/dateInputs';
 import { useFeeSetupApi } from './useFeeSetupApi';
 
 export default function FeeFineSetup() {
@@ -125,11 +126,9 @@ export default function FeeFineSetup() {
                         <td>{row.feeTypeLabel}</td>
                         <td>
                           <input
-                            type="text"
+                            type="date"
                             className="form-control"
-                            placeholder="dd-mm-yyyy"
-                            maxLength={10}
-                            value={row.dueDate}
+                            value={toDateInputValue(row.dueDate)}
                             onChange={(e) => updateRow(index, { dueDate: e.target.value })}
                           />
                         </td>

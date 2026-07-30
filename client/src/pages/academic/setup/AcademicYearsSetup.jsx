@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import SetupAlerts from '../../fees/setup/SetupAlerts';
 import { useAcademicSetupApi } from './useAcademicSetupApi';
+import ChipMultiSelect from '../../../components/ChipMultiSelect';
 
 const emptyForm = {
   institutionName: '',
@@ -66,7 +67,7 @@ function SemesterToggle({ value, onChange, disabled }) {
       <label className="form-check mb-0">
         <input
           type="radio"
-          className="form-check-input"
+          className="form-check-input me-2"
           checked={Number(value) === 1}
           disabled={disabled}
           onChange={() => onChange(1)}
@@ -76,7 +77,7 @@ function SemesterToggle({ value, onChange, disabled }) {
       <label className="form-check mb-0">
         <input
           type="radio"
-          className="form-check-input"
+          className="form-check-input me-2"
           checked={Number(value) === 2}
           disabled={disabled}
           onChange={() => onChange(2)}
@@ -183,8 +184,7 @@ export default function AcademicYearsSetup() {
     await save(form);
   };
 
-  const onExamYearsChange = (e) => {
-    const selected = Array.from(e.target.selectedOptions).map((opt) => opt.value);
+  const onExamYearsChange = (selected) => {
     setField('examAcademicYears', selected);
   };
 
@@ -238,20 +238,15 @@ export default function AcademicYearsSetup() {
         <div className="card border-0 shadow-sm mb-3">
           <div className="card-body">
             <label className="form-label" htmlFor="exam_years">Exam Academic Year</label>
-            <p className="text-muted small mb-2">Hold Ctrl (Cmd on Mac) to select multiple years.</p>
-            <select
-              id="exam_years"
-              className="form-select"
-              multiple
-              size={6}
+            <p className="text-muted small mb-2">Select all academic years to include for exams.</p>
+            <ChipMultiSelect
+              options={data?.examYearOptions || []}
               value={form.examAcademicYears}
-              disabled={busy}
               onChange={onExamYearsChange}
-            >
-              {(data?.examYearOptions || []).map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+              disabled={busy}
+              searchPlaceholder="Search academic years..."
+              emptySelectionText="No academic years selected"
+            />
           </div>
         </div>
 

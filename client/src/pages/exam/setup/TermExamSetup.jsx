@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import ConfirmModal from '../../fees/setup/ConfirmModal';
 import SetupAlerts from '../../fees/setup/SetupAlerts';
+import { toDateInputValue } from '../../../utils/dateInputs';
 import { useExamSetupApi } from './useExamSetupApi';
 
 function emptyRow() {
@@ -137,8 +138,8 @@ export default function TermExamSetup() {
                     <td><input type="checkbox" checked={row.markOption} onChange={(e) => updateRow(index, { markOption: e.target.checked })} /></td>
                     <td><input className="form-control" value={row.sessionFn} onChange={(e) => updateRow(index, { sessionFn: e.target.value })} /></td>
                     <td><input className="form-control" value={row.sessionAn} onChange={(e) => updateRow(index, { sessionAn: e.target.value })} /></td>
-                    <td><input className="form-control" value={row.fromDate} onChange={(e) => updateRow(index, { fromDate: e.target.value })} placeholder="dd-mm-yyyy" /></td>
-                    <td><input className="form-control" value={row.toDate} onChange={(e) => updateRow(index, { toDate: e.target.value })} placeholder="dd-mm-yyyy" /></td>
+                    <td><input type="date" className="form-control" value={toDateInputValue(row.fromDate)} onChange={(e) => updateRow(index, { fromDate: e.target.value })} /></td>
+                    <td><input type="date" className="form-control" value={toDateInputValue(row.toDate)} onChange={(e) => updateRow(index, { toDate: e.target.value })} /></td>
                     <td><input className="form-control" value={row.sessionTime} onChange={(e) => updateRow(index, { sessionTime: e.target.value })} /></td>
                     <td><input type="checkbox" checked={row.examStatus} onChange={(e) => updateRow(index, { examStatus: e.target.checked })} /></td>
                     <td>{row.id ? <button type="button" className="btn btn-sm btn-danger" onClick={() => setDeleteId(row.id)}>Delete</button> : null}</td>

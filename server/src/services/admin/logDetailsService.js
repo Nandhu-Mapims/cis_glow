@@ -25,15 +25,19 @@ function parseDateRange(fromDateStr) {
   return { from: toIso(fromPart), to: toIso(toPart || fromPart), label: raw };
 }
 
+const pageTitleCache = new Map();
+
 async function resolvePageTitle(logPage) {
+  if (pageTitleCache.has(logPage)) return pageTitleCache.get(logPage);
   const row = await prisma.basic_admin_menu_tb.findFirst({
     where: { sub_menu_link: logPage, del: 1 },
     select: { main_menu_name: true, sub_menu_name: true },
   });
-  if (row && (row.main_menu_name || row.sub_menu_name)) {
-    return `${row.main_menu_name} - ${row.sub_menu_name}`;
-  }
-  return String(logPage || '').replace('.php', '');
+  const title = (row && (row.main_menu_name || row.sub_menu_name))
+    ? `${row.main_menu_name} - ${row.sub_menu_name}`
+    : String(logPage || '').replace('.php', '');
+  pageTitleCache.set(logPage, title);
+  return title;
 }
 
 async function loadUserOptions() {
@@ -61,7 +65,7 @@ function buildSearchSummary(filters) {
   return summary;
 }
 
-async function searchLogDetails(filters) {
+async function searchLogDetails(filters, pagination = {}) {
   const clauses = [
     "del = 1",
     "log_page = 'index'",
@@ -85,12 +89,24 @@ async function searchLogDetails(filters) {
     clauses.push(`DATE(log_timestamp) <= '${escapeSql(filters.to)}'`);
   }
 
+  const limit = Number(pagination.limit) || 50;
+  const page = Math.max(1, Number(pagination.page) || 1);
+  const offset = (page - 1) * limit;
+
+  // Most-recent-first, capped to one page of login events - each one drives
+  // its own per-session sub-query below, so bounding this here (instead of
+  // pulling every matching row for the date range) is what keeps this fast
+  // regardless of how much history log_tb holds. Fetch one extra row to know
+  // if a next page exists without a separate COUNT(*) query.
   const sql = `
     SELECT * FROM log_tb
     WHERE ${clauses.join(' AND ')}
-    ORDER BY log_timestamp ASC
+    ORDER BY log_timestamp DESC
+    LIMIT ${limit + 1} OFFSET ${offset}
   `;
-  const logins = await prisma.$queryRawUnsafe(sql);
+  const fetched = await prisma.$queryRawUnsafe(sql);
+  const hasMore = fetched.length > limit;
+  const logins = fetched.slice(0, limit);
   const rows = [];
   const nameCache = new Map();
 
@@ -205,12 +221,18 @@ async function searchLogDetails(filters) {
     });
   }
 
-  return rows;
+  return { rows, hasMore, page, limit };
 }
 
 export async function loadLogDetailsData(memberId, fields = {}, audit = {}) {
   const users = await loadUserOptions();
-  const range = parseDateRange(fields.from_date);
+  const searched = fields.Submit === 'Search';
+
+  // An explicit search applies the date range (defaulting to today, as
+  // before). The default/auto view - and paging through it - shows the most
+  // recent activity across all dates instead of being scoped to "today",
+  // since the point is a fast "last 50 rows" glance, not a date-bound report.
+  const range = searched ? parseDateRange(fields.from_date) : { from: '', to: '', label: 'All dates' };
   const filters = {
     userName: String(fields.user_name || '').trim(),
     osName: String(fields.os_name || '').trim(),
@@ -220,11 +242,14 @@ export async function loadLogDetailsData(memberId, fields = {}, audit = {}) {
     to: range.to,
     dateLabel: range.label,
   };
+  const pagination = {
+    page: Number(fields.page) || 1,
+    limit: Number(fields.limit) || 50,
+  };
 
-  const searched = fields.Submit === 'Search';
-  let rows = [];
+  const { rows, hasMore, page, limit } = await searchLogDetails(filters, pagination);
+
   if (searched) {
-    rows = await searchLogDetails(filters);
     try {
       await insertLog(
         [PAGE, 'Search', 'Successful', JSON.stringify(filters), new Date(), audit.ip || '', audit.userAgent || '', memberId],
@@ -233,7 +258,7 @@ export async function loadLogDetailsData(memberId, fields = {}, audit = {}) {
     } catch {
       // Search results should still return when audit logging fails.
     }
-  } else {
+  } else if (pagination.page === 1) {
     try {
       await insertLog(
         [PAGE, 'View', 'Successful', JSON.stringify(fields || {}), new Date(), audit.ip || '', audit.userAgent || '', memberId],
@@ -254,7 +279,10 @@ export async function loadLogDetailsData(memberId, fields = {}, audit = {}) {
       operation: filters.operation,
     },
     searchSummary: buildSearchSummary({ ...filters, dateLabel: range.label }),
-    searched,
+    searched: true,
+    page,
+    limit,
+    hasMore,
     rows,
   };
 }

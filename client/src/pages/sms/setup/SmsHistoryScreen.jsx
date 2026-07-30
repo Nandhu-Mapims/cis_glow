@@ -65,11 +65,11 @@ export default function SmsHistoryScreen({ data, busy, onLoad, onSave }) {
           </div>
           <div className="mb-2">
             <label className="form-label">From</label>
-            <input type="date" className="form-control" value={filters.from_date} onChange={(e) => setFilters((f) => ({ ...f, from_date: e.target.value }))} />
+            <input type="date" className="form-control" value={filters.from_date} max={filters.to_date || undefined} onChange={(e) => setFilters((f) => ({ ...f, from_date: e.target.value }))} />
           </div>
           <div className="mb-3">
             <label className="form-label">To</label>
-            <input type="date" className="form-control" value={filters.to_date} onChange={(e) => setFilters((f) => ({ ...f, to_date: e.target.value }))} />
+            <input type="date" className="form-control" value={filters.to_date} min={filters.from_date || undefined} onChange={(e) => setFilters((f) => ({ ...f, to_date: e.target.value }))} />
           </div>
           <button type="submit" className="btn btn-danger w-100" disabled={busy}>Search</button>
         </form>

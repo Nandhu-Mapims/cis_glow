@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import ChipMultiSelect from '../../components/ChipMultiSelect';
 
 export default function AddressLabelPanel({ data, busy, onGenerate }) {
   const [searchBy, setSearchBy] = useState(data?.filters?.search_by || 'batch');
@@ -61,26 +62,14 @@ export default function AddressLabelPanel({ data, busy, onGenerate }) {
             <label className="form-label" htmlFor="address-label-courses">
               {searchBy === 'year' ? 'Year' : 'Batch'}
             </label>
-            <select
-              id="address-label-courses"
-              className="form-select"
-              multiple
-              size={12}
+            <ChipMultiSelect
+              options={groups.flatMap((group) => (group.options || []).map((opt) => ({ value: opt.value, label: opt.label, group: group.label })))}
               value={selected}
-              onChange={(e) => {
-                const values = [...e.target.selectedOptions].map((o) => o.value);
-                setSelected(values);
-              }}
-            >
-              {groups.map((group) => (
-                <optgroup key={group.label} label={group.label}>
-                  {(group.options || []).map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-            <div className="form-text">Hold Ctrl/Cmd to select multiple.</div>
+              onChange={setSelected}
+              emptySelectionText={`No ${searchBy === 'year' ? 'years' : 'batches'} selected`}
+              emptySearchText="No matches found."
+              listHeight={360}
+            />
           </div>
 
           <div className="mb-3">

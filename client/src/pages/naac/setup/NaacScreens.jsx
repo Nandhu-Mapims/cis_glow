@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ConfirmModal from '../../fees/setup/ConfirmModal';
+import { DragHandle, useDragReorder } from '../../../hooks/useDragReorder';
 
 const DOC_TYPES = ['QN', 'QL', 'DOC'];
 
@@ -18,6 +19,8 @@ export function NaacCrudScreen({ data, busy, readOnly, onLoad, onSave, itemField
   const [deptName, setDeptName] = useState('');
   const [deptOrder, setDeptOrder] = useState('');
   const [items, setItems] = useState([]);
+  const sortable = itemFields?.some((f) => f.key === 'order');
+  const { dragHandleProps, rowDropProps, rowClassName } = useDragReorder(items, setItems);
 
   useEffect(() => { onLoad(); }, [onLoad]);
   useEffect(() => {
@@ -83,23 +86,45 @@ export function NaacCrudScreen({ data, busy, readOnly, onLoad, onSave, itemField
           </div>
 
           {items.map((item, idx) => (
-            <div key={item.id || idx} className="border rounded p-2 mb-2 row g-2">
+            <div
+              key={item.id || idx}
+              className={`border rounded p-2 mb-2 row g-2 align-items-center${rowClassName(idx) ? ` ${rowClassName(idx)}` : ''}`}
+              {...(sortable ? rowDropProps(idx) : {})}
+            >
+              {sortable ? (
+                <div className="col-auto"><DragHandle {...dragHandleProps(idx)} /></div>
+              ) : null}
               {itemFields.map((f) => (
                 <div key={f.key} className="col-md-3">
-                  <input
-                    className="form-control"
-                    placeholder={f.label}
-                    value={item[f.key] || ''}
-                    onChange={(e) => setItems(items.map((row, i) => (i === idx ? { ...row, [f.key]: e.target.value } : row)))}
-                  />
+                  {f.key === 'order' && sortable ? (
+                    <input className="form-control" value={item[f.key] || ''} readOnly disabled title="Drag the handle to reorder" />
+                  ) : (
+                    <input
+                      className="form-control"
+                      placeholder={f.label}
+                      value={item[f.key] || ''}
+                      onChange={(e) => setItems(items.map((row, i) => (i === idx ? { ...row, [f.key]: e.target.value } : row)))}
+                    />
+                  )}
                 </div>
               ))}
+              <div className="col-auto ms-auto">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-danger"
+                  disabled={busy}
+                  title="Delete row"
+                  onClick={() => (item.id ? onSave({ action: 'delete', id: item.id, deptRef }) : setItems((p) => p.filter((_, i) => i !== idx)))}
+                >
+                  <i className="fa fa-trash" aria-hidden="true" />
+                </button>
+              </div>
             </div>
           ))}
 
-          <div className="d-flex gap-2">
+          <div className="d-flex align-items-center gap-2">
             <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setItems([...items, { order: items.length + 1, name: '' }])}>Add row</button>
-            <button type="submit" className="btn btn-danger" disabled={busy}>Save</button>
+            <button type="submit" className="btn btn-danger btn-sm" disabled={busy}>Save</button>
           </div>
         </>
       ) : null}
@@ -263,9 +288,13 @@ export function NaacQuanScreen({ data, busy, onLoad, onSave }) {
                         />
                       </td>
                       <td>
-                        {item.id ? (
-                          <button type="button" className="btn btn-sm btn-danger" onClick={() => setDeleteId(item.id)}>Del</button>
-                        ) : null}
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-danger"
+                          onClick={() => (item.id ? setDeleteId(item.id) : setItems((prev) => prev.filter((_, i) => i !== index)))}
+                        >
+                          Del
+                        </button>
                       </td>
                     </tr>
                   ))}

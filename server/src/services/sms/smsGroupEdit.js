@@ -33,7 +33,16 @@ export async function loadSmsGroupEdit(memberId, fields = {}, audit = {}) {
   let editing = null;
   const editId = Number(fields.editId || fields.edit_row_id || 0);
   if (editId > 0) {
-    const row = await prisma.sms_group_tb.findFirst({ where: { id: editId, del: 1 } });
+    // Do not hydrate the full Prisma model here: some legacy rows have a
+    // `0000-00-00` updated_dt, which Prisma correctly rejects as an invalid
+    // JavaScript Date. The edit view only needs these three safe columns.
+    const editRows = await prisma.$queryRawUnsafe(`
+      SELECT id, group_title, group_mobile
+      FROM sms_group_tb
+      WHERE id = ${editId} AND del = 1
+      LIMIT 1
+    `);
+    const row = editRows[0];
     if (row) {
       editing = {
         id: row.id,
@@ -67,10 +76,14 @@ export async function saveSmsGroupEdit(payload, memberId, audit = {}) {
   if (payload.action === 'delete' || payload.delete === 'Confirm') {
     const id = Number(payload.confirm || payload.id);
     if (!id) return { success: false, message: 'Select a group to delete.' };
-    await prisma.sms_group_tb.update({
-      where: { id },
-      data: { del: 0, ...update },
-    });
+    await prisma.$executeRawUnsafe(`
+      UPDATE sms_group_tb SET
+        del = 0,
+        updated_dt = NOW(),
+        updated_ip = '${escapeSql(update.updated_ip)}',
+        updated_by = '${escapeSql(String(update.updated_by))}'
+      WHERE id = ${id} AND del = 1
+    `);
     await logModulePage(PAGE, 'Delete', 'Successful', String(id), memberId, audit);
     return {
       success: true,
@@ -86,14 +99,15 @@ export async function saveSmsGroupEdit(payload, memberId, audit = {}) {
     return { success: false, message: 'Title and mobile numbers are required.' };
   }
 
-  await prisma.sms_group_tb.update({
-    where: { id },
-    data: {
-      group_title: groupTitle,
-      group_mobile: groupMobile,
-      ...update,
-    },
-  });
+  await prisma.$executeRawUnsafe(`
+    UPDATE sms_group_tb SET
+      group_title = '${escapeSql(groupTitle)}',
+      group_mobile = '${escapeSql(groupMobile)}',
+      updated_dt = NOW(),
+      updated_ip = '${escapeSql(update.updated_ip)}',
+      updated_by = '${escapeSql(String(update.updated_by))}'
+    WHERE id = ${id} AND del = 1
+  `);
 
   await logModulePage(PAGE, 'Update', 'Successful', String(id), memberId, audit);
   return {

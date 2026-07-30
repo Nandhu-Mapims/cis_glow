@@ -6,8 +6,6 @@ const CHART_COMPONENTS = {
   'dept-staffing': DeptStaffingChart,
 };
 
-const COLLAPSED_BODY_HEIGHT = 300;
-
 const WIDGET_META = {
   staff_details: { icon: 'fa fa-users', tone: 'crimson', kind: 'Staff' },
   staff_unit: { icon: 'fa fa-sitemap', tone: 'crimson', kind: 'Faculty' },
@@ -36,6 +34,10 @@ const WIDGET_META = {
 function metaFor(id) {
   return WIDGET_META[id] || { icon: 'fa fa-th-large', tone: 'crimson', kind: 'Panel' };
 }
+
+// These widgets are read at a glance (Faculty Structure norms/vacancy table) rather than
+// previewed-then-opened, so they always render in full and skip the collapse toggle.
+const ALWAYS_EXPANDED_WIDGET_IDS = new Set(['staff_unit']);
 
 /** Pull a useful headline number from legacy widget HTML when present. */
 function extractBadge(html) {
@@ -88,18 +90,22 @@ export default function DashboardWidgetCard({
   const rows = useMemo(() => rowCount(safeHtml), [safeHtml]);
   const status = loading ? 'Updating…' : safeHtml ? (rows > 0 ? `${rows} rows` : 'Ready') : 'No data';
   const ChartComponent = chart && CHART_COMPONENTS[chart.type];
+  const alwaysExpanded = ALWAYS_EXPANDED_WIDGET_IDS.has(widget.id);
 
   // Every panel starts collapsed to a short preview so the dashboard reads as a
   // uniform grid of compact cards; "Show full panel" (or "Show detailed table"
-  // for chart widgets) opens the full legacy table on demand.
-  const [collapsed, setCollapsed] = useState(true);
+  // for chart widgets) opens the full legacy table on demand. A few widgets
+  // (see ALWAYS_EXPANDED_WIDGET_IDS) are exceptions and never collapse.
+  const [collapsed, setCollapsed] = useState(!alwaysExpanded);
 
   useEffect(() => {
+    if (alwaysExpanded) return;
     if (expandAllTick > 0) setCollapsed(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expandAllTick]);
 
   useEffect(() => {
+    if (alwaysExpanded) return;
     if (collapseAllTick > 0) setCollapsed(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collapseAllTick]);
@@ -125,7 +131,7 @@ export default function DashboardWidgetCard({
             <span className="cis-widget-badge-label">{badge.label}</span>
           </div>
         )}
-        {safeHtml && (
+        {safeHtml && !alwaysExpanded && (
           <button
             type="button"
             className="cis-widget-toggle"
@@ -148,7 +154,6 @@ export default function DashboardWidgetCard({
           {!(collapsed && ChartComponent) && (
             <div
               className={`cis-widget-body legacy-widget-root legacy-widget-root--${widget.id}${collapsed ? ' is-scroll' : ''}`}
-              style={collapsed ? { maxHeight: COLLAPSED_BODY_HEIGHT } : undefined}
               dangerouslySetInnerHTML={{ __html: safeHtml }}
             />
           )}

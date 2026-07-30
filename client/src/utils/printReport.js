@@ -33,9 +33,13 @@ function splitAffidavitHtml(html) {
   };
 }
 
-function openPrintWindow(title, headHtml, bodyHtml) {
+function openPrintWindow(title, headHtml, bodyHtml, presetWin) {
   // Do not pass noopener — it makes window.open return null and breaks printing.
-  const win = window.open('', '_blank');
+  // `presetWin`, when given, is a window already opened synchronously inside a click
+  // handler (see printReportHtml's 3rd param) — needed when the HTML to print only
+  // becomes available after an `await`, by which point window.open() would otherwise
+  // be blocked as no longer being a direct result of the user gesture.
+  const win = presetWin !== undefined ? presetWin : window.open('', '_blank');
   if (!win) return null;
 
   win.document.open();
@@ -66,8 +70,11 @@ ${headHtml}
   return win;
 }
 
-export function printReportHtml(html, mode = 'default') {
-  if (!html) return;
+export function printReportHtml(html, mode = 'default', presetWin) {
+  if (!html) {
+    presetWin?.close();
+    return;
+  }
 
   const isAffidavit = mode === 'affidavit' || mode === true;
   if (isAffidavit) {
@@ -967,7 +974,13 @@ export function printReportHtml(html, mode = 'default') {
   }
   h4 { page-break-after: avoid; }
   thead { display: table-header-group; }
-  tr { page-break-inside: avoid; }
+  /* #total_con wraps the *entire* report in a single <tr> (legacy
+     single-page-container pattern) — a blanket 'tr { page-break-inside:
+     avoid }' can't honor "avoid" on content taller than one page, so the
+     browser shoves that whole row onto page 2, leaving page 1 with just the
+     header. Only the actual per-date schedule rows should resist splitting. */
+  #total_con > tbody > tr { page-break-inside: auto; }
+  .table-bordered tr { page-break-inside: avoid; }
 </style>`;
     if (!openPrintWindow('Exam Schedule', headHtml, bodyHtml)) {
       window.alert('Unable to open the print window. Please allow popups for this site.');
@@ -1128,7 +1141,7 @@ export function printReportHtml(html, mode = 'default') {
   #total_con { width: 780px; padding: 35px; }
 </style>`;
 
-  if (!openPrintWindow('Report', headHtml, html)) {
+  if (!openPrintWindow('Report', headHtml, html, presetWin)) {
     window.alert('Unable to open the print window. Please allow popups for this site.');
   }
 }

@@ -1,23 +1,35 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import DashboardLayout from '../../layouts/DashboardLayout';
+import { Breadcrumbs, PageError, PageHeader, PageLoading } from '../../components/PageShell';
+import DataTable from '../../components/DataTable';
+
+const BREADCRUMBS = [
+  { label: 'Home', to: '/dashboard' },
+  { label: 'Admin', to: '/admin' },
+  { label: 'Users' },
+];
 
 export default function AdminUserList() {
   const { settings, menu } = useOutletContext();
   const [loading, setLoading] = useState(true);
+  const [pageError, setPageError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [listError, setListError] = useState(null);
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [data, setData] = useState({ users: [], total: 0, limit: 20 });
+  const [users, setUsers] = useState([]);
 
-  const loadUsers = useCallback(async (nextSearch, nextPage) => {
+  const loadUsers = useCallback(async (nextSearch) => {
     setBusy(true);
+    setListError(null);
     try {
       const res = await api.get('/api/admin/users', {
-        params: { search: nextSearch, page: nextPage },
+        params: { search: nextSearch, page: 1, limit: 100 },
       });
-      setData(res.data);
+      setUsers(res.data.users || []);
+    } catch (err) {
+      setListError(err.response?.data?.message || 'Failed to load users');
     } finally {
       setBusy(false);
     }
@@ -26,128 +38,135 @@ export default function AdminUserList() {
   useEffect(() => {
     const init = async () => {
       try {
-        await loadUsers('', 1);
+        await loadUsers('');
+      } catch (err) {
+        setPageError(err.response?.data?.message || 'Failed to load users');
       } finally {
         setLoading(false);
       }
     };
     init();
-  }, [loadUsers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const onSearch = async (event) => {
+  const onSearch = (event) => {
     event.preventDefault();
-    setPage(1);
-    await loadUsers(search, 1);
+    loadUsers(search);
   };
 
-  const totalPages = Math.max(1, Math.ceil(data.total / data.limit));
+  const columns = useMemo(() => [
+    {
+      key: 'memberId',
+      header: 'Member ID',
+      primary: true,
+      sortable: true,
+      searchField: true,
+      width: '12rem',
+      render: (row) => row.memberId || '—',
+    },
+    {
+      key: 'memberName',
+      header: 'Name',
+      sortable: true,
+      searchField: true,
+      render: (row) => row.memberName || '—',
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      sortable: true,
+      searchField: true,
+      render: (row) => row.email || '—',
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      align: 'right',
+      render: (row) => (
+        <Link
+          to={`/admin/users/${row.id}/edit`}
+          className="btn btn-sm btn-outline-primary"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Edit
+        </Link>
+      ),
+    },
+  ], []);
 
   if (loading) {
-    return <div className="p-4 text-muted">Loading...</div>;
+    return <PageLoading message="Loading users…" />;
   }
+  if (pageError) {
+    return <PageError message={pageError} onRetry={() => window.location.reload()} />;
+  }
+
+  const emptyState = search
+    ? {
+      icon: 'fa fa-user-times',
+      title: 'No users found',
+      message: 'Nothing matched this search. Try a different member ID, name, or email.',
+    }
+    : {
+      icon: 'fa fa-users',
+      title: 'No users yet',
+      message: 'Add a user account to get started.',
+    };
 
   return (
     <DashboardLayout settings={settings} dashboard={{ title: 'Users' }} menu={menu}>
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb">
-          <li className="breadcrumb-item"><Link to="/dashboard">Home</Link></li>
-          <li className="breadcrumb-item"><Link to="/admin">Admin</Link></li>
-          <li className="breadcrumb-item active">Users</li>
-        </ol>
-      </nav>
+      <div className="cis-page">
+        <Breadcrumbs items={BREADCRUMBS} />
+        <PageHeader
+          title="User Directory"
+          subtitle="Search and manage login accounts"
+          actions={(
+            <>
+              <Link to="/admin" className="btn btn-outline-secondary btn-sm">Module Hub</Link>
+              <Link to="/admin/setup/account-add" className="btn btn-primary btn-sm">
+                <i className="fa fa-plus me-1" aria-hidden="true" />
+                Add User
+              </Link>
+            </>
+          )}
+        />
 
-      <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-        <h3 className="dashboard-title mb-0">User Directory</h3>
-        <div className="d-flex gap-2">
-          <Link to="/admin/setup/account-add" className="btn btn-primary btn-sm">Add user</Link>
-          <Link to="/admin" className="btn btn-outline-secondary btn-sm">Back</Link>
-        </div>
+        <section className="cis-searchbar" aria-label="User search">
+          <form className="cis-searchbar-field" onSubmit={onSearch}>
+            <label className="cis-searchbar-label" htmlFor="user-q">Search</label>
+            <div className="cis-searchbar-input-row">
+              <input
+                id="user-q"
+                name="q"
+                className="form-control"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Member ID, name, or email"
+                autoComplete="off"
+              />
+              <button type="submit" className="btn btn-primary" disabled={busy}>
+                {busy ? 'Searching…' : 'Search'}
+              </button>
+            </div>
+            <p className="cis-searchbar-hint">Matches member ID, name, or email address.</p>
+          </form>
+        </section>
+
+        <DataTable
+          columns={columns}
+          rows={users}
+          getRowKey={(row) => row.id}
+          loading={busy}
+          error={listError}
+          onRetry={() => loadUsers(search)}
+          empty={emptyState}
+          caption="User accounts"
+          searchable={users.length > 8}
+          searchPlaceholder="Filter these users by ID, name, or email…"
+          pageSize={25}
+          initialSort={{ key: 'memberId', dir: 'asc' }}
+        />
       </div>
-
-      <form className="row g-2 mb-3" onSubmit={onSearch}>
-        <div className="col-sm-8 col-md-6">
-          <input
-            type="search"
-            className="form-control"
-            placeholder="Search member ID or name"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="col-auto">
-          <button type="submit" className="btn btn-outline-primary" disabled={busy}>Search</button>
-        </div>
-      </form>
-
-      <div className="card shadow-sm">
-        <div className="table-responsive">
-          <table className="table table-hover mb-0">
-            <thead>
-              <tr>
-                <th>Member ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th className="text-end">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.users.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="text-muted">No users found.</td>
-                </tr>
-              ) : (
-                data.users.map((user) => (
-                  <tr key={user.id}>
-                    <td>{user.memberId}</td>
-                    <td>{user.memberName}</td>
-                    <td>{user.email || '—'}</td>
-                    <td className="text-end">
-                      <Link
-                        to={`/admin/users/${user.id}/edit`}
-                        className="btn btn-sm btn-outline-primary"
-                      >
-                        Edit
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {data.total > data.limit && (
-        <div className="d-flex justify-content-between align-items-center mt-3">
-          <span className="text-muted small">Page {page} of {totalPages}</span>
-          <div className="btn-group btn-group-sm">
-            <button
-              type="button"
-              className="btn btn-outline-secondary"
-              disabled={page <= 1 || busy}
-              onClick={() => {
-                const next = page - 1;
-                setPage(next);
-                loadUsers(search, next);
-              }}
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline-secondary"
-              disabled={page >= totalPages || busy}
-              onClick={() => {
-                const next = page + 1;
-                setPage(next);
-                loadUsers(search, next);
-              }}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
     </DashboardLayout>
   );
 }

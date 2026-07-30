@@ -29,6 +29,18 @@ export async function loadStaffCategories() {
   return rows.map((r) => ({ id: Number(r.id), name: r.category_name }));
 }
 
+/** Full admin-defined category list (edu_setup_tb) — unlike
+ * loadStaffCategories() above, this isn't limited to categories that have
+ * an active staff member assigned, matching staff_academic_calendar.php's
+ * "Category" multi-select which tags a calendar day, not a specific staff
+ * member. */
+export async function loadCalendarCategories() {
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT id, category_name FROM edu_setup_tb WHERE category='Category' AND del=1 ORDER BY category_order ASC`,
+  );
+  return rows.map((r) => ({ id: Number(r.id), name: r.category_name }));
+}
+
 export async function loadDepartments() {
   const rows = await prisma.$queryRawUnsafe(
     `SELECT id, name FROM staff_dept_master WHERE del = 1 ORDER BY d_order ASC`,

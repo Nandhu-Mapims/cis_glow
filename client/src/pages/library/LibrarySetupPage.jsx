@@ -96,6 +96,7 @@ export default function LibrarySetupPage() {
       backTo="/library"
       loading={loading}
       alerts={<SetupAlerts notice={notice} error={error} busy={busy} />}
+      cardClassName={screen === 'book-add' ? 'cis-setup-card cis-library-resource-card' : 'cis-setup-card'}
     >
       {SetupComponent ? (
         <SetupComponent data={data} busy={busy} onLoad={load} onSave={save} />

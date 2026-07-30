@@ -1,23 +1,45 @@
+.chip-multi-select {
+  background: var(--cis-surface);
+}
+
 .chip-multi-select-list {
-  max-height: 220px;
+  max-height: 320px;
   overflow-y: auto;
 }
 
+.chip-multi-select-group-label {
+  padding: 0.4rem 0.75rem 0.2rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cis-text-subtle);
+  background: var(--cis-bg-subtle);
+  position: sticky;
+  top: 0;
+}
+
+.chip-multi-select-hint {
+  font-size: 0.75rem;
+}
+
 .chip-multi-select-item {
-  background: #fff;
+  background: var(--cis-surface);
+  color: var(--cis-text);
   transition: background-color 0.15s ease;
 }
 
 .chip-multi-select-item:hover:not(:disabled) {
-  background: #f8f9fa;
+  background: var(--cis-bg-subtle);
 }
 
 .chip-multi-select-item--selected {
-  background: #e7f1ff;
+  background: var(--cis-primary-soft);
 }
 
 .chip-multi-select-item--selected:hover:not(:disabled) {
-  background: #dbeafe;
+  background: var(--cis-primary-soft);
+  filter: brightness(0.97);
 }
 
 .chip-multi-select-item--blocked {
@@ -25,7 +47,7 @@
 }
 
 .chip-multi-select-item + .chip-multi-select-item {
-  border-top: 1px solid #e9ecef !important;
+  border-top: 1px solid var(--cis-border) !important;
 }
 
 .chip-multi-select-item:disabled {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { DragHandle, useDragReorder } from '../../../hooks/useDragReorder';
 
 function readFileAsBase64(file) {
   return new Promise((resolve, reject) => {
@@ -328,6 +329,7 @@ export function TvAccessScreen({ data, busy, onLoad, onSave }) {
 export function TvSliderAccessScreen({ data, busy, onLoad, onSave }) {
   const [userId, setUserId] = useState('');
   const [rows, setRows] = useState([]);
+  const { dragHandleProps, rowDropProps, rowClassName } = useDragReorder(rows, setRows);
 
   useEffect(() => { onLoad(); }, [onLoad]);
   useEffect(() => {
@@ -340,17 +342,24 @@ export function TvSliderAccessScreen({ data, busy, onLoad, onSave }) {
     await onLoad({ userId: id });
   };
 
+  const deleteRow = (i) => {
+    const row = rows[i];
+    if (row.rowId) onSave({ action: 'delete', rowId: row.rowId, userId });
+    else setRows((p) => p.filter((_, j) => j !== i));
+  };
+
   return (
     <div>
       <UserPicker users={data?.users} userId={userId} onChange={pickUser} />
       {userId && (
         <form className="cis-setup-form" onSubmit={(e) => { e.preventDefault(); onSave({ userId, rows }); }}>
           <table className="table table-bordered table-sm">
-            <thead><tr><th>Order</th><th>Widget</th><th>From</th><th>To</th><th>Active</th></tr></thead>
+            <thead><tr><th style={{ width: '2rem' }} aria-hidden="true" /><th>Order</th><th>Widget</th><th>From</th><th>To</th><th>Active</th><th className="text-end" style={{ width: '1%' }} /></tr></thead>
             <tbody>
               {rows.map((row, i) => (
-                <tr key={row.rowId || `new-${i}`}>
-                  <td><input className="form-control form-control-sm" value={row.order} onChange={(e) => setRows(rows.map((r, j) => (j === i ? { ...r, order: e.target.value } : r)))} /></td>
+                <tr key={row.rowId || `new-${i}`} className={rowClassName(i)} {...rowDropProps(i)}>
+                  <td className="text-center"><DragHandle {...dragHandleProps(i)} /></td>
+                  <td><input className="form-control form-control-sm" value={row.order} readOnly disabled title="Drag the row's handle to reorder" /></td>
                   <td>
                     <select className="form-select form-select-sm" value={row.widgetKey} onChange={(e) => setRows(rows.map((r, j) => (j === i ? { ...r, widgetKey: e.target.value } : r)))}>
                       <option value="">-- Select --</option>
@@ -360,12 +369,19 @@ export function TvSliderAccessScreen({ data, busy, onLoad, onSave }) {
                   <td><input className="form-control form-control-sm" value={row.fromTime} onChange={(e) => setRows(rows.map((r, j) => (j === i ? { ...r, fromTime: e.target.value } : r)))} /></td>
                   <td><input className="form-control form-control-sm" value={row.toTime} onChange={(e) => setRows(rows.map((r, j) => (j === i ? { ...r, toTime: e.target.value } : r)))} /></td>
                   <td><input type="checkbox" checked={row.active} onChange={(e) => setRows(rows.map((r, j) => (j === i ? { ...r, active: e.target.checked } : r)))} /></td>
+                  <td className="text-end">
+                    <button type="button" className="btn btn-sm btn-outline-danger" title="Delete row" onClick={() => deleteRow(i)}>
+                      <i className="fa fa-trash" aria-hidden="true" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <button type="button" className="btn btn-outline-secondary btn-sm me-2" onClick={() => setRows([...rows, { rowId: null, widgetKey: '', order: rows.length + 1, fromTime: '00:00', toTime: '23:59', active: true }])}>Add row</button>
-          <button type="submit" className="btn btn-danger" disabled={busy}>Save</button>
+          <div className="d-flex align-items-center gap-2">
+            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setRows([...rows, { rowId: null, widgetKey: '', order: rows.length + 1, fromTime: '00:00', toTime: '23:59', active: true }])}>Add row</button>
+            <button type="submit" className="btn btn-danger btn-sm" disabled={busy}>Save</button>
+          </div>
         </form>
       )}
     </div>

@@ -89,6 +89,10 @@ function ActivityPanel({ title, rows }) {
 const LOG_DASHBOARD_CACHE_KEY = 'cis_log_dashboard_v1';
 const CACHE_TTL_MS = 300_000;
 
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function readSessionCache() {
   try {
     const raw = sessionStorage.getItem(LOG_DASHBOARD_CACHE_KEY);
@@ -118,7 +122,7 @@ function mergeDashboardState(prev, next) {
   return {
     ...prev,
     ...next,
-    panels: next.panels ?? prev.panels,
+    panels: next.panels ? { ...prev.panels, ...next.panels } : prev.panels,
     activities: next.activities ?? prev.activities,
   };
 }
@@ -129,7 +133,7 @@ export default function AdminLogDashboard() {
   const [activitiesLoading, setActivitiesLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState(() => readSessionCache()?.data ?? null);
-  const [selectedDate, setSelectedDate] = useState(() => readSessionCache()?.data?.selectedDateLabel || '');
+  const [selectedDate, setSelectedDate] = useState(() => readSessionCache()?.data?.selectedDate || todayIso());
   const requestIdRef = useRef(0);
   const didInitRef = useRef(false);
 
@@ -156,7 +160,7 @@ export default function AdminLogDashboard() {
       }
 
       setData((prev) => mergeDashboardState(prev, fastPanelsRes.data));
-      setSelectedDate(fastPanelsRes.data.selectedDateLabel || '');
+      setSelectedDate(fastPanelsRes.data.selectedDate || todayIso());
       setBusy(false);
 
       const studentPanelsRes = await api.post('/api/admin/log-dashboard', {
@@ -300,8 +304,9 @@ export default function AdminLogDashboard() {
                 <label className="form-label" htmlFor="s_date">Date</label>
                 <input
                   id="s_date"
+                  type="date"
                   className="form-control"
-                  placeholder="dd-mm-yyyy"
+                  max={todayIso()}
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
                 />

@@ -2,18 +2,6 @@ import { Fragment, useEffect, useState } from 'react';
 import { ExamSetupShell } from './ExamSelectors';
 import { useExamSetupApi } from './useExamSetupApi';
 
-function toDisplayDate(isoDate) {
-  if (!isoDate) return '';
-  const [y, m, d] = isoDate.split('-');
-  return `${d}-${m}-${y}`;
-}
-
-function toIsoDate(displayDate) {
-  const parts = String(displayDate || '').split('-');
-  if (parts.length !== 3) return displayDate;
-  return `${parts[2]}-${parts[1]}-${parts[0]}`;
-}
-
 export default function SheetsStatusSetup() {
   const { data, busy, error, notice, load } = useExamSetupApi('sheets-status');
   const [fromDate, setFromDate] = useState('');
@@ -28,16 +16,16 @@ export default function SheetsStatusSetup() {
   }, [load]);
 
   useEffect(() => {
-    if (data?.fromDate) setFromDate(toDisplayDate(data.fromDate));
-    if (data?.toDate) setToDate(toDisplayDate(data.toDate));
+    if (data?.fromDate) setFromDate(data.fromDate);
+    if (data?.toDate) setToDate(data.toDate);
     if (data?.batchId) setBatchId(data.batchId);
   }, [data]);
 
   const onSearch = async (e) => {
     e.preventDefault();
     await load({
-      from_date: toIsoDate(fromDate),
-      to_date: toIsoDate(toDate),
+      from_date: fromDate,
+      to_date: toDate,
       batch_id: batchId,
       action: 'go',
     });
@@ -48,11 +36,11 @@ export default function SheetsStatusSetup() {
       <form className="row g-2 mb-3" onSubmit={onSearch}>
         <div className="col-md-2">
           <label className="form-label small">From</label>
-          <input className="form-control form-control-sm" value={fromDate} onChange={(e) => setFromDate(e.target.value)} placeholder="dd-mm-yyyy" />
+          <input type="date" className="form-control form-control-sm" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
         </div>
         <div className="col-md-2">
           <label className="form-label small">To</label>
-          <input className="form-control form-control-sm" value={toDate} onChange={(e) => setToDate(e.target.value)} placeholder="dd-mm-yyyy" />
+          <input type="date" className="form-control form-control-sm" value={toDate} onChange={(e) => setToDate(e.target.value)} />
         </div>
         <div className="col-md-2">
           <label className="form-label small">Batch ID</label>

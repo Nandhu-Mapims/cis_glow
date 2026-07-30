@@ -123,12 +123,12 @@ export default function InvigilatorPrintSetup() {
 
           {data?.reportHtml ? (
             <div className="mb-3 row g-2">
-              <div className="col-sm-2" />
               <div className="col-sm-3">
                 <button type="button" className="btn btn-info" onClick={handlePrint} disabled={busy}>
                   Print
                 </button>
               </div>
+              <div className="col-sm-2" />
             </div>
           ) : null}
         </>

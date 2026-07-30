@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import SetupAlerts from '../../fees/setup/SetupAlerts';
 import { useAcademicSetupApi } from './useAcademicSetupApi';
 import { CurriculumReportSkeleton } from './curriculumReportUi';
+import { FormSection } from '../../../components/FormShell';
 
 function formatDayLabel(day) {
   if (!day) return '';
@@ -188,9 +189,7 @@ export default function PeriodSetupSetup() {
 
       {courseKey ? (
         <form onSubmit={handleSave}>
-          <div className="card shadow-sm mb-3 period-setup-card">
-            <div className="card-header fw-semibold">Schedule Settings</div>
-            <div className="card-body">
+          <FormSection id="period-schedule-settings" title="Schedule Settings" grid={false}>
               <label className="form-label fw-semibold">Days</label>
               <div className="period-setup-day-group mb-3">
                 {(data?.dayOptions || []).map((d) => {
@@ -239,20 +238,22 @@ export default function PeriodSetupSetup() {
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
+          </FormSection>
 
           {showTimetablePanel ? (
-            <div className="card shadow-sm mb-3 period-setup-card">
-              <div className="card-header fw-semibold d-flex justify-content-between align-items-center">
-                <span>Period Timetable</span>
+            <FormSection
+              id="period-timetable"
+              title="Period Timetable"
+              grid={false}
+              action={(
                 <span className="text-muted small">
                   {previewing && !dayRows.length
                     ? 'Building timetable…'
                     : `${dayRows.length} day(s) · ${slotCount} slot(s)`}
                 </span>
-              </div>
-              <div className="card-body p-0 period-setup-panel-body">
+              )}
+            >
+              <div className="period-setup-panel-body">
                 {previewing ? (
                   <div className="academic-report-loading" aria-live="polite" aria-busy="true">
                     <div className="spinner-border text-primary" role="status" aria-hidden="true" />
@@ -276,7 +277,7 @@ export default function PeriodSetupSetup() {
                       </thead>
                       <tbody>
                         {dayRows.map((dayRow, dayIndex) => (
-                          <tr key={dayRow.day}>
+                          <tr key={dayRow.day} className={dayIndex % 2 === 0 ? 'period-setup-day-row-a' : 'period-setup-day-row-b'}>
                             <td className="period-setup-day-col fw-semibold">{formatDayLabel(dayRow.day)}</td>
                             <td className="period-setup-combined-col">
                               <input
@@ -307,7 +308,7 @@ export default function PeriodSetupSetup() {
                   </div>
                 ) : null}
               </div>
-            </div>
+            </FormSection>
           ) : null}
 
           {canPreview && dayRows.length > 0 ? (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ChipMultiSelect from '../../../components/ChipMultiSelect';
+import { FormSection } from '../../../components/FormShell';
 import ConfirmModal from '../../fees/setup/ConfirmModal';
 import SetupAlerts from '../../fees/setup/SetupAlerts';
 import { CourseYearSelector } from '../../exam/setup/ExamSelectors';
@@ -50,9 +51,9 @@ function syncChildSubjectIds(baseId, ttRows, markRows) {
 
 function NestedTable({ title, rows, columns, onChange, onAdd, onRemove }) {
   return (
-    <div className="border rounded p-2 mb-2 bg-light">
-      <div className="d-flex justify-content-between align-items-center mb-2">
-        <strong>{title}</strong>
+    <div className="cis-nested-panel">
+      <div className="cis-nested-panel-head">
+        <strong className="cis-nested-panel-title">{title}</strong>
         <button type="button" className="btn btn-sm btn-outline-primary" onClick={onAdd}>+ Row</button>
       </div>
       {rows.length ? (
@@ -151,40 +152,46 @@ export default function SubjectSetupSetup() {
   return (
     <>
       <SetupAlerts notice={notice} error={error} busy={busy} />
-      <CourseYearSelector
-        options={data?.courseYearOptions}
-        value={courseYearKey}
-        disabled={busy}
-        onChange={async (value) => {
-          setCourseYearKey(value);
-          setSemester('');
-          await reload({ courseYearKey: value, semester: '' });
-        }}
-      />
 
-      {data?.selection ? (
-        <div className="mb-3 row g-2">
-          <label className="col-sm-2 col-form-label">Year <span className="text-danger">*</span></label>
-          <div className="col-sm-8">
-            {Array.from({ length: data.totalSemester || 0 }, (_, i) => i + 1).map((yr) => (
-              <label key={yr} className="me-3">
-                <input
-                  type="radio"
-                  name="semester"
-                  checked={String(semester) === String(yr)}
-                  onChange={async () => {
-                    setSemester(String(yr));
-                    await reload({ semester: String(yr) });
-                  }}
-                /> {yr}
-              </label>
-            ))}
-          </div>
+      <FormSection id="subject-setup-filters" title="Course & Year" description="Select the course/year (and semester) whose subjects you want to configure.">
+        <div className="col-12">
+          <CourseYearSelector
+            options={data?.courseYearOptions}
+            value={courseYearKey}
+            disabled={busy}
+            onChange={async (value) => {
+              setCourseYearKey(value);
+              setSemester('');
+              await reload({ courseYearKey: value, semester: '' });
+            }}
+          />
         </div>
-      ) : null}
+
+        {data?.selection ? (
+          <div className="col-12 row g-2">
+            <label className="col-sm-2 col-form-label">Year <span className="text-danger">*</span></label>
+            <div className="col-sm-8">
+              {Array.from({ length: data.totalSemester || 0 }, (_, i) => i + 1).map((yr) => (
+                <label key={yr} className="me-3">
+                  <input
+                    type="radio"
+                    name="semester"
+                    checked={String(semester) === String(yr)}
+                    onChange={async () => {
+                      setSemester(String(yr));
+                      await reload({ semester: String(yr) });
+                    }}
+                  /> {yr}
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </FormSection>
 
       {data?.scope ? (
         <form onSubmit={handleSave}>
+          <FormSection id="subject-setup-rows" title="Subjects" description="Configure category, subtype and subject rows for this course/year/semester. Use Exam / Time Table to expand per-subject variants." grid={false}>
           <div className="table-responsive">
             <table className="table table-bordered align-middle">
               <thead className="table-secondary">
@@ -403,6 +410,7 @@ export default function SubjectSetupSetup() {
               onRemove={(i) => updateRow(index, { markRows: row.markRows.filter((_, ri) => ri !== i) })}
             />
           ) : null)}
+          </FormSection>
 
           <div className="d-flex justify-content-between">
             <button type="button" className="btn btn-sm btn-info" onClick={() => setRows((prev) => [...prev, emptyRow(prev.length + 1)])}>Add Subject</button>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../api/client';
 import { useTransientNotice } from './useTransientNotice';
+import { cachedGet, invalidateCachePrefix } from '../utils/idbCache';
 
 function stripSaveMeta(payload = {}) {
   const { message, success, error, ...rest } = payload;
@@ -28,19 +29,31 @@ export function createSetupApi(basePath) {
       const seq = ++loadSeq.current;
       setBusy(true);
       setError(null);
+      const cacheKey = `${basePath}/setup/${screen}/load:${JSON.stringify(fields)}:${JSON.stringify(query)}`;
       try {
-        const res = await api.post(`${basePath}/setup/${screen}/load`, { fields, query });
+        const result = await cachedGet(
+          cacheKey,
+          async () => {
+            const res = await api.post(`${basePath}/setup/${screen}/load`, { fields, query });
+            if (res.data.error) throw Object.assign(new Error(res.data.error), { setupError: res.data.error });
+            return res.data;
+          },
+          {
+            ttlMs: 60_000,
+            onCache: (cached) => {
+              if (seq === loadSeq.current) setData(cached);
+            },
+            onFresh: (fresh) => {
+              if (seq === loadSeq.current) setData(fresh);
+            },
+          },
+        );
         if (seq !== loadSeq.current) return null;
-        if (res.data.error) {
-          setError(res.data.error);
-          setData(null);
-          return null;
-        }
-        setData(res.data);
-        return res.data;
+        setData(result);
+        return result;
       } catch (err) {
         if (seq !== loadSeq.current) return null;
-        setError(err.response?.data?.message || 'Unable to load screen');
+        setError(err.setupError || err.response?.data?.message || 'Unable to load screen');
         setData(null);
         return null;
       } finally {
@@ -66,6 +79,7 @@ export function createSetupApi(basePath) {
           setNotice(res.data.message);
         }
         setData((prev) => ({ ...(prev || {}), ...stripSaveMeta(res.data) }));
+        invalidateCachePrefix(`${basePath}/setup/${screen}/load:`);
         return res.data;
       } catch (err) {
         if (seq !== saveSeq.current) return null;

@@ -520,14 +520,17 @@ export async function loadAlumniEditScreen(memberId, fields = {}, audit = {}) {
   if (alumniId) {
     const row = await fetchAlumniFullRow(alumniId);
     if (!row) {
-      return { courseOptions, yopOptions, classOptions: [], alumniList: await fetchAlumniListRows() };
+      return { courseOptions, yopOptions, classOptions: [], alumniList: fields.alumniList || await fetchAlumniListRows() };
     }
     const alumni = mapAlumniRow(row);
     if (!audit?.skipLog) {
       await logStudentModule('alumni_profile_edit.php', 'View', 'Successful', alumni.regNo, memberId, audit);
     }
     return alumniEditPayload(alumni, fields, {
-      alumniList: await fetchAlumniListRows(),
+      // Picking a specific alumnus from a filtered search shouldn't blow away that
+      // search's results and replace them with the full unfiltered roster — reuse
+      // the list the client already has (see AlumniEditPanel's handleSelectAlumni).
+      alumniList: fields.alumniList || await fetchAlumniListRows(),
       selectedAlumniId: alumniId,
     });
   }

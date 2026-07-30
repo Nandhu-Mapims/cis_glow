@@ -1,7 +1,7 @@
 import { prisma } from '../../config/prisma.js';
 import { escapeSql } from '../../utils/sqlSafe.js';
 import { auditFields, logModulePage } from '../shared/moduleAudit.js';
-import { loadCerCategories, loadCerSubcategories, lookupStudent, nextApplicationNo } from './certificateShared.js';
+import { fmtDateExpr, loadCerCategories, loadCerSubcategories, lookupStudent, nextApplicationNo, receiptBlankColumnsSql } from './certificateShared.js';
 
 const PAGE = 'create_crequest.php';
 
@@ -11,6 +11,30 @@ export async function loadCertificateRequest(memberId, fields = {}, audit = {}) 
     ? String(fields.categoryId)
     : (categories[0] ? String(categories[0].id) : '');
   const subcategories = categoryId ? await loadCerSubcategories(categoryId) : [];
+
+  const photocopyItems = await prisma.$queryRawUnsafe(`
+    SELECT id, category_name FROM master_setup WHERE category = 'Attachment' AND del != 0 ORDER BY category_order ASC
+  `);
+
+  const lastRequestRows = await prisma.$queryRawUnsafe(`
+    SELECT R.application_no, ${fmtDateExpr('R.application_date', 'application_date')}, S.name AS certificate_name,
+      A.student_name, A.student_initial, A.register_no, B.degree_name, B.department_name
+    FROM certificate_receipt_tb AS R
+    LEFT JOIN cer_subcategory_tb AS S ON S.del = 1 AND S.id = R.apply_for
+    LEFT JOIN student_profile_tb AS A ON A.del = 1 AND A.id = R.student_id
+    LEFT JOIN basic_setup_course_tb AS B ON B.del = 1 AND B.id = A.course_id
+    WHERE R.del = 1 ORDER BY R.application_no + 0 DESC LIMIT 1
+  `);
+  const lr = lastRequestRows[0];
+  const lastRequest = lr ? {
+    applicationNo: Number(lr.application_no),
+    applicationDate: lr.application_date || '',
+    certificateName: lr.certificate_name || '',
+    studentName: `${lr.student_name || ''} ${lr.student_initial || ''}`.trim(),
+    registerNo: lr.register_no || '',
+    degreeName: lr.degree_name || '',
+    departmentName: lr.department_name || '',
+  } : null;
 
   await logModulePage(PAGE, 'View', 'Successful', '', memberId, audit);
   return {
@@ -22,6 +46,8 @@ export async function loadCertificateRequest(memberId, fields = {}, audit = {}) 
       name: s.name,
       format: s.c_format || '',
     })),
+    photocopyItems: photocopyItems.map((p) => ({ id: Number(p.id), name: p.category_name })),
+    lastRequest,
     form: { categoryId, subcategoryId: '', registerNo: '', photocopyList: [] },
   };
 }
@@ -59,15 +85,16 @@ export async function saveCertificateRequest(payload, memberId, audit = {}) {
   }
 
   const appNo = await nextApplicationNo();
+  const { columnsSql, valuesSql } = receiptBlankColumnsSql();
   await prisma.$executeRawUnsafe(`
     INSERT INTO certificate_receipt_tb (
-      application_no, application_date, student_id, register_no, apply_for,
+      application_no, application_date, generated_date, student_id, register_no, apply_for,
       application_fee, apply_reason, address_type, relation_type, status,
-      created_dt, created_ip, created_by, del
+      created_dt, created_ip, created_by, del, ${columnsSql}
     ) VALUES (
-      ${appNo}, CURDATE(), '${escapeSql(String(student.id))}', '${escapeSql(registerNo)}',
+      ${appNo}, CURDATE(), '0000-00-00', '${escapeSql(String(student.id))}', '${escapeSql(registerNo)}',
       '${escapeSql(String(subcategoryId))}', '0', '${escapeSql(applyReason)}',
-      0, 0, 0, NOW(), '${escapeSql(create.created_ip)}', '${escapeSql(memberId)}', 1
+      0, 0, 0, NOW(), '${escapeSql(create.created_ip)}', '${escapeSql(memberId)}', 1, ${valuesSql}
     )
   `);
 

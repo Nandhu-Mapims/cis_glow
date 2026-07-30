@@ -83,31 +83,64 @@ export async function loadPhotoUploadScreen(memberId, _fields = {}, audit = {}) 
   return { overwriteExists: false, uploads: [] };
 }
 
-export async function savePhotoUploadScreen(payload, memberId, audit = {}) {
-  const files = Array.isArray(payload.files) ? payload.files : [];
-  const overwrite = !!payload.overwriteExists;
-  const results = [];
-  for (const file of files) {
-    const name = String(file.name || '').trim();
-    if (!name.toLowerCase().endsWith('.png')) {
-      results.push({ name, error: 'Only .png files named staffid.png are allowed' });
-      continue;
-    }
-    const result = await saveLegacyBinaryFile({
-      folder: 'staff_idcard',
-      file: { name, data: file.data },
-      allowedExt: new Set(['png']),
-      preserveName: true,
-      maxBytes: 2 * 1024 * 1024,
-    });
-    if (result.error) {
-      results.push({ name, error: result.error });
-      continue;
-    }
-    results.push({ name, publicUrl: result.publicUrl, success: true });
+async function saveStaffPhoto(staffId, file) {
+  if (!staffId) return { error: 'Select a staff member first' };
+  if (!file?.name || !file?.data) return { error: 'Choose a photo to upload' };
+  const ext = String(file.name).split('.').pop()?.toLowerCase() || '';
+  if (!['png', 'jpg', 'jpeg'].includes(ext)) {
+    return { error: 'Only .png or .jpg photos are allowed' };
   }
-  await logStaffModule('staff_photo_upload.php', 'Update', 'Successful', String(results.length), memberId, audit);
-  return { success: true, message: 'Upload complete', results, overwriteExists: overwrite };
+  const result = await saveLegacyBinaryFile({
+    folder: 'staff_idcard',
+    file: { name: `${staffId}.${ext}`, data: file.data },
+    allowedExt: new Set(['png', 'jpg', 'jpeg']),
+    preserveName: true,
+    maxBytes: 2 * 1024 * 1024,
+  });
+  if (result.error) return { error: result.error };
+  return { success: true, savedAs: `${staffId}.${ext}`, publicUrl: result.publicUrl };
+}
+
+// Two ways in: search for one staff member then upload their photo (any original
+// file name — see MORE_HANDLERS['photo-upload']), or a bulk batch where each file's
+// own name IS the staff id (legacy staff_photo_upload.php convention, e.g.
+// EMP0123.png). Either way the file is always saved as `<staff_id>.<ext>`, matching
+// the naming convention staffPhotoUrl() looks up elsewhere (id card, profile, etc).
+export async function savePhotoUploadScreen(payload, memberId, audit = {}) {
+  const bulkFiles = Array.isArray(payload.files) ? payload.files : null;
+  const overwrite = !!payload.overwriteExists;
+
+  if (bulkFiles) {
+    const results = [];
+    for (const file of bulkFiles) {
+      const name = String(file.name || '').trim();
+      if (!name.toLowerCase().endsWith('.png')) {
+        results.push({ name, error: 'Only .png files named staffid.png are allowed' });
+        continue;
+      }
+      const result = await saveLegacyBinaryFile({
+        folder: 'staff_idcard',
+        file: { name, data: file.data },
+        allowedExt: new Set(['png']),
+        preserveName: true,
+        maxBytes: 2 * 1024 * 1024,
+      });
+      if (result.error) {
+        results.push({ name, error: result.error });
+        continue;
+      }
+      results.push({ name, publicUrl: result.publicUrl, success: true });
+    }
+    const successCount = results.filter((r) => r.success).length;
+    await logStaffModule('staff_photo_upload.php', 'Update', 'Successful', String(successCount), memberId, audit);
+    return { success: true, message: 'Upload complete', results, overwriteExists: overwrite };
+  }
+
+  const staffId = String(payload.staffId || '').trim();
+  const outcome = await saveStaffPhoto(staffId, payload.file);
+  if (outcome.error) return { error: outcome.error };
+  await logStaffModule('staff_photo_upload.php', 'Update', 'Successful', staffId, memberId, audit);
+  return { success: true, message: `Photo saved for ${staffId}`, publicUrl: outcome.publicUrl };
 }
 
 export async function loadCertificatesScreen(memberId, fields = {}, audit = {}) {

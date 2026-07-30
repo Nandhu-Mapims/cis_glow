@@ -54,11 +54,11 @@ export default function FeeDeleteReport() {
         <div className="card-body row g-3 align-items-end">
           <div className="col-md-3">
             <label className="form-label">From</label>
-            <input type="date" className="form-control" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+            <input type="date" className="form-control" value={fromDate} max={toDate || undefined} onChange={(e) => setFromDate(e.target.value)} />
           </div>
           <div className="col-md-3">
             <label className="form-label">To</label>
-            <input type="date" className="form-control" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+            <input type="date" className="form-control" value={toDate} min={fromDate || undefined} onChange={(e) => setToDate(e.target.value)} />
           </div>
           <div className="col-md-2">
             <button type="submit" className="btn btn-primary" disabled={generating}>

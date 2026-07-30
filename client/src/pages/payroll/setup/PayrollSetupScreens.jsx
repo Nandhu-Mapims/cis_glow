@@ -182,7 +182,7 @@ export function PayrollCloseSetup({ data, save, busy }) {
           onChange={(event) => setPayrollComplete(event.target.checked)}
           value="1"
         />
-        <label className="form-check-label" htmlFor="payroll_complete">Payroll Complete</label>
+        <label className="form-check-label ms-2" htmlFor="payroll_complete">Payroll Complete</label>
       </div>
       <button type="submit" className="btn btn-primary" disabled={busy || !payrollMonth}>Update</button>
     </form>

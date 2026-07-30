@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
+import ConfirmModal from '../../components/ConfirmModal';
+import { useToast } from '../../components/ToastProvider';
 import { useTransientNotice } from '../../hooks/useTransientNotice';
 import ReceiptDetailCard from './ReceiptDetailCard';
 import { FEE_SCREEN_META } from './feeModuleMeta';
@@ -10,6 +12,7 @@ const META = FEE_SCREEN_META['delete-approve'];
 
 export default function FeeDeleteApprove() {
   const { settings, menu } = useOutletContext();
+  const toast = useToast();
   const [dataLoading, setDataLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState([]);
@@ -17,6 +20,7 @@ export default function FeeDeleteApprove() {
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState(null);
   const [message, setMessage] = useTransientNotice(4000);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const loadPending = async () => {
     const res = await api.get('/api/fees/delete/requests/pending');
@@ -51,19 +55,22 @@ export default function FeeDeleteApprove() {
 
   const approve = async () => {
     if (!selected) return;
-    if (!window.confirm(`Delete receipt ${selected} from student_fee?`)) return;
     setBusy(true);
     setError(null);
     try {
       const res = await api.post('/api/fees/delete/approve', { receiptNo: selected });
       setMessage(res.data.message || 'Deleted');
+      toast.success(res.data.message || `Receipt ${selected} deleted`);
       setSelected('');
       setDetail(null);
       await loadPending();
     } catch (err) {
-      setError(err.response?.data?.message || 'Approve failed');
+      const msg = err.response?.data?.message || 'Approve failed';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setBusy(false);
+      setConfirmOpen(false);
     }
   };
 
@@ -112,7 +119,7 @@ export default function FeeDeleteApprove() {
                 <div className="cis-fee-receipt-detail-wrap mb-3">
                   <ReceiptDetailCard receipt={detail.receipt} remarks={detail.remarks} />
                 </div>
-                <button type="button" className="btn btn-danger" disabled={busy} onClick={approve}>
+                <button type="button" className="btn btn-danger" disabled={busy} onClick={() => setConfirmOpen(true)}>
                   Delete Receipt
                 </button>
               </div>
@@ -127,6 +134,17 @@ export default function FeeDeleteApprove() {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        show={confirmOpen}
+        title="Delete receipt?"
+        message={`Delete receipt ${selected} from student_fee? This cannot be undone.`}
+        confirmLabel="Delete Receipt"
+        tone="danger"
+        busy={busy}
+        onConfirm={approve}
+        onClose={() => setConfirmOpen(false)}
+      />
     </FeePageShell>
   );
 }

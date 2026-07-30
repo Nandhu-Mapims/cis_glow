@@ -7,7 +7,7 @@ import UserAvatar from './UserAvatar';
  * Account dropdown (avatar + name + role + menu). Used in the desktop top bar
  * and the mobile header. `variant` picks light/dark trigger styling.
  */
-export default function UserMenu({ variant = 'light' }) {
+export default function UserMenu({ variant = 'light', compact = false }) {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -29,12 +29,14 @@ export default function UserMenu({ variant = 'light' }) {
   }, [menuOpen]);
 
   return (
-    <div className={`dropdown cis-usermenu cis-usermenu--${variant}`} ref={menuRef}>
+    <div className={`dropdown cis-usermenu cis-usermenu--${variant}${compact ? ' cis-usermenu--compact' : ''}`} ref={menuRef}>
       <button
         className="cis-usermenu-btn"
         type="button"
         aria-haspopup="menu"
         aria-expanded={menuOpen}
+        aria-label={user?.memberName ? `Account menu (${user.memberName})` : 'Account menu'}
+        title={user?.memberName || undefined}
         onClick={() => setMenuOpen((open) => !open)}
       >
         <UserAvatar
@@ -43,13 +45,17 @@ export default function UserMenu({ variant = 'light' }) {
           className="cis-header-avatar"
           size={36}
         />
-        <span className="cis-usermenu-meta d-none d-sm-flex">
-          <span className="cis-usermenu-name">{user?.memberName}</span>
-          {user?.accessType ? (
-            <small className="cis-usermenu-role">{user.accessType}</small>
-          ) : null}
-        </span>
-        <i className="fa fa-angle-down cis-usermenu-caret" aria-hidden="true" />
+        {!compact ? (
+          <>
+            <span className="cis-usermenu-meta d-none d-sm-flex">
+              <span className="cis-usermenu-name">{user?.memberName}</span>
+              {user?.accessType ? (
+                <small className="cis-usermenu-role">{user.accessType}</small>
+              ) : null}
+            </span>
+            <i className="fa fa-angle-down cis-usermenu-caret" aria-hidden="true" />
+          </>
+        ) : null}
       </button>
       <ul className={`dropdown-menu dropdown-menu-end cis-usermenu-panel${menuOpen ? ' show' : ''}`} role="menu">
         <li className="px-3 py-2">

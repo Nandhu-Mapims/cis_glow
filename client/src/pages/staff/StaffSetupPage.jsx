@@ -1,32 +1,70 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useOutletContext, useParams } from 'react-router-dom';
+import ConfirmModal from '../../components/ConfirmModal';
 import { SetupPageShell } from '../../components/PageShell';
 import SetupAlerts from '../../components/SetupAlerts';
+import { DragHandle, useDragReorder } from '../../hooks/useDragReorder';
 import { STAFF_SETUP_META } from './staffModuleMeta';
 import { useStaffSetupApi } from './useStaffModuleApi';
 
-function CrudRows({ rows, columns, onChange, onAdd }) {
+/** Passing `onReorder` opts a CrudRows table into drag-and-drop reordering (see
+ * useDragReorder) — the `order` column then becomes read-only since its value is
+ * driven by row position, not manual typing. */
+function CrudRows({ rows, columns, onChange, onAdd, onDelete, onReorder, actions }) {
+  const sortable = typeof onReorder === 'function';
+  const hasOrderColumn = columns.some((c) => c.key === 'order');
+  const { dragHandleProps, rowDropProps, rowClassName } = useDragReorder(rows, onReorder || (() => {}), {
+    orderKey: hasOrderColumn ? 'order' : null,
+  });
+
   return (
   <div className="table-responsive">
     <table className="table table-bordered table-sm">
-      <thead className="table-secondary"><tr>{columns.map((c) => <th key={c.key}>{c.label}</th>)}</tr></thead>
+      <thead className="table-secondary">
+        <tr>
+          {sortable ? <th style={{ width: '2rem' }} aria-hidden="true" /> : null}
+          {columns.map((c) => <th key={c.key}>{c.label}</th>)}
+          {onDelete ? <th className="text-end" style={{ width: '1%' }} /> : null}
+        </tr>
+      </thead>
       <tbody>
         {rows.map((row, i) => (
-          <tr key={row.id || `new-${i}`}>
+          <tr
+            key={row.id || `new-${i}`}
+            className={sortable ? rowClassName(i) : undefined}
+            {...(sortable ? rowDropProps(i) : {})}
+          >
+            {sortable ? (
+              <td className="text-center">
+                <DragHandle {...dragHandleProps(i)} />
+              </td>
+            ) : null}
             {columns.map((c) => (
               <td key={c.key}>
                 {c.type === 'checkbox' ? (
                   <input type="checkbox" checked={!!row[c.key]} onChange={(e) => onChange(i, c.key, e.target.checked)} />
+                ) : c.key === 'order' && sortable ? (
+                  <input className="form-control form-control-sm" value={row[c.key] ?? ''} readOnly disabled title="Drag the row's handle to reorder" />
                 ) : (
                   <input className="form-control form-control-sm" value={row[c.key] ?? ''} onChange={(e) => onChange(i, c.key, e.target.value)} />
                 )}
               </td>
             ))}
+            {onDelete ? (
+              <td className="text-end">
+                <button type="button" className="btn btn-sm btn-outline-danger" title="Delete row" onClick={() => onDelete(i)}>
+                  <i className="fa fa-trash" aria-hidden="true" />
+                </button>
+              </td>
+            ) : null}
           </tr>
         ))}
       </tbody>
     </table>
-    <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onAdd}>Add row</button>
+    <div className="d-flex align-items-center gap-2">
+      <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onAdd}>Add row</button>
+      {actions}
+    </div>
   </div>
   );
 }
@@ -103,6 +141,7 @@ function OrgChartPositionsTable({ rows, designationGroups, reportsToGroups, desi
 function OrgChartConfigForm({ data, rows, setRows, busy, onLoad, onSave, updateRow }) {
   const [levelTitle, setLevelTitle] = useState('');
   const [levelOrder, setLevelOrder] = useState('');
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   useEffect(() => {
     if (!data) return;
@@ -165,13 +204,22 @@ function OrgChartConfigForm({ data, rows, setRows, busy, onLoad, onSave, updateR
           onAdd={() => setRows((p) => [...p, { designationKey: '', reportsTo: '' }])}
           onRemove={() => {
             if (rows.length <= 1) return;
-            if (window.confirm('Confirm to remove last row?')) setRows((p) => p.slice(0, -1));
+            setConfirmRemove(true);
           }}
         />
       )}
       {data?.selectedLevelId && (
         <button type="submit" className="btn btn-danger mt-3" disabled={busy}>Save</button>
       )}
+      <ConfirmModal
+        show={confirmRemove}
+        title="Remove last row?"
+        message="Remove the last position row from this level?"
+        confirmLabel="Remove Row"
+        tone="warning"
+        onConfirm={() => { setRows((p) => p.slice(0, -1)); setConfirmRemove(false); }}
+        onClose={() => setConfirmRemove(false)}
+      />
     </form>
   );
 }
@@ -321,6 +369,7 @@ function DesignationEditForm({ staff, departments, designations, rows, setRows, 
   const [releavingInfo, setReleavingInfo] = useState('');
   const [releavingAttachment, setReleavingAttachment] = useState('');
   const [attachmentFile, setAttachmentFile] = useState(null);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   useEffect(() => {
     if (!staff) return;
@@ -419,7 +468,7 @@ function DesignationEditForm({ staff, departments, designations, rows, setRows, 
             onAdd={() => setRows((p) => [...p, { departmentId: '', designationId: '', unitType: 'II', fromDate: '', toDate: '', isAcademic: false }])}
             onRemove={() => {
               if (rows.length <= 1) return;
-              if (window.confirm('Confirm to remove last row?')) setRows((p) => p.slice(0, -1));
+              setConfirmRemove(true);
             }}
             onSetMainRow={(index) => setRows((prev) => prev.map((r, i) => ({ ...r, isAcademic: i === index })))}
           />
@@ -429,6 +478,16 @@ function DesignationEditForm({ staff, departments, designations, rows, setRows, 
       <div className="text-center">
         <button type="submit" className="btn btn-lg btn-danger px-5" disabled={busy}>Save</button>
       </div>
+
+      <ConfirmModal
+        show={confirmRemove}
+        title="Remove last row?"
+        message="Remove the last designation row for this staff member?"
+        confirmLabel="Remove Row"
+        tone="warning"
+        onConfirm={() => { setRows((p) => p.slice(0, -1)); setConfirmRemove(false); }}
+        onClose={() => setConfirmRemove(false)}
+      />
     </form>
   );
 }
@@ -658,8 +717,19 @@ function SetupBody({ screen, data, busy, onLoad, onSave, searchMore }) {
   if (screen === 'inspection-name') {
     return (
       <form onSubmit={(e) => { e.preventDefault(); onSave({ rows }); }}>
-        <CrudRows rows={rows} columns={[{ key: 'order', label: 'Order' }, { key: 'name', label: 'Inspection For' }]} onChange={updateRow} onAdd={() => setRows((p) => [...p, { name: '', order: p.length + 1 }])} />
-        <button type="submit" className="btn btn-danger mt-2" disabled={busy}>Update</button>
+        <CrudRows
+          rows={rows}
+          columns={[{ key: 'order', label: 'Order' }, { key: 'name', label: 'Inspection For' }]}
+          onChange={updateRow}
+          onAdd={() => setRows((p) => [...p, { name: '', order: p.length + 1 }])}
+          onReorder={setRows}
+          onDelete={(i) => {
+            const row = rows[i];
+            if (row.id) onSave({ action: 'delete', id: row.id });
+            else setRows((p) => p.filter((_, j) => j !== i));
+          }}
+          actions={<button type="submit" className="btn btn-danger btn-sm" disabled={busy}>Update</button>}
+        />
       </form>
     );
   }
@@ -681,8 +751,19 @@ function SetupBody({ screen, data, busy, onLoad, onSave, searchMore }) {
           <div className="col-md-4"><label className="form-label">Name</label><input className="form-control" defaultValue={data?.mainName} onBlur={(e) => onLoad({ mainCategoryId: data?.selectedMainId, mainName: e.target.value, mainOrder: data?.mainOrder })} /></div>
           <div className="col-md-2"><label className="form-label">Order</label><input type="number" className="form-control" defaultValue={data?.mainOrder} /></div>
         </div>
-        <CrudRows rows={rows} columns={[{ key: 'order', label: 'Order' }, { key: 'name', label: 'Sub Category' }]} onChange={updateRow} onAdd={() => setRows((p) => [...p, { name: '', order: p.length + 1 }])} />
-        <button type="submit" className="btn btn-danger mt-2" disabled={busy}>Update</button>
+        <CrudRows
+          rows={rows}
+          columns={[{ key: 'order', label: 'Order' }, { key: 'name', label: 'Sub Category' }]}
+          onChange={updateRow}
+          onAdd={() => setRows((p) => [...p, { name: '', order: p.length + 1 }])}
+          onReorder={setRows}
+          onDelete={(i) => {
+            const row = rows[i];
+            if (row.id) onSave({ action: 'delete', id: row.id, mainCategoryId: data?.selectedMainId });
+            else setRows((p) => p.filter((_, j) => j !== i));
+          }}
+          actions={<button type="submit" className="btn btn-danger btn-sm" disabled={busy}>Update</button>}
+        />
       </form>
     );
   }
@@ -795,10 +876,17 @@ function SetupBody({ screen, data, busy, onLoad, onSave, searchMore }) {
           }
           onChange={updateRow}
           onAdd={() => setRows((p) => [...p, screen === 'attachment-scategory' ? { name: '', order: p.length + 1 } : {}])}
+          onReorder={screen === 'attachment-scategory' ? setRows : undefined}
+          onDelete={(i) => {
+            const row = rows[i];
+            if (screen === 'attachment-scategory' && row.id) {
+              onSave({ action: 'delete', id: row.id, mainCategoryId: data?.selectedMainId, subCategoryId: data?.selectedSubId });
+            } else {
+              setRows((p) => p.filter((_, j) => j !== i));
+            }
+          }}
+          actions={<button type="submit" className="btn btn-danger btn-sm" disabled={busy}>Update</button>}
         />
-        )}
-        {(screen !== 'attachment-scategory' || (data?.selectedMainId && data?.selectedSubId)) && (
-        <button type="submit" className="btn btn-danger mt-2" disabled={busy}>Update</button>
         )}
       </form>
     );

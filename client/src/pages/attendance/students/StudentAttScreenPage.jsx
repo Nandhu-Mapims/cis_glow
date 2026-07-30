@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useOutletContext, useSearchParams } from 'react-router-dom';
 import api from '../../../api/client';
+import ConfirmModal from '../../../components/ConfirmModal';
 import DashboardLayout from '../../../layouts/DashboardLayout';
 import { printReportHtml } from '../../../utils/printReport';
 import { buildPgPunchPrintHtml } from '../../../utils/attendanceReportPrint';
@@ -454,12 +455,22 @@ function StudentApprovalList({ data, filterFields, onSelect, onSave, busy }) {
               <form onSubmit={(e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
+                const more = (detail.more || []).map((day) => (
+                  day.showForenoon !== undefined
+                    ? {
+                        id: day.id,
+                        m_att: day.showForenoon ? (fd.get(`m_att_${day.id}`) || day.forenoonMark) : '',
+                        e_att: day.showAfternoon ? (fd.get(`e_att_${day.id}`) || day.afternoonMark) : '',
+                      }
+                    : { id: day.id, m_att: fd.get(`m_att_${day.id}`) || day.markedType }
+                ));
                 onSave({
                   ...filterFields,
                   rid: detail.header.id,
                   att_status: fd.get('status'),
                   l_comments: fd.get('comments'),
                   comments: fd.get('comments'),
+                  more,
                   update: 'Confirm',
                 });
               }}
@@ -470,6 +481,110 @@ function StudentApprovalList({ data, filterFields, onSelect, onSave, busy }) {
                   {' · '}{detail.header.fromDate} — {detail.header.toDate}
                   {detail.header.pType ? ` · ${detail.header.pType}` : ''}
                 </p>
+                {detail.more?.length > 0 && detail.more[0].showForenoon === undefined && (
+                  <div className="mb-3">
+                    <label className="form-label d-block mb-1">Days</label>
+                    <table className="table table-sm table-bordered mb-0">
+                      <tbody>
+                        {detail.more.map((day) => (
+                          <tr key={day.id}>
+                            <td className="align-middle">
+                              {day.date}
+                              {day.session && day.session !== 'fullday' ? ` (${day.session})` : ''}
+                            </td>
+                            <td>
+                              <div className="d-flex gap-3">
+                                <label className="form-check mb-0">
+                                  <input
+                                    type="radio"
+                                    className="form-check-input"
+                                    name={`m_att_${day.id}`}
+                                    value="LE"
+                                    defaultChecked={day.markedType !== 'OD'}
+                                  />
+                                  <span className="form-check-label">LE</span>
+                                </label>
+                                <label className="form-check mb-0">
+                                  <input
+                                    type="radio"
+                                    className="form-check-input"
+                                    name={`m_att_${day.id}`}
+                                    value="OD"
+                                    defaultChecked={day.markedType === 'OD'}
+                                  />
+                                  <span className="form-check-label">OD</span>
+                                </label>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {detail.more?.length > 0 && detail.more[0].showForenoon !== undefined && (
+                  <div className="mb-3">
+                    <label className="form-label d-block mb-1">Days</label>
+                    <table className="table table-sm table-bordered mb-0">
+                      <tbody>
+                        {detail.more.map((day) => (
+                          <Fragment key={day.id}>
+                            {day.showForenoon && (
+                              <tr>
+                                <td className="align-middle">
+                                  {day.date}
+                                  <br />
+                                  <small className="text-muted">FN{day.requestedForenoon ? ` · ${day.requestedForenoon}` : ''}</small>
+                                </td>
+                                <td>
+                                  <div className="d-flex flex-wrap gap-2">
+                                    {['P', 'La', 'Pe', 'AB', 'OD'].map((opt) => (
+                                      <label key={opt} className="form-check mb-0">
+                                        <input
+                                          type="radio"
+                                          className="form-check-input"
+                                          name={`m_att_${day.id}`}
+                                          value={opt}
+                                          defaultChecked={day.forenoonMark === opt.toUpperCase()}
+                                        />
+                                        <span className="form-check-label">{opt}</span>
+                                      </label>
+                                    ))}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                            {day.showAfternoon && (
+                              <tr>
+                                <td className="align-middle">
+                                  {!day.showForenoon ? day.date : ''}
+                                  <br />
+                                  <small className="text-muted">AN{day.requestedAfternoon ? ` · ${day.requestedAfternoon}` : ''}</small>
+                                </td>
+                                <td>
+                                  <div className="d-flex flex-wrap gap-2">
+                                    {['P', 'La', 'Pe', 'AB', 'OD'].map((opt) => (
+                                      <label key={opt} className="form-check mb-0">
+                                        <input
+                                          type="radio"
+                                          className="form-check-input"
+                                          name={`e_att_${day.id}`}
+                                          value={opt}
+                                          defaultChecked={day.afternoonMark === opt.toUpperCase()}
+                                        />
+                                        <span className="form-check-label">{opt}</span>
+                                      </label>
+                                    ))}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
                 <div className="mb-2">
                   <label className="form-label">Status</label>
                   <select name="status" className="form-select" defaultValue={String(detail.header.status)}>
@@ -526,6 +641,7 @@ function PgAttSetupForm({ data, onLoad, onSave, busy }) {
   const [courseKey, setCourseKey] = useState('');
   const [semester, setSemester] = useState('1');
   const [groups, setGroups] = useState([emptyPgGroup()]);
+  const [pendingDeleteGroup, setPendingDeleteGroup] = useState(null);
 
   useEffect(() => {
     if (!data) return;
@@ -574,14 +690,19 @@ function PgAttSetupForm({ data, onLoad, onSave, busy }) {
   };
 
   const deleteGroup = (attGroup) => {
-    if (!attGroup || !window.confirm('Delete this schedule group?')) return;
+    if (!attGroup) return;
+    setPendingDeleteGroup(attGroup);
+  };
+
+  const confirmDeleteGroup = () => {
     onSave({
       tt_course: data.course_id,
       tt_ayear: data.academic_year,
       tt_cyear: semester,
       tt_cacademic: data.academic_type,
-      delete_group: attGroup,
+      delete_group: pendingDeleteGroup,
     });
+    setPendingDeleteGroup(null);
   };
 
   return (
@@ -609,7 +730,7 @@ function PgAttSetupForm({ data, onLoad, onSave, busy }) {
             <label className="form-label d-block">Year</label>
             <div className="d-flex flex-wrap gap-3">
               {Array.from({ length: totalSemester }, (_, i) => String(i + 1)).map((year) => (
-                <label key={year} className="form-check-label">
+                <label key={year} className="form-check">
                   <input
                     type="radio"
                     className="form-check-input me-1"
@@ -657,6 +778,7 @@ function PgAttSetupForm({ data, onLoad, onSave, busy }) {
                         type="date"
                         className="form-control form-control-sm"
                         value={group.from_date || ''}
+                        max={group.to_date || undefined}
                         onChange={(e) => updateGroup(index, { from_date: e.target.value })}
                       />
                     </td>
@@ -665,6 +787,7 @@ function PgAttSetupForm({ data, onLoad, onSave, busy }) {
                         type="date"
                         className="form-control form-control-sm"
                         value={group.to_date || ''}
+                        min={group.from_date || undefined}
                         onChange={(e) => updateGroup(index, { to_date: e.target.value })}
                       />
                     </td>
@@ -721,23 +844,21 @@ function PgAttSetupForm({ data, onLoad, onSave, busy }) {
                       </select>
                     </td>
                     <td>
-                      {group.att_group ? (
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => deleteGroup(group.att_group)}
-                          disabled={busy}
-                        >
-                          Delete
-                        </button>
-                      ) : null}
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => (group.att_group ? deleteGroup(group.att_group) : setGroups((prev) => prev.filter((_, i) => i !== index)))}
+                        disabled={busy}
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="d-flex justify-content-between align-items-center">
+          <div className="d-flex align-items-center gap-2">
             <button
               type="button"
               className="btn btn-sm btn-outline-secondary"
@@ -753,6 +874,16 @@ function PgAttSetupForm({ data, onLoad, onSave, busy }) {
       ) : (
         <p className="text-muted mb-0">Select a course and academic year to configure PG attendance timings.</p>
       )}
+      <ConfirmModal
+        show={Boolean(pendingDeleteGroup)}
+        title="Delete schedule group?"
+        message={`Delete schedule group "${pendingDeleteGroup}"? This cannot be undone.`}
+        confirmLabel="Delete Group"
+        tone="danger"
+        busy={busy}
+        onConfirm={confirmDeleteGroup}
+        onClose={() => setPendingDeleteGroup(null)}
+      />
     </form>
   );
 }
@@ -1015,6 +1146,7 @@ function HolidayRosterForm({ screen, data, onLoad, onSave, busy }) {
   const [studentList, setStudentList] = useState('');
   const [groups, setGroups] = useState([emptyRosterRow(isIntern)]);
   const [listPage, setListPage] = useState(1);
+  const [pendingDelete, setPendingDelete] = useState(null); // { kind: 'roster' | 'row', payload }
 
   useEffect(() => {
     if (!data) return;
@@ -1042,6 +1174,25 @@ function HolidayRosterForm({ screen, data, onLoad, onSave, busy }) {
   const updateGroup = (index, patch) => {
     setGroups((prev) => prev.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   };
+
+  const confirmPendingDelete = () => {
+    if (!pendingDelete) return;
+    onSave(pendingDelete.payload);
+    setPendingDelete(null);
+  };
+
+  const deleteConfirmModal = (
+    <ConfirmModal
+      show={Boolean(pendingDelete)}
+      title={pendingDelete?.kind === 'roster' ? 'Delete roster?' : 'Delete row?'}
+      message={`Delete ${pendingDelete?.label || 'this item'}? This cannot be undone.`}
+      confirmLabel="Delete"
+      tone="danger"
+      busy={busy}
+      onConfirm={confirmPendingDelete}
+      onClose={() => setPendingDelete(null)}
+    />
+  );
 
   const loadStudents = () => {
     if (!courseKeys.length) return;
@@ -1146,11 +1297,11 @@ function HolidayRosterForm({ screen, data, onLoad, onSave, busy }) {
                       type="button"
                       className="btn btn-sm btn-outline-danger"
                       disabled={busy}
-                      onClick={() => {
-                        if (window.confirm('Delete this roster?')) {
-                          onSave({ delete_ref_id: roster.ref_id, page: pagination.page });
-                        }
-                      }}
+                      onClick={() => setPendingDelete({
+                        kind: 'roster',
+                        label: roster.label || `Roster #${roster.ref_id}`,
+                        payload: { delete_ref_id: roster.ref_id, page: pagination.page },
+                      })}
                     >
                       Delete
                     </button>
@@ -1189,6 +1340,7 @@ function HolidayRosterForm({ screen, data, onLoad, onSave, busy }) {
             </ul>
           </div>
         ) : null}
+        {deleteConfirmModal}
       </div>
     );
   }
@@ -1288,10 +1440,10 @@ function HolidayRosterForm({ screen, data, onLoad, onSave, busy }) {
                   </td>
                 ) : null}
                 <td>
-                  <input type="date" className="form-control form-control-sm" value={group.from_date || ''} onChange={(e) => updateGroup(index, { from_date: e.target.value })} />
+                  <input type="date" className="form-control form-control-sm" value={group.from_date || ''} max={group.to_date || undefined} onChange={(e) => updateGroup(index, { from_date: e.target.value })} />
                 </td>
                 <td>
-                  <input type="date" className="form-control form-control-sm" value={group.to_date || ''} onChange={(e) => updateGroup(index, { to_date: e.target.value })} />
+                  <input type="date" className="form-control form-control-sm" value={group.to_date || ''} min={group.from_date || undefined} onChange={(e) => updateGroup(index, { to_date: e.target.value })} />
                 </td>
                 <td>
                   <input type="time" className="form-control form-control-sm" value={group.from_time || ''} onChange={(e) => updateGroup(index, { from_time: e.target.value })} />
@@ -1312,19 +1464,20 @@ function HolidayRosterForm({ screen, data, onLoad, onSave, busy }) {
                   </select>
                 </td>
                 <td>
-                  {group.id ? (
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-outline-danger"
-                      disabled={busy}
-                      onClick={() => {
-                        if (!window.confirm('Delete this row?')) return;
-                        onSave({ ref_id: data?.ref_id, delete_row_id: group.id });
-                      }}
-                    >
-                      Delete
-                    </button>
-                  ) : null}
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-danger"
+                    disabled={busy}
+                    onClick={() => (group.id
+                      ? setPendingDelete({
+                        kind: 'row',
+                        label: 'this roster row',
+                        payload: { ref_id: data?.ref_id, delete_row_id: group.id },
+                      })
+                      : setGroups((prev) => prev.filter((_, i) => i !== index)))}
+                  >
+                    Delete
+                  </button>
                 </td>
               </tr>
             ))}
@@ -1332,7 +1485,7 @@ function HolidayRosterForm({ screen, data, onLoad, onSave, busy }) {
         </table>
       </div>
 
-      <div className="d-flex justify-content-between align-items-center">
+      <div className="d-flex align-items-center gap-2">
         <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setGroups((prev) => [...prev, emptyRosterRow(isIntern)])}>
           + Add row
         </button>
@@ -1340,6 +1493,7 @@ function HolidayRosterForm({ screen, data, onLoad, onSave, busy }) {
           {busy ? 'Saving…' : (isAdd ? 'Save' : 'Update')}
         </button>
       </div>
+      {deleteConfirmModal}
     </form>
   );
 }
@@ -1503,6 +1657,7 @@ function PgPunchReportForm({ data, busy, onGenerate, reportHtml, isEntry }) {
               type="date"
               className="form-control"
               value={fromDate}
+              max={toDate || undefined}
               onChange={(e) => setFromDate(e.target.value)}
               required
             />
@@ -1514,6 +1669,7 @@ function PgPunchReportForm({ data, busy, onGenerate, reportHtml, isEntry }) {
               type="date"
               className="form-control"
               value={toDate}
+              min={fromDate || undefined}
               onChange={(e) => setToDate(e.target.value)}
               required
             />
@@ -1654,11 +1810,11 @@ function ScreenFilters({ screen, meta, data, filterFields, onGenerate, onSave, o
     <>
       <div className="col-md-3">
         <label className="form-label">From</label>
-        <input type="datetime-local" name="from_date" className="form-control" value={fields.from_date} onChange={(e) => set('from_date', e.target.value)} />
+        <input type="datetime-local" name="from_date" className="form-control" value={fields.from_date} max={fields.to_date || undefined} onChange={(e) => set('from_date', e.target.value)} />
       </div>
       <div className="col-md-3">
         <label className="form-label">To</label>
-        <input type="datetime-local" name="to_date" className="form-control" value={fields.to_date} onChange={(e) => set('to_date', e.target.value)} />
+        <input type="datetime-local" name="to_date" className="form-control" value={fields.to_date} min={fields.from_date || undefined} onChange={(e) => set('to_date', e.target.value)} />
       </div>
     </>
   );
@@ -1667,11 +1823,11 @@ function ScreenFilters({ screen, meta, data, filterFields, onGenerate, onSave, o
     <>
       <div className="col-md-3">
         <label className="form-label">From</label>
-        <input type="date" name="from_date" className="form-control" value={fields.from_date} onChange={(e) => set('from_date', e.target.value)} title="Optional — leave blank for all dates" />
+        <input type="date" name="from_date" className="form-control" value={fields.from_date} max={fields.to_date || undefined} onChange={(e) => set('from_date', e.target.value)} title="Optional — leave blank for all dates" />
       </div>
       <div className="col-md-3">
         <label className="form-label">To</label>
-        <input type="date" name="to_date" className="form-control" value={fields.to_date} onChange={(e) => set('to_date', e.target.value)} title="Optional — leave blank for all dates" />
+        <input type="date" name="to_date" className="form-control" value={fields.to_date} min={fields.from_date || undefined} onChange={(e) => set('to_date', e.target.value)} title="Optional — leave blank for all dates" />
       </div>
     </>
   );
@@ -1680,11 +1836,11 @@ function ScreenFilters({ screen, meta, data, filterFields, onGenerate, onSave, o
     <>
       <div className="col-md-3">
         <label className="form-label">From</label>
-        <input type="date" name="from_date" className="form-control" value={fields.from_date} onChange={(e) => set('from_date', e.target.value)} required />
+        <input type="date" name="from_date" className="form-control" value={fields.from_date} max={fields.to_date || undefined} onChange={(e) => set('from_date', e.target.value)} required />
       </div>
       <div className="col-md-3">
         <label className="form-label">To</label>
-        <input type="date" name="to_date" className="form-control" value={fields.to_date} onChange={(e) => set('to_date', e.target.value)} required />
+        <input type="date" name="to_date" className="form-control" value={fields.to_date} min={fields.from_date || undefined} onChange={(e) => set('to_date', e.target.value)} required />
       </div>
     </>
   );

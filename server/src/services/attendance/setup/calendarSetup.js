@@ -2,6 +2,7 @@ import { prisma } from '../../../config/prisma.js';
 import { escapeSql, parseId, parseOptionalId } from '../../../utils/sqlSafe.js';
 import {
   loadAcademicEvents,
+  loadCalendarCategories,
   loadCalendarEventTypes,
   loadReportAuthorities,
   loadStaffCategories,
@@ -177,7 +178,10 @@ export async function loadWorkingDaySetup(memberId, fields = {}, audit = {}) {
   const month = fields.calendar_month || new Date().toISOString().slice(0, 7);
   const [y, m] = month.split('-').map(Number);
   const daysInMonth = new Date(y, m, 0).getDate();
-  const eventTypes = await loadCalendarEventTypes();
+  const [eventTypes, categories] = await Promise.all([
+    loadCalendarEventTypes(),
+    loadCalendarCategories(),
+  ]);
 
   const rows = await prisma.$queryRawUnsafe(
     `SELECT id,
@@ -201,7 +205,7 @@ export async function loadWorkingDaySetup(memberId, fields = {}, audit = {}) {
   }
 
   await logStaffAttSetup('staff_academic_calendar.php', 'View', 'Successful', month, memberId, audit);
-  return { calendar_month: month, eventTypes, days };
+  return { calendar_month: month, eventTypes, categories, days };
 }
 
 export async function saveWorkingDaySetup(payload, memberId, audit = {}) {

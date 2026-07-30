@@ -61,11 +61,19 @@ function ActivityForm({ data, form, setForm, busy, onLookup }) {
             <div className="col-md-3">
               <input className="form-control" placeholder={idLabel} value={row.studentList || ''} disabled={busy} onChange={(e) => updateRow(index, 'studentList', e.target.value)} />
             </div>
-            <div className="col-md-4">
+            <div className="col-md-3">
               <textarea className="form-control" rows={1} placeholder="Names" value={row.studentNameList || ''} disabled={busy} onChange={(e) => updateRow(index, 'studentNameList', e.target.value)} />
             </div>
-            <div className="col-md-2">
+            <div className="col-md-3 d-flex gap-2">
               <button type="button" className="btn btn-outline-secondary btn-sm" disabled={busy} onClick={() => onLookup(index)}>Lookup</button>
+              <button
+                type="button"
+                className="btn btn-outline-danger btn-sm"
+                disabled={busy || (form.participantRows || []).length <= 1}
+                onClick={() => update('participantRows', (form.participantRows || []).filter((_, j) => j !== index))}
+              >
+                Remove
+              </button>
             </div>
           </div>
         ))}

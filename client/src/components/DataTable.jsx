@@ -181,9 +181,10 @@ export default function DataTable({
                 </tr>
               </thead>
               <tbody>
-                {paged.map((row) => {
+                {paged.map((row, rowIndex) => {
                   const key = getRowKey(row);
                   const clickable = Boolean(onRowClick);
+                  const displayIndex = rangeStart - 1 + rowIndex;
                   return (
                     <tr
                       key={key}
@@ -200,7 +201,7 @@ export default function DataTable({
                           key={col.key}
                           className={`${col.align ? `cis-dt-align-${col.align}` : ''}${col.numeric ? ' cis-dt-num' : ''}${col.primary ? ' cis-dt-primary' : ''}`}
                         >
-                          {col.render ? col.render(row) : row[col.key]}
+                          {col.render ? col.render(row, displayIndex) : row[col.key]}
                         </td>
                       ))}
                       {rowHref && (

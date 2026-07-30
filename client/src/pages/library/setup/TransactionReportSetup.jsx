@@ -9,8 +9,8 @@ export default function TransactionReportSetup({ data, busy, onLoad, onSave }) {
   return (
     <>
       <form onSubmit={(e) => { e.preventDefault(); onSave({ ...form, search: true }); }} className="row g-2 mb-3">
-        <div className="col-md-2"><input type="date" className="form-control" value={form.fromDate} onChange={(e) => set('fromDate', e.target.value)} /></div>
-        <div className="col-md-2"><input type="date" className="form-control" value={form.toDate} onChange={(e) => set('toDate', e.target.value)} /></div>
+        <div className="col-md-2"><input type="date" className="form-control" value={form.fromDate} max={form.toDate || undefined} onChange={(e) => set('fromDate', e.target.value)} /></div>
+        <div className="col-md-2"><input type="date" className="form-control" value={form.toDate} min={form.fromDate || undefined} onChange={(e) => set('toDate', e.target.value)} /></div>
         <div className="col-md-2">
           <select className="form-select" value={form.issueReturn} onChange={(e) => set('issueReturn', e.target.value)}>
             <option value="">Issued & Return</option>

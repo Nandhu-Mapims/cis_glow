@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
+import ChipMultiSelect from '../../../components/ChipMultiSelect';
 import LegacyDateInput from '../../../components/LegacyDateInput';
 import LegacyDateTimeInput from '../../../components/LegacyDateTimeInput';
 import ReportPrintBar from '../../../components/ReportPrintBar';
+import { FormSection } from '../../../components/FormShell';
 import { ensureLegacyDateTimePicker } from '../../../utils/legacyDateTimePickerLoader';
 import SetupAlerts from '../../fees/setup/SetupAlerts';
 import { useAcademicSetupApi } from '../setup/useAcademicSetupApi';
@@ -135,7 +137,7 @@ export default function CurriculumReportScreen({ screen }) {
     switch (config.type) {
       case 'datetime':
         return (
-          <>
+          <FormSection id="curriculum-filter-datetime" title="Date &amp; time" grid={false}>
             <CurriculumFilterRow label="Date &amp; time">
               <LegacyDateTimeInput
                 value={fields.current_date || ''}
@@ -147,12 +149,16 @@ export default function CurriculumReportScreen({ screen }) {
                 onSelect={(next) => patch('current_date', next)}
               />
             </CurriculumFilterRow>
-          </>
+          </FormSection>
         );
       case 'course-semester':
       case 'course-semester-batch':
         return (
-          <>
+          <FormSection
+            id="curriculum-filter-course-semester"
+            title={config.type === 'course-semester-batch' ? 'Course, semester &amp; batch options' : 'Course &amp; semester'}
+            grid={false}
+          >
             <CurriculumFilterRow label="Course">
               <GroupedSelect
                 options={data?.courseYearOptions}
@@ -193,23 +199,25 @@ export default function CurriculumReportScreen({ screen }) {
                 </div>
               </CurriculumFilterRow>
             ) : null}
-          </>
+          </FormSection>
         );
       case 'feedback':
         return (
-          <CurriculumFilterRow label="Feedback">
-            <select
-              className="form-select"
-              value={fields.category || ''}
-              disabled={generating}
-              onChange={(e) => patch('category', e.target.value)}
-            >
-              <option value="">--Select--</option>
-              {(data?.feedbackOptions || []).map((opt) => (
-                <option key={opt.id} value={opt.id}>{opt.title}</option>
-              ))}
-            </select>
-          </CurriculumFilterRow>
+          <FormSection id="curriculum-filter-feedback" title="Feedback round" grid={false}>
+            <CurriculumFilterRow label="Feedback">
+              <select
+                className="form-select"
+                value={fields.category || ''}
+                disabled={generating}
+                onChange={(e) => patch('category', e.target.value)}
+              >
+                <option value="">--Select--</option>
+                {(data?.feedbackOptions || []).map((opt) => (
+                  <option key={opt.id} value={opt.id}>{opt.title}</option>
+                ))}
+              </select>
+            </CurriculumFilterRow>
+          </FormSection>
         );
       case 'feedback-course': {
         const reportType = fields.report_type || data?.reportType || 'subject';
@@ -220,7 +228,7 @@ export default function CurriculumReportScreen({ screen }) {
             : [];
         const typeOptions = screen === 'feedback-report-pg' ? PG_REPORT_TYPES : UG_REPORT_TYPES;
         return (
-          <>
+          <FormSection id="curriculum-filter-feedback-course" title="Feedback round, type, course &amp; subjects" grid={false}>
             <CurriculumFilterRow label="Feedback">
               <select
                 className="form-select"
@@ -256,31 +264,29 @@ export default function CurriculumReportScreen({ screen }) {
               </CurriculumFilterRow>
             ) : null}
             {fields.category && reportType === 'subject' && fields.course_name ? (
-              <CurriculumFilterRow
-                label="Subject"
-                hint="Hold Ctrl (or Cmd) to select multiple subjects."
-              >
-                <select
-                  multiple
-                  className="form-select"
-                  size={Math.min(8, Math.max(4, (data?.subjectOptions || []).length))}
+              <CurriculumFilterRow label="Subject">
+                <ChipMultiSelect
+                  options={(data?.subjectOptions || []).map((opt) => ({ value: opt.value, label: opt.label }))}
                   value={subjectValues}
                   disabled={generating}
-                  onChange={(e) => patch('subject_name', [...e.target.selectedOptions].map((o) => o.value))}
-                >
-                  {(data?.subjectOptions || []).map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
+                  onChange={(next) => patch('subject_name', next)}
+                  emptySelectionText="No subjects selected"
+                  emptySearchText="No subjects match your search."
+                  listHeight={260}
+                />
               </CurriculumFilterRow>
             ) : null}
-          </>
+          </FormSection>
         );
       }
       case 'course-cyear-range':
       case 'course-cyear-month':
         return (
-          <>
+          <FormSection
+            id="curriculum-filter-course-cyear"
+            title={config.type === 'course-cyear-month' ? 'Course, year &amp; month' : 'Course, year &amp; date range'}
+            grid={false}
+          >
             <CurriculumFilterRow label="Course &amp; year">
               <GroupedSelect
                 options={data?.courseYearOptions}
@@ -326,11 +332,11 @@ export default function CurriculumReportScreen({ screen }) {
                 </div>
               </CurriculumFilterRow>
             )}
-          </>
+          </FormSection>
         );
       case 'staff-range':
         return (
-          <>
+          <FormSection id="curriculum-filter-staff-range" title="Staff &amp; date range" grid={false}>
             <CurriculumFilterRow label="Staff">
               <select
                 className="form-select"
@@ -364,11 +370,11 @@ export default function CurriculumReportScreen({ screen }) {
                 </div>
               </div>
             </CurriculumFilterRow>
-          </>
+          </FormSection>
         );
       case 'dept-range':
         return (
-          <>
+          <FormSection id="curriculum-filter-dept-range" title="Department &amp; date range" grid={false}>
             <CurriculumFilterRow label="Department">
               <select
                 className="form-select"
@@ -402,7 +408,7 @@ export default function CurriculumReportScreen({ screen }) {
                 </div>
               </div>
             </CurriculumFilterRow>
-          </>
+          </FormSection>
         );
       default:
         return null;

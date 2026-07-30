@@ -22,4 +22,6 @@
 .kiosk-room-list .list-group-item.active {
   background: var(--cis-primary);
   border-color: var(--cis-primary);
+  color: #fff;
+  box-shadow: none;
 }

@@ -61,7 +61,7 @@ const SAVERS = {
   'print-setup': (fields, memberId, _files, audit) => savePrintSetupSetup(fields, memberId, audit),
   'print-style': (fields, memberId, _files, audit) => savePrintStyleSetup(fields, memberId, audit),
   'lesson-plan': (fields, memberId, _files, audit) => saveLessonPlanSetup(fields, memberId, audit),
-  signature: (fields, memberId, _files, audit) => saveSignatureSetup(fields, memberId, audit),
+  signature: (fields, memberId, files, audit) => saveSignatureSetup({ ...fields, files }, memberId, audit),
   'payroll-emailer': (fields, memberId, _files, audit) => savePayrollEmailerSetup(fields, memberId, audit),
   'sms-cron': (fields, memberId, _files, audit) => saveSmsCronSetup(fields, memberId, audit),
 };

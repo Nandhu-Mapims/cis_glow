@@ -148,6 +148,20 @@ async function buildAttChartAggregates(staffRows, days, variant, audit) {
     .filter(Boolean);
 }
 
+async function computeStaffAttendanceCounts(s, lp, fromDate, toDate) {
+  let present = 0; let absent = 0; let late = 0; let permission = 0;
+  for (let m = new Date(fromDate).getTime(); m <= new Date(toDate).getTime(); m += 86400000) {
+    const d = new Date(m).toISOString().slice(0, 10);
+    const att = await getAttendance(s.id, s.staff_id, d, lp);
+    const flag = callAttendanceReport(att.m, att.e);
+    if (flag === 'X' || flag === 'p' || flag === '/') present += 1;
+    else if (flag === 'a') absent += 1;
+    if (att.late) late += 1;
+    if (att.permission) permission += 1;
+  }
+  return [s.staff_id, `${s.staff_initial || ''} ${s.staff_name || ''}`.trim(), present, absent, late, permission];
+}
+
 export async function loadAttendanceReportScreen(memberId, fields = {}, audit = {}) {
   const { fromDate, toDate } = parseDateRange(fields);
   const categories = fields.search_category || [];
@@ -162,19 +176,28 @@ export async function loadAttendanceReportScreen(memberId, fields = {}, audit = 
        ORDER BY staff_id ASC LIMIT ${audit.skipLog ? 10 : 300}`,
     );
 
-    for (const s of staffRows) {
-      const lp = await getLPTime(s.att_category);
-      let present = 0; let absent = 0; let late = 0; let permission = 0;
-      for (let m = new Date(fromDate).getTime(); m <= new Date(toDate).getTime(); m += 86400000) {
-        const d = new Date(m).toISOString().slice(0, 10);
-        const att = await getAttendance(s.id, s.staff_id, d, lp);
-        const flag = callAttendanceReport(att.m, att.e);
-        if (flag === 'X' || flag === 'p' || flag === '/') present += 1;
-        else if (flag === 'a') absent += 1;
-        if (att.late) late += 1;
-        if (att.permission) permission += 1;
-      }
-      bodyRows.push([s.staff_id, `${s.staff_initial || ''} ${s.staff_name || ''}`.trim(), present, absent, late, permission]);
+    // Each staff-day needs its own attendance computation (multiple raw
+    // queries apiece) — done one staff at a time this was ~90ms/staff-day,
+    // so 300 staff x a month blew well past any request timeout. Cache
+    // getLPTime per category (shared by most staff) and batch staff
+    // concurrently (same width as buildAttChartAggregates) to stay under
+    // the shared Prisma pool's connection_limit=10.
+    const lpCache = new Map();
+    const uniqueCategories = [...new Set(staffRows.map((s) => String(s.att_category || '1')))];
+    await Promise.all(uniqueCategories.map(async (cat) => {
+      lpCache.set(cat, await getLPTime(cat));
+    }));
+
+    const batchSize = audit.skipLog ? 5 : 8;
+    for (let i = 0; i < staffRows.length; i += batchSize) {
+      const batch = staffRows.slice(i, i + batchSize);
+      const results = await Promise.all(batch.map((s) => computeStaffAttendanceCounts(
+        s,
+        lpCache.get(String(s.att_category || '1')),
+        fromDate,
+        toDate,
+      )));
+      bodyRows.push(...results);
     }
   }
 
@@ -235,35 +258,214 @@ export async function teachingMonthReportMore(fields = {}) {
   return { rowHtml, present, absent, late, lop };
 }
 
+const WEEKDAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+
+/** ISO weekday (Mon=1..Sun=7) — matches PHP date('N'). */
+function isoWeekday(dateIso) {
+  const [y, mo, d] = String(dateIso).split('-').map(Number);
+  const js = new Date(y, mo - 1, d, 12, 0, 0).getDay();
+  return js === 0 ? 7 : js;
+}
+
+function emptyWeekdayBucket() {
+  return { total: 0, present: 0, absent: 0, per: 0, late: 0 };
+}
+
+/** Ports staff_yearly_report.php's per-staff attendance summary: header,
+ * summary cards, a Mo-Su weekly breakdown, consecutive-absence buckets, an
+ * OD/defaulter/approval box, and a full day-by-day grid. The legacy PHP
+ * accumulates several of these counters in more than one place per day
+ * (e.g. permission is added once per session AND again as a day total) —
+ * here each counter is sourced from a single authoritative field instead of
+ * replicating the double-counting, since the underlying per-session
+ * attendance resolution (getAttendance/modifiedAttendance) is already a
+ * faithful port and is reused as-is. */
 export async function loadYearlyReportScreen(memberId, fields = {}, audit = {}) {
   const staffId = String(fields.staff_id || '').trim();
   const { fromDate, toDate } = parseDateRange(fields);
-  if (!staffId) {
-    return { staff_id: '', from_date: formatDateDisplay(fromDate), to_date: formatDateDisplay(toDate), reportHtml: '' };
+  if (!staffId || !shouldGenerateReport(fields)) {
+    return { staff_id: staffId, from_date: formatDateDisplay(fromDate), to_date: formatDateDisplay(toDate), days: [] };
   }
 
+  // SELECT * pulls in legacy zero-date columns (e.g. quarters_date =
+  // '0000-00-00') that Prisma's query engine can't parse as a DateTime —
+  // select only the columns this screen actually needs.
   const profile = await prisma.$queryRawUnsafe(
-    `SELECT * FROM staff_profile_tb WHERE del=1 AND staff_id='${escapeSql(staffId)}' LIMIT 1`,
+    `SELECT id, staff_id, staff_name, staff_initial, staff_title, job_category, att_category
+     FROM staff_profile_tb WHERE del=1 AND staff_id='${escapeSql(staffId)}' LIMIT 1`,
   );
   if (!profile[0]) return { error: 'Staff not found' };
-
   const s = profile[0];
-  const lp = await getLPTime(s.att_category);
-  const dayCells = [];
-  for (let m = new Date(fromDate).getTime(); m <= new Date(toDate).getTime(); m += 86400000) {
-    const d = new Date(m).toISOString().slice(0, 10);
-    const att1 = await getAttendance(s.id, s.staff_id, d, lp);
-    const att = await modifiedAttendance(s.id, s.staff_id, d, lp, att1, 1);
-    dayCells.push([formatDateDisplay(d), callAttendanceReport(att.m, att.e)]);
+
+  const desgRows = await prisma.$queryRawUnsafe(`
+    SELECT DES.name AS designation, DEPT.name AS department
+    FROM staff_designation_tb AS SD
+    LEFT JOIN staff_desg_master AS DES ON DES.id = SD.designation AND DES.del=1
+    LEFT JOIN staff_dept_master AS DEPT ON DEPT.id = SD.department AND DEPT.del=1
+    WHERE SD.del=1 AND SD.is_academic=1 AND SD.staff_id=${Number(s.id)}
+      AND SD.from_date<='${escapeSql(fromDate)}' AND (SD.to_date>='${escapeSql(fromDate)}' OR SD.to_date='0000-00-00')
+    ORDER BY SD.id ASC LIMIT 1
+  `);
+  let designation = desgRows[0]?.designation || '';
+  const department = desgRows[0]?.department || '';
+  if (!designation && s.job_category) {
+    const catRows = await prisma.$queryRawUnsafe(
+      `SELECT category_name FROM edu_setup_tb WHERE category='Category' AND id='${escapeSql(String(s.job_category))}' LIMIT 1`,
+    );
+    designation = catRows[0]?.category_name || '';
   }
 
-  await logStaffAttSetup('staff_yearly_report.php', fields.Submit ? 'Generate' : 'View', 'Successful', staffId, memberId, audit);
+  const lp = await getLPTime(s.att_category);
+  const lopList = await calDefaulterPending(s.id, s.staff_id, lp, fromDate, toDate, 1);
+  const lopM = new Set(lopList.m);
+  const lopE = new Set(lopList.e);
+
+  const weekday = {};
+  for (let i = 1; i <= 7; i += 1) weekday[i] = emptyWeekdayBucket();
+
+  const totals = {
+    totalDays: 0, working: 0, present: 0, absent: 0, cl: 0, el: 0, od: 0, permission: 0, late: 0,
+    reqFromLeave: 0, reqFromDefaulter: 0, reqPostDefaulter: 0, reqPostPermission: 0,
+  };
+  const leaveStreaks = { 0.5: 0, 1: 0, 1.5: 0, 2: 0, 3: 0 };
+  let streak = 0;
+  const bumpStreak = () => {
+    if (streak <= 0) return;
+    const bucket = streak > 2 ? 3 : streak;
+    leaveStreaks[bucket] = (leaveStreaks[bucket] || 0) + 1;
+    streak = 0;
+  };
+
+  const days = [];
+
+  for (let m = new Date(fromDate).getTime(); m <= new Date(toDate).getTime(); m += 86400000) {
+    // `m` is UTC-midnight (matches the rest of this file's date-string
+    // convention), but calDefaulterPending's lopDay.m/e epochs are keyed on
+    // local-midnight timestamps (its own internal loop parses `${d}T00:00:00`
+    // with no 'Z', which JS treats as local time) — recompute the epoch the
+    // same way it does so the lopM/lopE lookups below actually match.
+    const cur = new Date(m).toISOString().slice(0, 10);
+    const cday = isoWeekday(cur);
+    const epoch = Math.floor(new Date(`${cur}T00:00:00`).getTime() / 1000);
+    totals.totalDays += 1;
+
+    const att1 = await getAttendance(s.id, s.staff_id, cur, lp);
+    const att = await modifiedAttendance(s.id, s.staff_id, cur, lp, att1, 1);
+
+    let msinfo = att.msinfo || '';
+    let mPresent = 0;
+    let ePresent = 0;
+    const isHoliday = String(att.s).toLowerCase() === 'h';
+    if (isHoliday) {
+      att.m = 'h';
+      att.e = 'h';
+      mPresent = 1;
+      ePresent = 1;
+      msinfo = att.h_str || msinfo || 'HW';
+    }
+
+    if (lopM.has(epoch) && lopE.has(epoch)) msinfo = 'Ab';
+    else if (lopM.has(epoch)) msinfo = 'FN:Ab';
+    else if (lopE.has(epoch)) msinfo = 'AN:Ab';
+
+    // Morning (FN) session
+    if (lopM.has(epoch)) {
+      att.m = 'a';
+      totals.absent += 0.5; totals.working += 0.5;
+      weekday[cday].absent += 0.5; weekday[cday].total += 0.5;
+    } else {
+      if (att.m === 'la') { totals.late += 1; weekday[cday].late += 1; }
+      if (att.attopt?.m === 'od') { totals.od += 0.5; }
+      else if (att.m === 'le' && att.attopt?.m === 'cl') { totals.cl += 0.5; }
+      else if (att.m === 'le' && att.attopt?.m === 'el') { totals.el += 0.5; }
+      else if (att.m === 'a') { totals.absent += 0.5; weekday[cday].absent += 0.5; }
+      else if (att.m !== 'h' && att.m !== 'le') { totals.present += 0.5; weekday[cday].present += 0.5; mPresent = 1; }
+      if (att.m !== 'h') { totals.working += 0.5; weekday[cday].total += 0.5; }
+      if (att.msrc === 'lr') totals.reqFromLeave += 0.5;
+      else if (att.msrc === 'dr') totals.reqFromDefaulter += 0.5;
+      if (att.m === 'a' && att.msrc === 'dr') totals.reqPostDefaulter += 0.5;
+      else if (att.m === 'pe' && att.msrc === 'dr') totals.reqPostPermission += 1;
+    }
+
+    // Afternoon (AN) session
+    if (lopE.has(epoch)) {
+      att.e = 'a';
+      totals.absent += 0.5; totals.working += 0.5;
+      weekday[cday].absent += 0.5; weekday[cday].total += 0.5;
+    } else {
+      if (att.e === 'la') { totals.late += 1; weekday[cday].late += 1; }
+      if (att.attopt?.e === 'od') { totals.od += 0.5; }
+      else if (att.e === 'le' && att.attopt?.e === 'cl') { totals.cl += 0.5; }
+      else if (att.e === 'le' && att.attopt?.e === 'el') { totals.el += 0.5; }
+      else if (att.e === 'a') { totals.absent += 0.5; weekday[cday].absent += 0.5; }
+      else if (att.e !== 'h' && att.e !== 'le') { totals.present += 0.5; weekday[cday].present += 0.5; ePresent = 1; }
+      if (att.e !== 'h') { totals.working += 0.5; weekday[cday].total += 0.5; }
+      if (att.esrc === 'lr') totals.reqFromLeave += 0.5;
+      else if (att.esrc === 'dr') totals.reqFromDefaulter += 0.5;
+      if (att.e === 'a' && att.esrc === 'dr') totals.reqPostDefaulter += 0.5;
+      else if (att.e === 'pe' && att.esrc === 'dr') totals.reqPostPermission += 1;
+    }
+
+    if (mPresent === 0) streak += 0.5; else bumpStreak();
+    if (ePresent === 0) streak += 0.5; else bumpStreak();
+
+    totals.permission += att.pe || 0;
+    weekday[cday].per += att.pe || 0;
+
+    const status = callAttendanceReport(att.m, att.e).toUpperCase();
+    days.push({
+      date: cur,
+      display: formatDateDisplay(cur),
+      weekday: WEEKDAY_LABELS[cday - 1],
+      status,
+      mFlag: att.m || '',
+      eFlag: att.e || '',
+      isHoliday,
+      detail: msinfo || '',
+    });
+  }
+  bumpStreak();
+
+  await logStaffAttSetup('staff_yearly_report.php', 'Generate', 'Successful', staffId, memberId, audit);
   return {
     staff_id: staffId,
-    staff_name: s.staff_name,
     from_date: formatDateDisplay(fromDate),
     to_date: formatDateDisplay(toDate),
-    reportHtml: htmlTable(['Date', 'Status'], dayCells),
+    staff: {
+      staffId: s.staff_id,
+      name: `${s.staff_title || ''} ${s.staff_name || ''} ${s.staff_initial || ''}`.replace(/\s+/g, ' ').trim(),
+      designation,
+      department,
+    },
+    summary: {
+      totalDays: totals.totalDays,
+      workingDays: totals.working,
+      present: totals.present,
+    },
+    weekly: {
+      labels: WEEKDAY_LABELS,
+      working: { total: totals.working, byDay: WEEKDAY_LABELS.map((_, i) => weekday[i + 1].total) },
+      present: { total: totals.present, byDay: WEEKDAY_LABELS.map((_, i) => weekday[i + 1].present) },
+      leave: { total: totals.cl + totals.el + totals.absent, byDay: WEEKDAY_LABELS.map((_, i) => weekday[i + 1].absent) },
+      permission: { total: totals.permission, byDay: WEEKDAY_LABELS.map((_, i) => weekday[i + 1].per) },
+      late: { total: totals.late, byDay: WEEKDAY_LABELS.map((_, i) => weekday[i + 1].late) },
+    },
+    leaveStreaks: {
+      '0.5': leaveStreaks[0.5] || 0,
+      '1': leaveStreaks[1] || 0,
+      '1.5': leaveStreaks[1.5] || 0,
+      '2': leaveStreaks[2] || 0,
+      '>2': leaveStreaks[3] || 0,
+    },
+    approvals: {
+      od: totals.od,
+      defaulter: totals.reqFromDefaulter,
+      preApprovalLeave: totals.reqFromLeave,
+      preApprovalPermission: totals.permission,
+      postApprovalDefaulter: totals.reqPostDefaulter,
+      postApprovalPermission: totals.reqPostPermission,
+    },
+    days,
   };
 }
 

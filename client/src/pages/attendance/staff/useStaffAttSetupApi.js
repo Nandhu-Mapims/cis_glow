@@ -63,7 +63,7 @@ export function useStaffAttScreenApi(screen) {
     setError(null);
     try {
       const isHeavy = fields.Submit && (
-        screen === 'daily-attendance' || screen.startsWith('att-chart')
+        screen === 'daily-attendance' || screen === 'attendance-report' || screen === 'yearly-report' || screen.startsWith('att-chart')
       );
       const config = isHeavy ? { timeout: 180000 } : undefined;
       const res = await api.post(`/api/attendance/staff/${screen}`, { fields }, config);

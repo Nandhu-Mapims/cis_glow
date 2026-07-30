@@ -355,10 +355,30 @@
   background: var(--cis-bg);
 }
 
+/* Alternate day-row shading so each day's block of per-period mini-forms
+   is visually distinguishable from its neighbours in the dense grid. */
+.period-setup-grid tbody tr {
+  border-top: 2px solid var(--cis-border);
+}
+
+.period-setup-grid tbody tr:first-child {
+  border-top: none;
+}
+
+.period-setup-day-row-a .period-setup-day-col,
+.period-setup-day-row-a .period-setup-combined-col {
+  background: var(--cis-bg-subtle);
+}
+
+.period-setup-day-row-b .period-setup-day-col,
+.period-setup-day-row-b .period-setup-combined-col {
+  background: var(--cis-surface);
+}
+
 /* ── Curriculum reports (shared shell) ── */
 .curriculum-report-filters {
   position: sticky;
-  top: 0;
+  top: var(--cis-header-height, 64px);
   z-index: 5;
   border: 1px solid var(--cis-border);
   border-radius: var(--cis-card-radius);
@@ -378,7 +398,26 @@
   background: var(--cis-bg);
 }
 
+.curriculum-batch-color-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.curriculum-batch-color-picker {
+  width: 2.25rem;
+  height: 2rem;
+  padding: 0.15rem;
+  border: 1px solid var(--cis-border);
+  border-radius: var(--cis-radius-sm);
+  background: var(--cis-surface);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 .curriculum-batch-color-input {
+  flex: 1;
+  min-width: 0;
   font-family: monospace;
   font-weight: 600;
   text-transform: uppercase;

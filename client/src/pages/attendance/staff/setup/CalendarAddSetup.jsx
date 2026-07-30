@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toDateInputValue } from '../../../../utils/dateInputs';
 
 export default function CalendarAddSetup({ data, busy, onSave }) {
   const [form, setForm] = useState({});
@@ -8,8 +9,8 @@ export default function CalendarAddSetup({ data, busy, onSave }) {
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSave({ ...f, Submit: 'Update', fresult: 1 }); }}>
       <div className="row g-3">
-        <div className="col-md-3"><label className="form-label">From Date</label><input className="form-control" value={f.from_date || ''} onChange={(e) => set('from_date', e.target.value)} /></div>
-        <div className="col-md-3"><label className="form-label">To Date</label><input className="form-control" value={f.to_date || ''} onChange={(e) => set('to_date', e.target.value)} /></div>
+        <div className="col-md-3"><label className="form-label">From Date</label><input type="date" className="form-control" value={toDateInputValue(f.from_date)} onChange={(e) => set('from_date', e.target.value)} /></div>
+        <div className="col-md-3"><label className="form-label">To Date</label><input type="date" className="form-control" value={toDateInputValue(f.to_date)} onChange={(e) => set('to_date', e.target.value)} /></div>
         <div className="col-md-3"><label className="form-label">Staff ID</label><input className="form-control" value={f.staff_id || ''} onChange={(e) => set('staff_id', e.target.value)} /></div>
         <div className="col-md-3"><label className="form-label">Event</label>
           <select className="form-select" value={f.a_event || ''} onChange={(e) => set('a_event', e.target.value)}>

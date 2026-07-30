@@ -22,6 +22,36 @@ function contrastText(hex) {
   return lum > 0.5 ? '#000000' : '#ffffff';
 }
 
+function BatchColorField({ value, onChange, previewTextColor }) {
+  const hex = normalizeHex(value);
+  const cssColor = hexCss(value);
+
+  return (
+    <div className="curriculum-batch-color-field">
+      <input
+        type="color"
+        className="curriculum-batch-color-picker"
+        value={cssColor}
+        onChange={(e) => onChange(normalizeHex(e.target.value))}
+        aria-label="Choose color"
+      />
+      <input
+        className="form-control form-control-sm curriculum-batch-color-input"
+        type="text"
+        maxLength={6}
+        value={hex}
+        placeholder="FFFFFF"
+        style={{
+          backgroundColor: cssColor,
+          color: previewTextColor || contrastText(value),
+        }}
+        onChange={(e) => onChange(normalizeHex(e.target.value))}
+        aria-label="Hex color code"
+      />
+    </div>
+  );
+}
+
 export default function BatchColorSetup() {
   const { data, busy, error, notice, load, save } = useAcademicSetupApi('batch-color');
   const [rows, setRows] = useState([]);
@@ -49,7 +79,7 @@ export default function BatchColorSetup() {
       <SetupAlerts notice={notice} error={error} busy={busy} />
       <form onSubmit={handleSave}>
         <CurriculumSetupCard title="Batch Color">
-          <div className="table-responsive" style={{ maxWidth: '36rem' }}>
+          <div className="table-responsive" style={{ maxWidth: '42rem' }}>
             <table className="table table-bordered table-sm mb-0 curriculum-batch-color-table">
               <thead className="table-secondary">
                 <tr>
@@ -63,31 +93,20 @@ export default function BatchColorSetup() {
                   <tr key={row.batchNo}>
                     <td className="align-middle">Batch {row.batchLabel}</td>
                     <td>
-                      <input
-                        className="form-control form-control-sm curriculum-batch-color-input"
-                        type="text"
-                        maxLength={6}
-                        value={normalizeHex(row.backColor)}
-                        style={{
-                          backgroundColor: hexCss(row.backColor),
-                          color: normalizeHex(row.foreColor).length === 6
+                      <BatchColorField
+                        value={row.backColor}
+                        onChange={(backColor) => updateRow(i, { backColor })}
+                        previewTextColor={
+                          normalizeHex(row.foreColor).length === 6
                             ? hexCss(row.foreColor)
-                            : contrastText(row.backColor),
-                        }}
-                        onChange={(e) => updateRow(i, { backColor: normalizeHex(e.target.value) })}
+                            : contrastText(row.backColor)
+                        }
                       />
                     </td>
                     <td>
-                      <input
-                        className="form-control form-control-sm curriculum-batch-color-input"
-                        type="text"
-                        maxLength={6}
-                        value={normalizeHex(row.foreColor)}
-                        style={{
-                          backgroundColor: hexCss(row.foreColor),
-                          color: contrastText(row.foreColor),
-                        }}
-                        onChange={(e) => updateRow(i, { foreColor: normalizeHex(e.target.value) })}
+                      <BatchColorField
+                        value={row.foreColor}
+                        onChange={(foreColor) => updateRow(i, { foreColor })}
                       />
                     </td>
                   </tr>

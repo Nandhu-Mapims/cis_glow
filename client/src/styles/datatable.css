@@ -340,3 +340,26 @@ th.cis-dt-align-right .cis-dt-sort-btn { justify-content: flex-end; }
   .cis-dt-skel-bar { animation: none; opacity: 0.6; }
   .cis-dt-row-clickable { transition: none; }
 }
+
+/* Nested/expandable panel attached to a parent table row (e.g. subject tt-rows / mark-rows) */
+.cis-nested-panel {
+  margin: 0 0 0.75rem 1.5rem;
+  padding: 0.75rem 0.75rem 0.5rem;
+  border: 1px solid var(--cis-border);
+  border-left: 3px solid var(--cis-primary);
+  border-radius: 0 8px 8px 0;
+  background: var(--cis-bg);
+}
+
+.cis-nested-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.cis-nested-panel-title {
+  font-weight: 650;
+  font-size: 0.875rem;
+  color: var(--cis-text);
+}

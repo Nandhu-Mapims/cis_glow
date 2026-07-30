@@ -139,22 +139,38 @@ export async function loadAddressLabelScreen(memberId, fields = {}, audit = {}) 
   };
 }
 
+function courseTypeCodeFromName(courseName) {
+  if (courseName === 'U.G') return 1;
+  if (courseName === 'P.G') return 2;
+  return 0;
+}
+
 export async function loadAttachmentsReportScreen(memberId, fields = {}, audit = {}) {
   const lookups = await loadStudentLookups();
-  if (!fields.Submit && !fields.search_course) {
+  if (!fields.Submit && !fields.search_course && !(fields.search_by && fields.search_input)) {
     await logStudentModule('student_attachments_report.php', 'View', 'Successful', '', memberId, audit);
-    return { ...lookups, reportHtml: null };
+    return { ...lookups, reportHtml: null, students: null };
   }
-  let sql = `SELECT A.id, A.register_no, A.student_name, A.student_initial, A.course_id
-    FROM student_profile_tb AS A WHERE A.del = 1 AND ${studentActiveSql('A')}`;
+
+  let sql = `SELECT A.id, A.register_no, A.student_name, A.student_initial, A.course_id, C.course_name
+    FROM student_profile_tb AS A
+    LEFT JOIN basic_setup_course_tb AS C ON C.id = CAST(A.course_id AS UNSIGNED)
+    WHERE A.del = 1 AND ${studentActiveSql('A')}`;
+  if (fields.search_by === 'roll_no' && fields.search_input) {
+    const ids = String(fields.search_input).split(',').map((s) => s.trim()).filter(Boolean).map((s) => `'${escapeSql(s)}'`);
+    if (ids.length) sql += ` AND A.register_no IN (${ids.join(',')})`;
+  } else if (fields.search_by === 'batch' && fields.search_input) {
+    sql += ` AND A.academic_year='${escapeSql(fields.search_input)}'`;
+  }
   if (fields.search_course) {
     const [courseId, admissionYear] = String(fields.search_course).split('___');
     if (courseId) sql += ` AND A.course_id='${escapeSql(courseId)}'`;
     if (admissionYear) sql += ` AND A.academic_year='${escapeSql(admissionYear)}'`;
   }
   sql += ' ORDER BY A.register_no ASC LIMIT 500';
-  const students = await prisma.$queryRawUnsafe(sql);
-  const studentIds = students.map((s) => Number(s.id)).filter((id) => Number.isInteger(id));
+  const rawStudents = await prisma.$queryRawUnsafe(sql);
+  const studentIds = rawStudents.map((s) => Number(s.id)).filter((id) => Number.isInteger(id));
+
   const attachmentCounts = studentIds.length
     ? await prisma.$queryRawUnsafe(
       `SELECT s_id, COUNT(*) AS c FROM student_attachment_tb
@@ -163,13 +179,44 @@ export async function loadAttachmentsReportScreen(memberId, fields = {}, audit =
     )
     : [];
   const countsById = new Map(attachmentCounts.map((r) => [Number(r.s_id), Number(r.c)]));
+
+  // Required attachment count per course type (UG/PG) — drives the pending/in-review/complete status.
+  const typeCounts = await prisma.$queryRawUnsafe(
+    `SELECT ug, pg FROM master_setup WHERE category = 'Attachment' AND del != 0`,
+  );
+  const requiredByCode = { 1: 0, 2: 0 };
+  typeCounts.forEach((t) => {
+    if (Number(t.ug) === 1) requiredByCode[1] += 1;
+    if (Number(t.pg) === 2) requiredByCode[2] += 1;
+  });
+
+  const students = rawStudents.map((s) => {
+    const fileCount = countsById.get(Number(s.id)) || 0;
+    const required = requiredByCode[courseTypeCodeFromName(s.course_name)] || 0;
+    const status = fileCount === 0 ? 'pending' : (required > 0 && fileCount >= required ? 'complete' : 'in_review');
+    return {
+      id: Number(s.id),
+      registerNo: s.register_no,
+      name: formatStudentName(s),
+      courseName: s.course_name || null,
+      fileCount,
+      requiredCount: required,
+      status,
+    };
+  });
+
   const rows = students.map((s) => [
-    escapeHtml(s.register_no),
-    escapeHtml(formatStudentName(s)),
-    escapeHtml(String(countsById.get(Number(s.id)) || 0)),
+    escapeHtml(s.registerNo),
+    escapeHtml(s.name),
+    escapeHtml(String(s.fileCount)),
   ]);
   await logStudentModule('student_attachments_report.php', 'Generate', 'Successful', String(rows.length), memberId, audit);
-  return { ...lookups, reportHtml: wrapReportHtml('Student Attachments Report', tableHtml(['Register No', 'Name', 'Files'], rows)) };
+  return {
+    ...lookups,
+    students,
+    count: students.length,
+    reportHtml: wrapReportHtml('Student Attachments Report', tableHtml(['Register No', 'Name', 'Files'], rows)),
+  };
 }
 
 export async function loadTempAffidavitScreen(memberId, fields = {}, audit = {}) {
@@ -457,25 +504,53 @@ export async function loadPhotoUploadScreen(memberId, _fields = {}, audit = {}) 
   return { uploads: [] };
 }
 
-export async function savePhotoUploadScreen(payload, memberId, audit = {}) {
-  const files = Array.isArray(payload.files) ? payload.files : [];
-  const results = [];
-  for (const file of files) {
-    const name = String(file.name || '').trim();
-    if (!/\.(png|jpg|jpeg)$/i.test(name)) {
-      results.push({ name, error: 'Only .png or .jpg named register_no.ext are allowed' });
-      continue;
-    }
-    const result = await saveLegacyBinaryFile({
-      folder: 'student_idcard',
-      file: { name, data: file.data },
-      allowedExt: new Set(['png', 'jpg', 'jpeg']),
-      preserveName: true,
-      maxBytes: 2 * 1024 * 1024,
-    });
-    if (result.error) results.push({ name, error: result.error });
-    else results.push({ name, publicUrl: result.publicUrl, success: true });
+async function savePhoto(registerNo, file) {
+  if (!registerNo) return { error: 'Select a student first' };
+  if (!file?.name || !file?.data) return { error: 'Choose a photo to upload' };
+  const ext = String(file.name).split('.').pop()?.toLowerCase() || '';
+  if (!['png', 'jpg', 'jpeg'].includes(ext)) {
+    return { error: 'Only .png or .jpg photos are allowed' };
   }
-  await logStudentModule('student_photo_upload.php', 'Update', 'Successful', String(results.length), memberId, audit);
-  return { success: true, message: 'Upload complete', results };
+  const result = await saveLegacyBinaryFile({
+    folder: 'student_idcard',
+    file: { name: `${registerNo}.${ext}`, data: file.data },
+    allowedExt: new Set(['png', 'jpg', 'jpeg']),
+    preserveName: true,
+    maxBytes: 2 * 1024 * 1024,
+  });
+  if (result.error) return { error: result.error };
+  return { success: true, savedAs: `${registerNo}.${ext}`, publicUrl: result.publicUrl };
+}
+
+// Two ways in: pick one student then upload their photo (any original file name — see
+// MORE_HANDLERS['photo-upload']), or a bulk batch where each file's own name IS the
+// register no (legacy student_photo_upload.php convention, e.g. 24CSE001.jpg). Either
+// way the file is always saved as `<register_no>.<ext>`, matching the naming convention
+// studentIdCardPhotoUrl() looks up elsewhere (id card, profile, etc).
+export async function savePhotoUploadScreen(payload, memberId, audit = {}) {
+  const bulkFiles = Array.isArray(payload.files) ? payload.files : null;
+
+  if (bulkFiles) {
+    const results = [];
+    for (const file of bulkFiles) {
+      const name = String(file?.name || '').trim();
+      const match = /^(.+)\.(png|jpe?g)$/i.exec(name);
+      if (!match) {
+        results.push({ name, error: 'File must be named register_no.png/.jpg' });
+        continue;
+      }
+      const registerNo = match[1];
+      const outcome = await savePhoto(registerNo, file);
+      results.push(outcome.error ? { name, registerNo, error: outcome.error } : { name, registerNo, ...outcome });
+    }
+    const successCount = results.filter((r) => r.success).length;
+    await logStudentModule('student_photo_upload.php', 'Update', 'Successful', `${successCount}/${results.length}`, memberId, audit);
+    return { success: true, message: `${successCount} of ${results.length} photo(s) saved`, results };
+  }
+
+  const registerNo = String(payload.registerNo || '').trim();
+  const outcome = await savePhoto(registerNo, payload.file);
+  if (outcome.error) return { error: outcome.error };
+  await logStudentModule('student_photo_upload.php', 'Update', 'Successful', registerNo, memberId, audit);
+  return { success: true, message: `Photo saved for ${registerNo}`, publicUrl: outcome.publicUrl };
 }

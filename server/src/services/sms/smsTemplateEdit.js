@@ -33,7 +33,14 @@ export async function loadSmsTemplateEdit(memberId, fields = {}, audit = {}) {
   let editing = null;
   const editId = Number(fields.editId || fields.edit_row_id || 0);
   if (editId > 0) {
-    const row = await prisma.sms_template_tb.findFirst({ where: { id: editId, del: 1 } });
+    // Do not hydrate full Prisma model: legacy rows may contain zero dates ('0000-00-00 00:00:00') in updated_dt
+    const editRows = await prisma.$queryRawUnsafe(`
+      SELECT id, template_id, sms_template, sample_message
+      FROM sms_template_tb
+      WHERE id = ${editId} AND del = 1
+      LIMIT 1
+    `);
+    const row = editRows[0];
     if (row) {
       editing = {
         id: row.id,
@@ -64,15 +71,19 @@ export async function loadSmsTemplateEdit(memberId, fields = {}, audit = {}) {
 }
 
 export async function saveSmsTemplateEdit(payload, memberId, audit = {}) {
-  const { create, update } = auditFields(memberId, audit);
+  const { update } = auditFields(memberId, audit);
 
   if (payload.action === 'delete' || payload.delete === 'Confirm') {
     const id = Number(payload.confirm || payload.id);
     if (!id) return { success: false, message: 'Select a template to delete.' };
-    await prisma.sms_template_tb.update({
-      where: { id },
-      data: { del: 0, ...update },
-    });
+    await prisma.$executeRawUnsafe(`
+      UPDATE sms_template_tb SET
+        del = 0,
+        updated_dt = NOW(),
+        updated_ip = '${escapeSql(update.updated_ip)}',
+        updated_by = '${escapeSql(String(update.updated_by))}'
+      WHERE id = ${id} AND del = 1
+    `);
     await logModulePage(PAGE, 'Delete', 'Successful', String(id), memberId, audit);
     return {
       success: true,
@@ -90,15 +101,16 @@ export async function saveSmsTemplateEdit(payload, memberId, audit = {}) {
     return { success: false, message: 'Template ID and content are required.' };
   }
 
-  await prisma.sms_template_tb.update({
-    where: { id },
-    data: {
-      template_id: templateId,
-      sms_template: content,
-      sample_message: sample,
-      ...update,
-    },
-  });
+  await prisma.$executeRawUnsafe(`
+    UPDATE sms_template_tb SET
+      template_id = '${escapeSql(templateId)}',
+      sms_template = '${escapeSql(content)}',
+      sample_message = '${escapeSql(sample)}',
+      updated_dt = NOW(),
+      updated_ip = '${escapeSql(update.updated_ip)}',
+      updated_by = '${escapeSql(String(update.updated_by))}'
+    WHERE id = ${id} AND del = 1
+  `);
 
   await logModulePage(PAGE, 'Update', 'Successful', String(id), memberId, audit);
   return {

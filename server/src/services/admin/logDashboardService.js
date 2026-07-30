@@ -401,18 +401,20 @@ async function loadLogDashboardDataInner(memberId, fields) {
   return payload;
 }
 
-function getCachedPayload(cacheKey, sections) {
+function getCachedPayload(cacheKey, sections, roles = []) {
   const cached = dashboardCache.get(cacheKey);
   if (!cached || Date.now() - cached.at >= CACHE_TTL_MS) return null;
 
   const { data } = cached;
   const hasPanels = Boolean(data?.panels);
   const hasActivities = Boolean(data?.activities);
+  const rolesLoaded = data?.rolesLoaded || [];
+  const hasAllRoles = roles.every((role) => rolesLoaded.includes(role));
 
   if (sections.includes('panels') && sections.includes('activities')) {
-    return hasPanels && hasActivities ? data : null;
+    return hasPanels && hasActivities && hasAllRoles ? data : null;
   }
-  if (sections.includes('panels') && hasPanels) {
+  if (sections.includes('panels') && hasPanels && hasAllRoles) {
     return mergeDashboardData({}, {
       selectedDate: data.selectedDate,
       selectedDateLabel: data.selectedDateLabel,
@@ -435,7 +437,7 @@ export async function loadLogDashboardData(memberId, fields = {}, audit = {}) {
   const loadKey = inflightKey(cacheKey, sections, roles);
 
   if (!bypassCache) {
-    const cached = getCachedPayload(cacheKey, sections);
+    const cached = getCachedPayload(cacheKey, sections, roles);
     if (cached) return cached;
 
     if (inflightLoads.has(loadKey)) {

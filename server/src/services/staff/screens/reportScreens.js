@@ -829,8 +829,10 @@ export async function loadPublicationDciScreen(memberId, fields = {}, audit = {}
       escapeHtml(p.p_journal_name),
       escapeHtml(String(p.p_year || '')),
     ]);
-    blocks.push(`<h5>${escapeHtml(formatStaffName(s))} (${escapeHtml(s.staff_id)})</h5>
-      ${tableHtml(['Title', 'Journal', 'Year'], pubRows)}`);
+    blocks.push(`<div class="cis-report-section"><div class="cis-report-section-inner">
+      <h5>${escapeHtml(formatStaffName(s))} (${escapeHtml(s.staff_id)})</h5>
+      ${tableHtml(['Title', 'Journal', 'Year'], pubRows)}
+      </div></div>`);
   }
   await logStaffModule('dci_staff_publication_report.php', 'Generate', 'Successful', String(blocks.length), memberId, audit);
   return { departments, reportHtml: wrapReportHtml('DCI Publication Report', blocks.join('') || '<p>No publications found.</p>') };

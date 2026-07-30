@@ -167,6 +167,11 @@ body {
   opacity: 0.65;
 }
 
+.cis-usermenu--compact .cis-usermenu-btn {
+  padding: 0.2rem;
+  gap: 0;
+}
+
 /* Dark variant — sits on the dark top navigation bar */
 .cis-usermenu--dark .cis-usermenu-btn {
   border-color: rgba(255, 255, 255, 0.16);
@@ -350,13 +355,12 @@ html[data-cis-sidebar='light'] .cis-usermenu--dark .cis-usermenu-caret { color: 
   padding-right: 0.85rem;
 }
 
-.cis-topnav-bar-brand {
+.cis-topnav-bar-single {
   justify-content: space-between;
   gap: 1rem;
   min-height: 52px;
-  padding-top: 0.45rem;
-  padding-bottom: 0.45rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
 }
 
 .cis-topnav-tools {
@@ -437,6 +441,50 @@ html[data-cis-sidebar='light'] .cis-topnav-iconbtn:hover {
   box-shadow: none;
 }
 
+.cis-cmdk-trigger {
+  width: auto;
+  height: 38px;
+  padding: 0 0.7rem 0 0.65rem;
+  gap: 0.45rem;
+  border-radius: 999px;
+}
+
+.cis-cmdk-trigger i {
+  font-size: 0.75rem;
+}
+
+.cis-cmdk-trigger-kbd {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 0.4rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.cis-cmdk-trigger:hover .cis-cmdk-trigger-kbd {
+  border-color: rgba(255, 255, 255, 0.32);
+  color: #fff;
+}
+
+html[data-cis-sidebar='light'] .cis-cmdk-trigger-kbd {
+  border-color: var(--cis-border);
+  background: var(--cis-surface);
+  color: var(--cis-text-muted);
+}
+
+html[data-cis-sidebar='light'] .cis-cmdk-trigger:hover .cis-cmdk-trigger-kbd {
+  border-color: var(--cis-primary);
+  color: var(--cis-primary);
+}
+
 .cis-topnav-iconbtn-dot {
   position: absolute;
   top: 7px;
@@ -496,9 +544,12 @@ html[data-cis-sidebar='light'] .cis-topnav-lastlogin small {
 }
 
 .cis-topnav-bar-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
   min-height: 36px;
-  padding-top: 0.15rem;
-  padding-bottom: 0.2rem;
   overflow: visible;
 }
 
@@ -566,6 +617,15 @@ html[data-cis-sidebar='light'] .cis-topnav-lastlogin small {
   position: relative;
   width: min(280px, 36vw);
   flex-shrink: 0;
+}
+
+.cis-topnav-search--compact {
+  width: min(160px, 14vw);
+  transition: width 0.18s ease;
+}
+
+.cis-topnav-search--compact:focus-within {
+  width: min(260px, 26vw);
 }
 
 .cis-topnav-search-results {
@@ -671,15 +731,38 @@ html[data-cis-sidebar='light'] .cis-topnav-lastlogin small {
 }
 
 .cis-topnav-menu {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 0;
   list-style: none;
   margin: 0;
   padding: 0;
   min-height: 32px;
   width: 100%;
+}
+
+/* Sliding highlight pill — shared by the top bar and the mega-menu rail.
+   Moved imperatively (transform/width/height) so it glides between items
+   instead of the background snapping from one item straight to another. */
+.cis-topnav-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(var(--cis-primary-rgb), 0.95), rgba(var(--cis-primary-rgb), 0.75));
+  box-shadow: 0 4px 12px rgba(var(--cis-primary-rgb), 0.24);
+  opacity: 0;
+  z-index: 0;
+  pointer-events: none;
+  will-change: transform, width, height;
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.24s ease,
+    opacity 0.16s ease;
 }
 
 .cis-topnav-item {
@@ -693,6 +776,8 @@ html[data-cis-sidebar='light'] .cis-topnav-lastlogin small {
 }
 
 .cis-topnav-link {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 0.28rem;
@@ -708,7 +793,7 @@ html[data-cis-sidebar='light'] .cis-topnav-lastlogin small {
   line-height: 1.2;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: color 0.15s ease;
 }
 
 .cis-topnav-link i:first-child {
@@ -719,14 +804,12 @@ html[data-cis-sidebar='light'] .cis-topnav-lastlogin small {
 .cis-topnav-link:hover,
 .cis-topnav-link:focus {
   color: #fff;
-  background: rgba(255, 255, 255, 0.1);
+  text-decoration: none;
 }
 
 .cis-topnav-item.is-active > .cis-topnav-link,
 .cis-topnav-item.is-open > .cis-topnav-link {
   color: #fff;
-  background: linear-gradient(135deg, rgba(var(--cis-primary-rgb), 0.95), rgba(var(--cis-primary-rgb), 0.75));
-  box-shadow: 0 4px 12px rgba(var(--cis-primary-rgb), 0.24);
 }
 
 .cis-topnav-caret {
@@ -739,48 +822,299 @@ html[data-cis-sidebar='light'] .cis-topnav-lastlogin small {
   transform: rotate(180deg);
 }
 
-.cis-topnav-panel {
+/* Mega panel: full dropdown anchored under the menu bar, sliding
+   horizontally to line up under whichever top-level item is open. */
+.cis-topnav-mega-wrap {
   position: absolute;
-  top: calc(100% + 0.25rem);
+  top: 100%;
   left: 0;
-  min-width: 210px;
-  max-width: min(320px, 90vw);
-  max-height: min(70vh, 460px);
-  overflow: auto;
-  padding: 0.35rem;
-  border-radius: 10px;
+  margin-top: 0.5rem;
+  z-index: 1400;
+  pointer-events: none;
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cis-topnav-mega-wrap.is-open {
+  pointer-events: auto;
+}
+
+.cis-topnav-mega {
+  display: flex;
+  align-items: stretch;
+  min-width: 420px;
+  max-width: min(960px, calc(100vw - 2rem));
+  max-height: min(70vh, 520px);
+  border-radius: 14px;
+  overflow: hidden;
   background: #fff;
   border: 1px solid var(--cis-border);
-  box-shadow: 0 16px 36px rgba(26, 26, 26, 0.18);
-  z-index: 1400;
-  scrollbar-width: thin;
-  list-style: none;
+  box-shadow: 0 24px 60px rgba(26, 26, 26, 0.22);
   opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transform: translateY(-8px) scale(0.98);
+  transform: translateY(-10px) scale(0.98);
   transform-origin: top left;
-  transition:
-    opacity 0.18s ease,
-    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
-    visibility 0.18s ease;
+  transition: opacity 0.2s ease, transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.cis-topnav-item.is-open > .cis-topnav-panel {
+.cis-topnav-mega-wrap.is-open .cis-topnav-mega {
   opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
   transform: translateY(0) scale(1);
 }
 
-.cis-topnav-item:nth-last-child(-n + 4) .cis-topnav-panel {
-  left: auto;
-  right: 0;
-  transform-origin: top right;
+.cis-topnav-mega-rail {
+  position: relative;
+  flex: 0 0 200px;
+  max-width: 42%;
+  padding: 0.6rem;
+  overflow-y: auto;
+  background: linear-gradient(180deg, var(--cis-sidebar-bg-elevated) 0%, var(--cis-sidebar-bg) 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  scrollbar-width: thin;
 }
 
-.cis-topnav-item:nth-last-child(-n + 4).is-open > .cis-topnav-panel {
-  transform: translateY(0) scale(1);
+.cis-topnav-mega-rail-item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.cis-topnav-mega-rail-item + .cis-topnav-mega-rail-item {
+  margin-top: 0.15rem;
+}
+
+.cis-topnav-mega-rail-item:hover,
+.cis-topnav-mega-rail-item:focus-visible,
+.cis-topnav-mega-rail-item.is-active {
+  color: #fff;
+  outline: none;
+}
+
+.cis-topnav-mega-rail-item i {
+  font-size: 0.75rem;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+.cis-topnav-mega-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.7rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  animation: cis-mega-fade 0.2s ease;
+}
+
+@keyframes cis-mega-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mega panel items are grouped by their originating mainMenu (e.g. "Exam
+   Batch", "Certificate", "Marks") — many of those share short, generic item
+   labels ("Add", "Edit", "Type", "Report") that only make sense with that
+   grouping visible. CSS column-count flows sections top-to-bottom in source
+   order, which stranded short columns next to a tall one whenever a big and
+   a small section landed side by side. Columns are pre-balanced in JS
+   (packSectionsIntoColumns in TopNav.jsx) instead, so this is a plain flex
+   row of equal-width columns, each stacking its assigned sections. */
+.cis-topnav-mega-columns {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.cis-topnav-mega-column {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.cis-topnav-mega-section {
+  padding: 0.5rem 0.6rem 0.55rem;
+  border-radius: 10px;
+  background: var(--cis-bg-subtle);
+}
+
+.cis-topnav-mega-section-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.3rem;
+  padding: 0 0.15rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cis-primary);
+}
+
+.cis-topnav-mega-section-label::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--cis-primary);
+}
+
+.cis-topnav-mega-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.cis-topnav-mega-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  color: var(--cis-text);
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cis-topnav-mega-link i {
+  width: 1rem;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+
+.cis-topnav-mega-link:hover {
+  background: var(--cis-primary-soft);
+  color: var(--cis-primary);
+  text-decoration: none;
+}
+
+.cis-topnav-mega-link.is-active {
+  background: var(--cis-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.cis-topnav-mega-link.is-active i {
+  opacity: 0.95;
+}
+
+@media (max-width: 1240px) {
+  .cis-topnav-mega {
+    max-width: min(760px, calc(100vw - 2rem));
+  }
+
+  .cis-topnav-mega-rail {
+    flex-basis: 170px;
+  }
+}
+
+/* ── Desktop top bar, narrow tier (lg–xl, ~992–1199px) ──
+   At these widths the brand text + full-width search + icon buttons + menu
+   were all competing for the same row, so the menu ran out of room and
+   wrapped to a second, uneven line. Reclaim space from both ends: drop the
+   institution name (logo alone still identifies the app) and the command
+   palette's keyboard hint, shrink the search box and icon buttons, and
+   tighten the menu's own gaps/padding so items keep to one row. */
+@media (max-width: 1199.98px) {
+  .cis-topnav-bar {
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+  }
+
+  .cis-topnav-brand-text {
+    display: none;
+  }
+
+  .cis-topnav-tools {
+    gap: 0.4rem;
+  }
+
+  .cis-topnav-search--compact {
+    width: min(120px, 9vw);
+  }
+
+  .cis-topnav-search--compact:focus-within {
+    width: min(220px, 22vw);
+  }
+
+  .cis-cmdk-trigger-kbd {
+    display: none;
+  }
+
+  .cis-cmdk-trigger {
+    padding: 0 0.55rem;
+  }
+
+  .cis-topnav-iconbtn {
+    width: 34px;
+    height: 34px;
+    font-size: 0.85rem;
+  }
+
+  .cis-topnav-menu {
+    gap: 0.05rem;
+  }
+
+  .cis-topnav-link {
+    padding: 0.16rem 0.32rem;
+    gap: 0.22rem;
+    font-size: 0.7rem;
+  }
+}
+
+/* ── Desktop top bar, tightest tier (just above the lg breakpoint, ~992–1099px) ──
+   Even trimmed down, 7–8 top-level categories plus tools rarely fit in one
+   row at this width. Drop the now-redundant menu search (⌘K / Ctrl K opens
+   the same lookup via the command palette) and let the menu itself scroll
+   horizontally instead of wrapping — a scrollbar reads as intentional,
+   a broken second row does not. */
+@media (max-width: 1099.98px) {
+  .cis-topnav-search {
+    display: none;
+  }
+
+  .cis-topnav-menu {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .cis-topnav-menu::-webkit-scrollbar {
+    display: none;
+  }
+
+  .cis-topnav-item {
+    flex: 0 0 auto;
+  }
 }
 
 .cis-topnav-panel.is-inline {
@@ -789,9 +1123,12 @@ html[data-cis-sidebar='light'] .cis-topnav-lastlogin small {
   max-width: none;
   min-width: 0;
   margin-top: 0.35rem;
+  padding: 0.35rem;
+  border-radius: 10px;
   box-shadow: none;
   background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  list-style: none;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -867,6 +1204,7 @@ html[data-cis-sidebar='light'] .cis-topnav-lastlogin small {
 .cis-topnav-panel-link:hover {
   background: var(--cis-primary-soft);
   color: var(--cis-primary);
+  text-decoration: none;
 }
 
 .cis-topnav-panel-link.is-active {
@@ -979,7 +1317,6 @@ html[data-cis-sidebar='light'] .cis-topnav-lastlogin small {
 .cis-topnav-menu-mobile .cis-topnav-panel {
   position: static;
   margin-top: 0.25rem;
-  max-height: none;
   max-width: none;
   min-width: 0;
   background: rgba(255, 255, 255, 0.06);
@@ -1014,10 +1351,6 @@ html[data-cis-sidebar='light'] .cis-topnav-drawer {
   color: var(--cis-text);
   border-bottom-color: var(--cis-border);
   box-shadow: 0 1px 0 var(--cis-border), 0 8px 20px rgba(26, 26, 26, 0.04);
-}
-
-html[data-cis-sidebar='light'] .cis-topnav-bar-brand {
-  border-bottom-color: var(--cis-border);
 }
 
 html[data-cis-sidebar='light'] .cis-topnav-tools .cis-theme-control-trigger {
@@ -1109,3 +1442,63 @@ html[data-cis-sidebar='light'] .cis-topnav-drawer-close {
   }
 }
 
+/* ── Radio / checkbox label spacing safety net ──
+   Many screens wrap a bare <input type="radio|checkbox"> and its text inside
+   a single <label> with no explicit flex/gap utility, which collapses the
+   space between the control and its text (and between adjacent options) down
+   to a single JSX whitespace character. This normalizes that spacing
+   app-wide without touching every screen. Labels that already opt into a
+   layout (Bootstrap flex utilities, .form-check, or a bespoke class) are
+   left alone. */
+label:has(> input[type='radio']):not(.d-flex):not(.d-inline-flex):not(.form-check):not(.cis-list-radio):not(.exam-schedule-semester-option):not(.stipend-copy-type-option):not(.stipend-report-type-option):not(.cis-fee-bank-option),
+label:has(> input[type='checkbox']):not(.d-flex):not(.d-inline-flex):not(.form-check):not(.cis-list-radio):not(.exam-schedule-semester-option):not(.stipend-copy-type-option):not(.stipend-report-type-option):not(.cis-fee-bank-option) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+label:has(> input[type='radio']):not(.d-flex):not(.d-inline-flex):not(.form-check):not(.cis-list-radio):not(.exam-schedule-semester-option):not(.stipend-copy-type-option):not(.stipend-report-type-option):not(.cis-fee-bank-option) input[type='radio'],
+label:has(> input[type='checkbox']):not(.d-flex):not(.d-inline-flex):not(.form-check):not(.cis-list-radio):not(.exam-schedule-semester-option):not(.stipend-copy-type-option):not(.stipend-report-type-option):not(.cis-fee-bank-option) input[type='checkbox'] {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+
+/* ── Shared drag-and-drop row reordering (useDragReorder hook) ──
+   Used by any editable CRUD table with a draggable "order" column, across
+   several modules (staff setup, TV/kiosk widget lists, committee rows, NAAC
+   items). One shared look so drag handles read the same everywhere. */
+.cis-dnd-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--cis-radius-sm);
+  color: var(--cis-text-subtle);
+  cursor: grab;
+}
+
+.cis-dnd-handle:hover {
+  background: var(--cis-bg-subtle);
+  color: var(--cis-text);
+}
+
+.cis-dnd-handle:active {
+  cursor: grabbing;
+}
+
+.cis-dnd-row-dragging {
+  opacity: 0.45;
+  background: var(--cis-bg-subtle);
+}
+
+.cis-dnd-row-dragover > td {
+  box-shadow: inset 0 2px 0 var(--cis-primary);
+}
+
+tr.cis-dnd-row-dragging,
+tr.cis-dnd-row-dragover {
+  transition: background-color 0.12s ease, opacity 0.12s ease;
+}

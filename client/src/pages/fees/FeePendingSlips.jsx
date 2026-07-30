@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext, useNavigate } from 'react-router-dom';
 import api from '../../api/client';
 import { FEE_SCREEN_META } from './feeModuleMeta';
 import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
+import DataTable from '../../components/DataTable';
 
 import { formatIndianMoneyDisplay } from './feeUiHelpers';
 
@@ -10,28 +11,13 @@ const META = FEE_SCREEN_META['slips-pending'];
 
 export default function FeePendingSlips() {
   const { settings, menu } = useOutletContext();
+  const navigate = useNavigate();
   const [dataLoading, setDataLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [registerNo, setRegisterNo] = useState('');
   const [error, setError] = useState(null);
   const [slips, setSlips] = useState([]);
   const [total, setTotal] = useState(0);
-  const [sortBy, setSortBy] = useState('newest');
-
-  const sortedSlips = useMemo(() => {
-    const list = [...slips];
-    const dateKey = (slip) => String(slip.paidDate || slip.createdAt || '');
-    if (sortBy === 'oldest') {
-      list.sort((a, b) => dateKey(a).localeCompare(dateKey(b)));
-    } else if (sortBy === 'amount-desc') {
-      list.sort((a, b) => (Number(b.amount) || 0) - (Number(a.amount) || 0));
-    } else if (sortBy === 'amount-asc') {
-      list.sort((a, b) => (Number(a.amount) || 0) - (Number(b.amount) || 0));
-    } else {
-      list.sort((a, b) => dateKey(b).localeCompare(dateKey(a)));
-    }
-    return list;
-  }, [slips, sortBy]);
 
   const loadSlips = async (roll = '') => {
     setSearching(true);
@@ -66,6 +52,84 @@ export default function FeePendingSlips() {
     e.preventDefault();
     await loadSlips(registerNo.trim());
   };
+
+  const columns = useMemo(() => [
+    {
+      key: 'registerNo',
+      header: 'Register No',
+      primary: true,
+      sortable: true,
+      searchField: true,
+      width: '10rem',
+      render: (row) => (
+        <Link to={`/fees/history?registerNo=${encodeURIComponent(row.registerNo)}`} onClick={(e) => e.stopPropagation()}>
+          {row.registerNo}
+        </Link>
+      ),
+    },
+    {
+      key: 'studentName',
+      header: 'Student',
+      sortable: true,
+      searchField: true,
+      render: (row) => (
+        <>
+          {row.studentName || row.studentLabel || '—'}
+          {row.degreeName ? <div className="text-muted small">{row.degreeName}</div> : null}
+        </>
+      ),
+    },
+    {
+      key: 'paidDate',
+      header: 'Paid Date',
+      sortable: true,
+      sortValue: (row) => String(row.paidDate || row.createdAt || ''),
+      render: (row) => row.paidDate || '—',
+    },
+    {
+      key: 'payBank',
+      header: 'Bank',
+      sortable: true,
+      hideOnMobile: true,
+      render: (row) => <span className="text-uppercase">{row.payBank || '—'}</span>,
+    },
+    {
+      key: 'receipts',
+      header: 'Receipts',
+      hideOnMobile: true,
+      render: (row) => row.receipts || '—',
+    },
+    {
+      key: 'amount',
+      header: 'Amount',
+      align: 'right',
+      numeric: true,
+      sortable: true,
+      sortValue: (row) => Number(row.amount) || 0,
+      render: (row) => formatIndianMoneyDisplay(row.amount),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      align: 'center',
+      render: () => <span className="badge bg-warning-soft">Pending</span>,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      align: 'center',
+      hideOnMobile: false,
+      render: (row) => (
+        <Link
+          to={`/fees/slips/${encodeURIComponent(row.groupId)}/approve`}
+          className="btn btn-sm btn-primary"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Approve
+        </Link>
+      ),
+    },
+  ], []);
 
   return (
     <FeePageShell
@@ -112,83 +176,30 @@ export default function FeePendingSlips() {
         </div>
       </form>
 
-      {slips.length > 0 && (
-        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-          <span className="text-muted small">Sort slips</span>
-          <select
-            className="form-select form-select-sm cis-fee-slip-sort"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-            <option value="amount-desc">Amount: high to low</option>
-            <option value="amount-asc">Amount: low to high</option>
-          </select>
-        </div>
-      )}
-
-      {sortedSlips.length > 0 ? (
-        <div className="row g-3 cis-fee-pending-slip-grid">
-          {sortedSlips.map((slip) => (
-            <div key={slip.groupId} className="col-md-6 col-xl-4">
-              <section className="card shadow-sm h-100 cis-fee-slip-card">
-                <div className="cis-fee-slip-card-header">
-                  <div>
-                    <span className="badge cis-fee-slip-chip">Pending</span>
-                    <Link to={`/fees/history?registerNo=${encodeURIComponent(slip.registerNo)}`}>
-                      {slip.registerNo}
-                    </Link>
-                    <div className="cis-fee-slip-card-subtitle">
-                      {slip.studentName || slip.studentLabel || '—'}
-                      {slip.degreeName ? ` · ${slip.degreeName}` : ''}
-                    </div>
-                  </div>
-                  <div className="cis-fee-slip-card-amount">{formatIndianMoneyDisplay(slip.amount)}</div>
-                </div>
-                <ul className="list-group list-group-flush cis-fee-pending-slip-meta">
-                  <li className="list-group-item d-flex justify-content-between">
-                    <span>Paid date</span>
-                    <span>{slip.paidDate || '—'}</span>
-                  </li>
-                  <li className="list-group-item d-flex justify-content-between">
-                    <span>Bank</span>
-                    <span className="text-uppercase">{slip.payBank || '—'}</span>
-                  </li>
-                  {slip.receipts ? (
-                    <li className="list-group-item">
-                      <div className="small text-muted mb-1">Receipts</div>
-                      <div className="small">{slip.receipts}</div>
-                    </li>
-                  ) : null}
-                </ul>
-                <div className="cis-fee-slip-card-footer">
-                  <Link
-                    to={`/fees/slips/${encodeURIComponent(slip.groupId)}/approve`}
-                    className="btn btn-primary w-100"
-                  >
-                    Approve slip
-                  </Link>
-                </div>
-              </section>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="card shadow-sm cis-fee-empty-state">
-          <div className="card-body">
-            <i className="fa fa-inbox" aria-hidden="true" />
-            <p className="mb-2">
-              {registerNo.trim()
-                ? `No pending slips for register ${registerNo.trim()}.`
-                : 'No pending slips found.'}
-            </p>
+      <DataTable
+        columns={columns}
+        rows={slips}
+        getRowKey={(row) => row.groupId}
+        loading={searching && !slips.length}
+        error={null}
+        empty={{
+          icon: 'fa fa-inbox',
+          title: 'No pending slips',
+          message: registerNo.trim()
+            ? `No pending slips for register ${registerNo.trim()}.`
+            : 'No pending slips found.',
+          action: (
             <Link to="/fees/collection" className="btn btn-sm btn-outline-primary">
               Go to Fee Collection
             </Link>
-          </div>
-        </div>
-      )}
+          ),
+        }}
+        caption="Pending fee slips"
+        searchable={slips.length > 8}
+        searchPlaceholder="Filter pending slips by register no, name, or bank…"
+        pageSize={20}
+        initialSort={{ key: 'paidDate', dir: 'desc' }}
+      />
     </FeePageShell>
   );
 }

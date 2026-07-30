@@ -90,11 +90,11 @@ function buildAddress(parts) {
 
 async function loadLookups() {
   const [eduSetup, departments, designations, categories, payrollTypes] = await Promise.all([
-    prisma.edu_setup_tb.findMany({ where: { del: 1 }, orderBy: { category_order: 'asc' } }),
-    prisma.staff_dept_master.findMany({ where: { del: 1 }, orderBy: { d_order: 'asc' } }),
-    prisma.staff_desg_master.findMany({ where: { del: 1 }, orderBy: { d_order: 'asc' } }),
-    prisma.master_setup.findMany({ where: { del: { not: 0 } }, orderBy: { category_order: 'asc' } }),
-    prisma.basic_setup_payroll_tb.findMany({ where: { del: 1 }, orderBy: { id: 'asc' } }),
+    prisma.$queryRawUnsafe(`SELECT id, category_name FROM edu_setup_tb WHERE del = 1 ORDER BY category_order ASC`),
+    prisma.$queryRawUnsafe(`SELECT id, name FROM staff_dept_master WHERE del = 1 ORDER BY d_order ASC`),
+    prisma.$queryRawUnsafe(`SELECT id, name FROM staff_desg_master WHERE del = 1 ORDER BY d_order ASC`),
+    prisma.$queryRawUnsafe(`SELECT id, category_name FROM master_setup WHERE del != 0 ORDER BY category_order ASC`),
+    prisma.$queryRawUnsafe(`SELECT id, payroll_type FROM basic_setup_payroll_tb WHERE del = 1 ORDER BY id ASC`),
   ]);
 
   const eduMap = {};
@@ -304,6 +304,28 @@ export async function getStaffReportFilters() {
   };
 }
 
+let staffSelectColumnsCache = null;
+
+async function getStaffSelectColumns() {
+  if (staffSelectColumnsCache) return staffSelectColumnsCache;
+  try {
+    const columns = await prisma.$queryRawUnsafe(`SHOW COLUMNS FROM staff_profile_tb`);
+    staffSelectColumnsCache = columns
+      .map((col) => {
+        const field = col.Field;
+        const type = col.Type.toLowerCase();
+        if (type.includes('date') || type.includes('timestamp')) {
+          return `CAST(A.\`${field}\` AS CHAR) AS \`${field}\``;
+        }
+        return `A.\`${field}\``;
+      })
+      .join(', ');
+  } catch (_e) {
+    staffSelectColumnsCache = 'A.*';
+  }
+  return staffSelectColumnsCache;
+}
+
 async function loadStaffRows(categoryId, discontinued) {
   let filter = '';
   if (categoryId) {
@@ -316,11 +338,12 @@ async function loadStaffRows(categoryId, discontinued) {
   }
 
   const orderClause = await getStaffOrderClause();
+  const selectCols = await getStaffSelectColumns();
   return prisma.$queryRawUnsafe(
-    `SELECT A.*
+    `SELECT ${selectCols}
      FROM staff_profile_tb AS A
      WHERE A.del = 1 ${filter}
-     ${orderClause.replace('A.id', 'A.id')}`,
+     ${orderClause}`,
   );
 }
 

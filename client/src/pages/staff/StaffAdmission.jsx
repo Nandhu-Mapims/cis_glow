@@ -215,7 +215,7 @@ export default function StaffAdmission() {
     >
       <form onSubmit={handleSubmit} className="cis-form-layout">
         <FormSectionNav sections={SECTIONS} activeId={activeSection} />
-        <div className="cis-form-main">
+        <div className="cis-form-main ">
           <FormSection id="staff" title="Staff Details">
             <div className={FIELD_COL}>
               <label className="form-label" htmlFor="staffId">Staff ID <span className="text-danger">*</span></label>

@@ -51,7 +51,7 @@ export const THEME_PRESETS = {
       '--cis-accent-rgb': '245, 209, 95',
       '--cis-peach-soft': '#fff5f2',
       '--cis-bg': '#fafaf8',
-      '--cis-bg-subtle': '#fffbeb',
+      '--cis-bg-subtle': 'hsl(0, 0%, 97%)',
       '--cis-shell-bg': '#f0efec',
       '--cis-border': '#e8e4dc',
       '--cis-border-strong': '#d6d0c4',

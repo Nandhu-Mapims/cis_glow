@@ -31,6 +31,7 @@ function SalaryRow({
   onAmountChange,
   onDelete,
   canDelete,
+  onRemoveExtra,
 }) {
   const rowKey = row.id || `new-${index}`;
   const amounts = {
@@ -49,6 +50,7 @@ function SalaryRow({
       <input
         name={name}
         className="form-control form-control-sm"
+        style={{ width: `${name == 'basic_pay' ? '100px' : '80px'}` }}
         defaultValue={value}
         onChange={(e) => onAmountChange(rowKey)}
       />
@@ -120,6 +122,11 @@ function SalaryRow({
       <td className="text-center">
         {canDelete && row.id ? (
           <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => onDelete(row.id)} title="Delete row">
+            <i className="fa fa-trash" />
+          </button>
+        ) : null}
+        {canDelete && !row.id && onRemoveExtra ? (
+          <button type="button" className="btn btn-sm btn-outline-danger" onClick={onRemoveExtra} title="Remove this blank row">
             <i className="fa fa-trash" />
           </button>
         ) : null}
@@ -377,7 +384,7 @@ export default function SalaryAddSetup({ data, load, save, busy }) {
                         <th>To</th>
                         <th>PF</th>
                         <th>ESI</th>
-                        <th>Basic</th>
+                        <th className="w-25">Basic</th>
                         <th>Margin</th>
                         <th>D.A</th>
                         <th>HRA</th>
@@ -396,6 +403,7 @@ export default function SalaryAddSetup({ data, load, save, busy }) {
                           policy={policy}
                           onAmountChange={onAmountChange}
                           onDelete={setDeleteRowId}
+                          onRemoveExtra={!row.id ? () => setExtraRows((n) => Math.max(0, n - 1)) : undefined}
                           canDelete
                         />
                       ))}

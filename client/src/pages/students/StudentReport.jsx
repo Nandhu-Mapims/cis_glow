@@ -3,6 +3,7 @@ import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import { FormActionBar, FormSection } from '../../components/FormShell';
 import { extractReportBodyHtml, printReportHtml } from '../../utils/printReport';
+import { cachedGet } from '../../utils/idbCache';
 import StudentPageShell, { STUDENT_BREADCRUMB_HUB } from './StudentPageShell';
 
 export default function StudentReport() {
@@ -26,21 +27,48 @@ export default function StudentReport() {
   const [fieldFilter, setFieldFilter] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
+
     const load = async () => {
       try {
-        const [fieldsRes, filtersRes] = await Promise.all([
-          api.get('/api/students/reports/fields'),
-          api.get('/api/students/reports/filters'),
-        ]);
-        setFieldGroups(fieldsRes.data.groups || []);
-        setFilters(filtersRes.data);
+        // Field catalog + course/batch options are reference data (changes only when
+        // someone adds a course or a new academic year starts), not per-report data —
+        // cache them so a refresh doesn't re-pay this round trip every time.
+        const payload = await cachedGet(
+          'students/reports/builder-meta',
+          async () => {
+            const [fieldsRes, filtersRes] = await Promise.all([
+              api.get('/api/students/reports/fields'),
+              api.get('/api/students/reports/filters'),
+            ]);
+            return { fieldGroups: fieldsRes.data.groups || [], filters: filtersRes.data };
+          },
+          {
+            ttlMs: 24 * 60 * 60_000,
+            onCache: (cached) => {
+              if (cancelled) return;
+              setFieldGroups(cached.fieldGroups);
+              setFilters(cached.filters);
+              setDataLoading(false);
+            },
+            onFresh: (fresh) => {
+              if (cancelled) return;
+              setFieldGroups(fresh.fieldGroups);
+              setFilters(fresh.filters);
+            },
+          },
+        );
+        if (cancelled) return;
+        setFieldGroups(payload.fieldGroups);
+        setFilters(payload.filters);
       } catch (err) {
-        setError(err.response?.data?.message || 'Unable to load report builder');
+        if (!cancelled) setError(err.response?.data?.message || 'Unable to load report builder');
       } finally {
-        setDataLoading(false);
+        if (!cancelled) setDataLoading(false);
       }
     };
     load();
+    return () => { cancelled = true; };
   }, []);
 
   const addField = (field) => {
@@ -98,40 +126,68 @@ export default function StudentReport() {
     fields: selectedFields,
   });
 
-  const generateReport = async (format) => {
+  // `presetWin` (for format 'html') is a blank window opened synchronously in the button's
+  // onClick, before this async function starts — window.open() called after an `await`
+  // is no longer considered a direct result of the user's click and gets popup-blocked,
+  // which is what produced "Unable to open the print window" here.
+  const generateReport = async (format, presetWin) => {
     if (selectedFields.length === 0) {
+      presetWin?.close();
       setError('Please select at least one field.');
       return;
     }
     setGenerating(true);
     setError(null);
     try {
+      if (format === 'html') {
+        // Same filters + same columns as a previous run → replay instantly from
+        // IndexedDB instead of re-querying the DB; a background refetch still runs
+        // (unless the cache is still within ttlMs) and quietly updates the on-page
+        // preview if the underlying data changed. The actual print only fires once,
+        // using whichever data this ends up resolving with — see below.
+        const cacheKey = `students/reports/generate:${JSON.stringify(buildPayload())}`;
+        const data = await cachedGet(
+          cacheKey,
+          async () => (await api.post('/api/students/reports/generate', { ...buildPayload(), format })).data,
+          {
+            ttlMs: 5 * 60_000,
+            onCache: (cached) => setPreviewHtml(cached.html || ''),
+            onFresh: (fresh) => setPreviewHtml(fresh.html || ''),
+          },
+        );
+        const html = data.html || '';
+        setPreviewHtml(html);
+        printReportHtml(extractReportBodyHtml(html), 'default', presetWin);
+        return;
+      }
+
       const res = await api.post('/api/students/reports/generate', {
         ...buildPayload(),
         format,
       });
 
-      if (format === 'xls') {
-        if (res.data.downloadUrl) {
-          window.open(res.data.downloadUrl, '_blank');
-        } else if (res.data.csv) {
-          const blob = new Blob([res.data.csv], { type: 'text/csv;charset=utf-8;' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = res.data.filename || 'student_report.csv';
-          link.click();
-          URL.revokeObjectURL(url);
-        } else {
-          setError('Export file was not created');
-        }
-        return;
+      // A download-attribute anchor click isn't treated as a popup, so it isn't subject
+      // to the same block — unlike window.open(), it works fine after an await.
+      if (res.data.downloadUrl) {
+        const link = document.createElement('a');
+        link.href = res.data.downloadUrl;
+        link.download = res.data.filename || '';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } else if (res.data.csv) {
+        const blob = new Blob([res.data.csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = res.data.filename || 'student_report.csv';
+        link.click();
+        URL.revokeObjectURL(url);
+      } else {
+        setError('Export file was not created');
       }
-
-      const html = res.data.html || '';
-      setPreviewHtml(html);
-      printReportHtml(extractReportBodyHtml(html));
     } catch (err) {
+      presetWin?.close();
       setError(err.response?.data?.message || 'Report generation failed');
     } finally {
       setGenerating(false);
@@ -444,7 +500,7 @@ export default function StudentReport() {
             type="button"
             className="btn btn-primary"
             disabled={generating}
-            onClick={() => generateReport('html')}
+            onClick={() => generateReport('html', window.open('', '_blank'))}
           >
             {generating ? 'Generating…' : 'Print report'}
           </button>

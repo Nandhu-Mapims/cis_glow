@@ -199,34 +199,64 @@ export async function loadDailyAttendanceScreen(memberId, fields = {}, audit = {
   };
 }
 
+/** Legacy biomertic_att.php never required a Staff ID — an empty one just
+ * skips the tktno filter and lists every punch in the date range. It also
+ * loops one punchtimedetails_<year><quarter> table per calendar month the
+ * range spans (punch tables are partitioned quarterly), not just the one
+ * containing from_date, so a range crossing a quarter boundary doesn't
+ * silently drop rows. */
+function punchQuarterTables(fromDate, toDate) {
+  const tables = new Set();
+  const cursor = new Date(fromDate);
+  cursor.setDate(1);
+  const end = new Date(toDate);
+  while (cursor <= end) {
+    const year = cursor.getFullYear();
+    const quarter = Math.ceil((cursor.getMonth() + 1) / 4);
+    tables.add(`punchtimedetails_${year}${quarter}`);
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return [...tables];
+}
+
 export async function loadBiometricReportScreen(memberId, fields = {}, audit = {}) {
   const staffId = String(fields.roll_no || fields.staff_id || '').trim();
   const fromDate = toIsoDate(fields.from_date) || new Date().toISOString().slice(0, 10);
   const toDate = toIsoDate(fields.to_date) || fromDate;
   const machineId = fields.machine_id || '';
 
-  if (!staffId) {
-    await logStaffAttSetup('biomertic_att.php', 'View', 'Successful', '', memberId, audit);
-    return { staff_id: '', from_date: formatDateDisplay(fromDate), to_date: formatDateDisplay(toDate), rows: [], reportHtml: '' };
+  let staffFilter = '';
+  if (staffId) {
+    const ids = staffId.split(',').map((s) => s.trim()).filter(Boolean);
+    const clauses = ids.map((id) => `tktno='${escapeSql(id)}' OR tktno='${escapeSql(`0${id}`)}'`).join(' OR ');
+    if (clauses) staffFilter = ` AND (${clauses})`;
   }
+  const flagFilter = machineId ? ` AND flag='${escapeSql(String(machineId))}'` : '';
 
-  const year = new Date(fromDate).getFullYear();
-  const quarter = Math.ceil((new Date(fromDate).getMonth() + 1) / 4);
-  const tbl = `punchtimedetails_${year}${quarter}`;
-  const sid = escapeSql(staffId);
-  const sid0 = escapeSql(`0${staffId}`);
-  let flagFilter = '';
-  if (machineId) flagFilter = ` AND flag='${escapeSql(String(machineId))}'`;
-
-  const rows = await prisma.$queryRawUnsafe(
+  const tables = punchQuarterTables(fromDate, toDate);
+  const rowBatches = await Promise.all(tables.map((tbl) => prisma.$queryRawUnsafe(
     `SELECT tktno, CAST(p_date AS CHAR) AS p_date, flag, hh_mm
      FROM ${tbl}
-     WHERE DATE(p_date) BETWEEN '${escapeSql(fromDate)}' AND '${escapeSql(toDate)}'
-       AND (tktno='${sid}' OR tktno='${sid0}')${flagFilter}
+     WHERE DATE(p_date) BETWEEN '${escapeSql(fromDate)}' AND '${escapeSql(toDate)}'${staffFilter}${flagFilter}
      ORDER BY p_date ASC LIMIT 2000`,
-  ).catch(() => []);
+  ).catch(() => [])));
+  const rows = rowBatches.flat().slice(0, 2000);
 
-  const bodyRows = rows.map((r) => [r.tktno, r.p_date, r.hh_mm || '', r.flag || '']);
+  const tktnos = [...new Set(rows.map((r) => String(r.tktno).replace(/^0+/, '') || r.tktno))];
+  const nameByTktno = new Map();
+  if (tktnos.length) {
+    const idList = tktnos.map((id) => `'${escapeSql(id)}'`).join(',');
+    const staffRows = await prisma.$queryRawUnsafe(
+      `SELECT staff_id, staff_name, staff_initial, staff_title FROM staff_profile_tb
+       WHERE del = 1 AND staff_id IN (${idList})`,
+    );
+    for (const s of staffRows) {
+      nameByTktno.set(s.staff_id, `${s.staff_title || ''} ${s.staff_initial || ''} ${s.staff_name || ''}`.trim());
+    }
+  }
+  const nameFor = (tktno) => nameByTktno.get(String(tktno)) || nameByTktno.get(String(tktno).replace(/^0+/, '')) || '';
+
+  const bodyRows = rows.map((r) => [r.tktno, nameFor(r.tktno), r.p_date, r.hh_mm || '', r.flag || '']);
   await logStaffAttSetup('biomertic_att.php', fields.Submit ? 'Generate' : 'View', 'Successful', staffId, memberId, audit);
   return {
     staff_id: staffId,
@@ -234,6 +264,8 @@ export async function loadBiometricReportScreen(memberId, fields = {}, audit = {
     to_date: formatDateDisplay(toDate),
     machine_id: machineId,
     rows,
-    reportHtml: htmlTable(['Ticket', 'Date/Time', 'Time', 'Machine'], bodyRows),
+    reportHtml: rows.length
+      ? htmlTable(['Ticket', 'Name', 'Date/Time', 'Time', 'Machine'], bodyRows)
+      : '<p class="text-danger">No data found...</p>',
   };
 }

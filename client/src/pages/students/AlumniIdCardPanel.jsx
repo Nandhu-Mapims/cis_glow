@@ -48,7 +48,7 @@ export default function AlumniIdCardPanel({ data, busy, onGenerate }) {
               <div className="mb-3">
                 <label className="form-label small text-muted">Option</label>
                 <div className="d-flex flex-wrap gap-3">
-                  <label className="form-check-label">
+                  <label className="form-check">
                     <input
                       type="checkbox"
                       className="form-check-input me-1"
@@ -59,7 +59,7 @@ export default function AlumniIdCardPanel({ data, busy, onGenerate }) {
                     />
                     Front
                   </label>
-                  <label className="form-check-label">
+                  <label className="form-check">
                     <input
                       type="checkbox"
                       className="form-check-input me-1"
@@ -76,7 +76,7 @@ export default function AlumniIdCardPanel({ data, busy, onGenerate }) {
               <div className="mb-3">
                 <label className="form-label small text-muted">Search by</label>
                 <div className="d-flex flex-column gap-2">
-                  <label className="form-check-label">
+                  <label className="form-check">
                     <input
                       type="radio"
                       className="form-check-input me-1"
@@ -87,7 +87,7 @@ export default function AlumniIdCardPanel({ data, busy, onGenerate }) {
                     />
                     Register No
                   </label>
-                  <label className="form-check-label">
+                  <label className="form-check">
                     <input
                       type="radio"
                       className="form-check-input me-1"
