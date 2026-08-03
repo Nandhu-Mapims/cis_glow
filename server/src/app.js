@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { config } from './config/index.js';
+import { legacyStaticGuard } from './middleware/legacyStaticGuard.js';
 import authRoutes from './routes/auth.js';
 import settingsRoutes from './routes/settings.js';
 import dashboardRoutes from './routes/dashboard.js';
@@ -42,12 +43,32 @@ const app = express();
 // X-Forwarded-For only from that hop, so a client can't spoof it directly.
 app.set('trust proxy', 1);
 
-// CSP disabled: many screens render legacy-parity HTML (dashboard widgets, print
-// reports) via dangerouslySetInnerHTML with inline onclick handlers/styles - a
-// default CSP would silently break that behavior. Other protective headers stay on.
+// CSP runs in report-only mode: many screens render legacy-parity HTML (dashboard
+// widgets, print reports) via dangerouslySetInnerHTML with inline onclick handlers/
+// styles, so a blocking CSP needs a directive audit before enforcement - report-only
+// surfaces violations (browser devtools console) without breaking anything, as a
+// first step toward enforcing it. Other protective headers stay on.
 app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: {
+    reportOnly: true,
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'blob:'],
+      fontSrc: ["'self'", 'data:'],
+      connectSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'self'"],
+      baseUri: ["'self'"],
+    },
+  },
+  // 'same-site' (not 'cross-origin'): client (5173) and API (4000) share the
+  // localhost registrable domain in dev, so this still allows the SPA to load
+  // legacy-mounted assets while no longer letting arbitrary third-party origins
+  // fetch/embed them. Widen back to 'cross-origin' only if client and API end up
+  // deployed on genuinely different domains in production.
+  crossOriginResourcePolicy: { policy: 'same-site' },
 }));
 app.use(compression());
 
@@ -65,7 +86,7 @@ app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use(cookieParser());
 
-app.use('/legacy', express.static(path.resolve(config.legacyImgPath, '..')));
+app.use('/legacy', legacyStaticGuard, express.static(path.resolve(config.legacyImgPath, '..')));
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'cis-server' });

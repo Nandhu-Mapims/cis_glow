@@ -53,9 +53,6 @@ function buildPeriods(todayIso) {
     ],
     active: [
       { label: formatDisplayDate(iso(today)), from: iso(today), to: iso(today) },
-      { label: formatDisplayDate(iso(yesterday)), from: iso(yesterday), to: iso(yesterday) },
-      { label: 'Last 7 Days', from: iso(weekStart), to: iso(today) },
-      { label: 'Last 30 Days', from: iso(monthStart), to: iso(today) },
     ],
   };
 }

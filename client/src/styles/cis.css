@@ -39,7 +39,13 @@ body {
 }
 
 .cis-header-inner {
-  min-height: var(--cis-header-height);
+  /* Fixed, not var(--cis-header-height) — that variable is the combined
+     TopNav+Header height, measured off a wrapper this element lives inside.
+     Sizing to it here created a ResizeObserver feedback loop (grow →
+     re-measure → grow again), visible only on small screens because this
+     mobile-only header (d-lg-none) is the one case where it's part of the
+     measured chrome. */
+  min-height: 52px;
   padding: 0.75rem var(--cis-content-padding);
 }
 
@@ -886,9 +892,8 @@ html[data-cis-sidebar='light'] .cis-topnav-lastlogin small {
   font-size: 0.76rem;
   font-weight: 600;
   text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: break-word;
   cursor: pointer;
   transition: color 0.15s ease;
 }
@@ -996,9 +1001,8 @@ html[data-cis-sidebar='light'] .cis-topnav-lastlogin small {
   text-decoration: none;
   font-size: 0.78rem;
   font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: break-word;
   transition: background 0.15s ease, color 0.15s ease;
 }
 

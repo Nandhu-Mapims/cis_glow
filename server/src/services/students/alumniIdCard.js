@@ -9,7 +9,7 @@ import { alumniPhotoUrl, escapeHtml } from './studentShared.js';
 const FRONT_BG = '/legacy/files/certificate/AASSET_idcard_front_bg.jpg';
 const BACK_BG = '/legacy/files/certificate/AASSET_id_card_back_bg.jpg';
 
-function isEnabledFlag(value, defaultValue = true) {
+export function isEnabledFlag(value, defaultValue = true) {
   if (value === undefined || value === null || value === '') return defaultValue;
   if (value === false || value === 0 || value === '0') return false;
   return Boolean(value);

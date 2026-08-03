@@ -212,7 +212,7 @@ export default function AdminLogDashboard() {
 
     if (cache?.data?.panels && cache.data?.activities && !cache.fresh) {
       loadDashboard({}, { showSpinner: false });
-      return () => { requestIdRef.current += 1; };
+      return undefined;
     }
 
     if (cache?.data?.panels && !cache?.data?.activities) {
@@ -229,13 +229,11 @@ export default function AdminLogDashboard() {
           setError(err.response?.data?.message || 'Unable to load login activity');
         })
         .finally(() => setActivitiesLoading(false));
-      return () => { requestIdRef.current += 1; };
+      return undefined;
     }
 
     loadDashboard({}, { showSpinner: !cache?.data?.panels });
-    return () => {
-      requestIdRef.current += 1;
-    };
+    return undefined;
   }, [loadDashboard]);
 
   const onDateSubmit = async (event) => {

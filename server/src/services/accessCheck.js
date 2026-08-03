@@ -35,6 +35,15 @@ function isWithinDateRange(accessRow, now) {
   return !Number.isNaN(from) && !Number.isNaN(to) && from <= current && to >= current;
 }
 
+// MD5 here is intentional, not an oversight: these `login_random_id_*`/`login_user_id_*`
+// cookies are shared with the legacy PHP app (same browser, same domain, same cookie
+// names — see index.php's matching md5() calls), which is the primary "remembered
+// device" check on both sides. Switching to a stronger hash here would desync from
+// legacy and break device recognition for every user until the legacy app is updated
+// too. Low practical risk regardless: this only gates a convenience skip on top of the
+// real credential check in auth.js, not authentication itself, and MD5 is used here
+// as a fixed-input digest (not against attacker-chosen input) so collision attacks
+// don't apply.
 function checkDeviceAccess(accessRow, cookies, userId) {
   const loginRandomId = cookies[`login_random_id_${userId}`];
   const loginUserId = cookies[`login_user_id_${userId}`];

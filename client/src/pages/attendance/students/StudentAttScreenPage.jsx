@@ -497,7 +497,7 @@ function StudentApprovalList({ data, filterFields, onSelect, onSave, busy }) {
                                 <label className="form-check mb-0">
                                   <input
                                     type="radio"
-                                    className="form-check-input"
+                                    className="form-check-input me-2"
                                     name={`m_att_${day.id}`}
                                     value="LE"
                                     defaultChecked={day.markedType !== 'OD'}
@@ -507,7 +507,7 @@ function StudentApprovalList({ data, filterFields, onSelect, onSave, busy }) {
                                 <label className="form-check mb-0">
                                   <input
                                     type="radio"
-                                    className="form-check-input"
+                                    className="form-check-input me-2"
                                     name={`m_att_${day.id}`}
                                     value="OD"
                                     defaultChecked={day.markedType === 'OD'}

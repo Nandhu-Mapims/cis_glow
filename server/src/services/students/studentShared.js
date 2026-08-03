@@ -85,7 +85,7 @@ export function tableHtml(headers, rows) {
   const th = headers.map((h) => `<th>${escapeHtml(h)}</th>`).join('');
   const trs = rows.map((row, i) => {
     const cells = row.map((c) => `<td>${c}</td>`).join('');
-    return `<tr><td>${i + 1}</td>${cells}</tr>`;
+    return `<tr class="cis-table-hover"><td>${i + 1}</td>${cells}</tr>`;
   }).join('');
   return `<table class="table table-bordered table-sm"><thead><tr><th>S.No</th>${th}</tr></thead><tbody>${trs}</tbody></table>`;
 }

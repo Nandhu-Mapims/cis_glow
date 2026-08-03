@@ -82,7 +82,7 @@ export const STUDENT_SCREEN_META = {
   'id-card': {
     title: 'Student ID Card',
     legacy: 'student_id_card.php',
-    type: 'student-search-report',
+    type: 'student-id-card',
     hubSection: 'Documents & ID',
     icon: 'fa fa-id-card-o',
   },

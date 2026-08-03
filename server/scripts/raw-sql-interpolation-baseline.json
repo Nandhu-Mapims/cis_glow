@@ -1,0 +1,257 @@
+[
+  {
+    "file": "src/services/attendance/screens/gridScreens.js",
+    "line": 104,
+    "text": "await logStaffAttSetup('staff_holiday_roster.php', 'Delete', 'Successful', `${payload.ref_id} - ${payload.delete_group_id}`, memberId, audit);"
+  },
+  {
+    "file": "src/services/attendance/screens/gridScreens.js",
+    "line": 366,
+    "text": "UPDATE staff_att_transport_tb SET arrival_time='${fields.arrival}', departure_time='${fields.departure}',"
+  },
+  {
+    "file": "src/services/attendance/screens/gridScreens.js",
+    "line": 367,
+    "text": "arrival_driver='${fields.arrivalDriver}', arrival_staff='${fields.arrivalStaff}',"
+  },
+  {
+    "file": "src/services/attendance/screens/gridScreens.js",
+    "line": 368,
+    "text": "departure_driver='${fields.departureDriver}', departure_staff='${fields.departureStaff}',"
+  },
+  {
+    "file": "src/services/attendance/screens/gridScreens.js",
+    "line": 377,
+    "text": "'${fields.arrival}', '${fields.departure}', '${fields.arrivalDriver}', '${fields.arrivalStaff}',"
+  },
+  {
+    "file": "src/services/attendance/screens/gridScreens.js",
+    "line": 378,
+    "text": "'${fields.departureDriver}', '${fields.departureStaff}',"
+  },
+  {
+    "file": "src/services/fees/feeScholarshipSetup.js",
+    "line": 10,
+    "text": "? `${fields.courseId}___${fields.academicYear}___${fields.academicBatch || 'regular'}`"
+  },
+  {
+    "file": "src/services/hostel/setup/staffRentalSetup.js",
+    "line": 192,
+    "text": "stay_type = '${fields.stay_type}',"
+  },
+  {
+    "file": "src/services/hostel/setup/staffRentalSetup.js",
+    "line": 193,
+    "text": "block_no = '${fields.block_no}',"
+  },
+  {
+    "file": "src/services/hostel/setup/staffRentalSetup.js",
+    "line": 194,
+    "text": "room_no = '${fields.room_no}',"
+  },
+  {
+    "file": "src/services/hostel/setup/staffRentalSetup.js",
+    "line": 195,
+    "text": "from_month = '${fields.from_month}',"
+  },
+  {
+    "file": "src/services/hostel/setup/staffRentalSetup.js",
+    "line": 196,
+    "text": "to_month = '${fields.to_month}',"
+  },
+  {
+    "file": "src/services/hostel/setup/staffRentalSetup.js",
+    "line": 197,
+    "text": "join_reason = '${fields.join_reason}',"
+  },
+  {
+    "file": "src/services/hostel/setup/staffRentalSetup.js",
+    "line": 198,
+    "text": "rental_fee = ${fields.rental_fee},"
+  },
+  {
+    "file": "src/services/hostel/setup/staffRentalSetup.js",
+    "line": 199,
+    "text": "hostel_discontinue = ${fields.hostel_discontinue},"
+  },
+  {
+    "file": "src/services/hostel/setup/staffRentalSetup.js",
+    "line": 200,
+    "text": "discontinue_reason = '${fields.discontinue_reason}',"
+  },
+  {
+    "file": "src/services/hostel/setup/staffRentalSetup.js",
+    "line": 213,
+    "text": "'${fields.from_month}', '${fields.to_month}', '${fields.join_reason}',"
+  },
+  {
+    "file": "src/services/hostel/setup/staffRentalSetup.js",
+    "line": 214,
+    "text": "${fields.hostel_discontinue}, '${fields.discontinue_reason}', ${fields.rental_fee},"
+  },
+  {
+    "file": "src/services/hostel/setup/studentHostelSetup.js",
+    "line": 92,
+    "text": "block_no = '${fields.block_no}', room_no = '${fields.room_no}',"
+  },
+  {
+    "file": "src/services/hostel/setup/studentHostelSetup.js",
+    "line": 93,
+    "text": "from_month = '${fields.from_month}', to_month = '${fields.to_month}',"
+  },
+  {
+    "file": "src/services/hostel/setup/studentHostelSetup.js",
+    "line": 94,
+    "text": "join_reason = '${fields.join_reason}', stay_year = '${fields.stay_year}',"
+  },
+  {
+    "file": "src/services/hostel/setup/studentHostelSetup.js",
+    "line": 95,
+    "text": "hostel_discontinue = ${fields.hostel_discontinue},"
+  },
+  {
+    "file": "src/services/hostel/setup/studentHostelSetup.js",
+    "line": 96,
+    "text": "discontinue_reason = '${fields.discontinue_reason}',"
+  },
+  {
+    "file": "src/services/hostel/setup/studentHostelSetup.js",
+    "line": 109,
+    "text": "'${fields.from_month}', '${fields.to_month}', '${fields.join_reason}', '${fields.stay_year}',"
+  },
+  {
+    "file": "src/services/hostel/setup/studentHostelSetup.js",
+    "line": 110,
+    "text": "${fields.hostel_discontinue}, '${fields.discontinue_reason}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 182,
+    "text": "current_year='${fields.current_year}', academic_year='${fields.academic_year}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 183,
+    "text": "academic_batch='${fields.academic_batch}', student_activity='${fields.student_activity}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 184,
+    "text": "register_no='${fields.register_no}', course_id='${fields.course_id}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 185,
+    "text": "academic_type='${fields.academic_type}', student_transport='${fields.student_transport}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 195,
+    "text": "${sid}, '${fields.course_id}', '${fields.register_no}', '${fields.academic_year}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 196,
+    "text": "'${fields.academic_batch}', '${fields.current_year}', '${fields.student_activity}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 197,
+    "text": "'${fields.academic_type}', '${fields.student_transport}', NOW(),"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 610,
+    "text": "? `SELECT id FROM alumni_tb WHERE del=1 AND TRIM(alumni_regno)='${fields.regNo}' LIMIT 1`"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 611,
+    "text": ": `SELECT id FROM alumni_tb WHERE del=1 AND TRIM(alumni_regno)='${fields.regNo}' AND id!=${sid} LIMIT 1`,"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 622,
+    "text": "'${fields.name}', '${fields.email}', '${fields.mobile}', '${fields.address}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 623,
+    "text": "'${fields.course}', '${fields.dept}', '${fields.yop}', '${fields.pgd}', '${fields.cp}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 624,
+    "text": "'${fields.ws}', '${fields.regNo}', '${fields.gender}', '${fields.alumniDob}', '',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 638,
+    "text": "alumni_regno='${fields.regNo}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 639,
+    "text": "alumni_name='${fields.name}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 640,
+    "text": "alumni_email='${fields.email}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 641,
+    "text": "alumni_mobile='${fields.mobile}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 642,
+    "text": "alumni_address='${fields.address}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 643,
+    "text": "alumni_course='${fields.course}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 644,
+    "text": "alumni_dept='${fields.dept}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 645,
+    "text": "alumni_yop='${fields.yop}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 646,
+    "text": "alumni_pgd='${fields.pgd}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 647,
+    "text": "alumni_cp='${fields.cp}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 648,
+    "text": "alumni_ws='${fields.ws}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 649,
+    "text": "alumni_gender='${fields.gender}',"
+  },
+  {
+    "file": "src/services/students/screens/actionScreens.js",
+    "line": 650,
+    "text": "alumni_dob='${fields.alumniDob}',"
+  },
+  {
+    "file": "src/services/students/studentReport.js",
+    "line": 568,
+    "text": "<tr><th colspan='${fields.length}' nowrap style='background:none; border: none;'>&nbsp;</th></tr>"
+  }
+]

@@ -1205,6 +1205,20 @@ export function printAlumniIdCard(html) {
   }
 }
 
+/** Print student ID card using legacy layout CSS (student_id_card.php parity). */
+export function printStudentIdCard(html) {
+  if (!html) return;
+  const bodyHtml = extractReportBodyHtml(html);
+  const headHtml = `<style>
+  body { margin: 0; padding: 0; background: #fff; }
+  @page { size: portrait; margin: 8mm; }
+  #idcard { page-break-inside: avoid; }
+</style>`;
+  if (!openPrintWindow('Student ID Card', headHtml, bodyHtml)) {
+    window.alert('Unable to open the print window. Please allow popups for this site.');
+  }
+}
+
 /** Print AAADAR implant/laser certificate using legacy layout CSS. */
 export function printAaadarCertificate(html) {
   if (!html) return;

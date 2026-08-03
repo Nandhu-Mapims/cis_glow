@@ -30,6 +30,11 @@ import {
   buildAddressLabelFilterOptions,
   generateAddressLabelReport,
 } from '../addressLabel.js';
+import {
+  buildStudentIdCardReport,
+  studentBarcodeUrl,
+} from '../studentIdCardBuilder.js';
+import { isEnabledFlag } from '../alumniIdCard.js';
 
 async function studentsForReport(fields, memberId, page, audit) {
   const students = await resolveStudentFilter(fields);
@@ -37,25 +42,83 @@ async function studentsForReport(fields, memberId, page, audit) {
   return students;
 }
 
+async function loadCourseMap(courseIds) {
+  const ids = [...new Set(courseIds.map((id) => String(id || '').trim()).filter(Boolean))];
+  if (!ids.length) return new Map();
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT id, course_name, degree_name, department_name
+     FROM basic_setup_course_tb WHERE del=1 AND id IN (${ids.map((id) => `'${escapeSql(id)}'`).join(',')})`,
+  );
+  return new Map(rows.map((r) => [String(r.id), r]));
+}
+
+async function loadBloodGroupMap(bgIds) {
+  const ids = [...new Set(bgIds.map((id) => String(id || '').trim()).filter(Boolean))];
+  if (!ids.length) return new Map();
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT id, category_name FROM master_setup
+     WHERE category='BloodGroup' AND del!=0 AND id IN (${ids.map((id) => `'${escapeSql(id)}'`).join(',')})`,
+  );
+  return new Map(rows.map((r) => [String(r.id), r.category_name]));
+}
+
 export async function loadIdCardScreen(memberId, fields = {}, audit = {}) {
   const lookups = await loadStudentLookups();
+  const frontEnable = isEnabledFlag(fields.front_enable, true);
+  const backEnable = isEnabledFlag(fields.back_enable, true);
   if (!fields.Submit && !fields.search_by) {
     await logStudentModule('student_id_card.php', 'View', 'Successful', '', memberId, audit);
     return { ...lookups, frontEnable: true, backEnable: true, reportHtml: null };
   }
-  const students = await studentsForReport(fields, memberId, 'student_id_card.php', audit);
-  const cards = [];
-  for (const s of students) {
-    const photo = await studentIdCardPhotoUrl(s.register_no);
-    const img = photo ? `<img src="${photo}" alt="" style="max-height:90px"/>` : '';
-    const addr = [s.door_no, s.street, s.post, s.taluk, s.district, s.state, s.pincode]
-      .filter(Boolean).map((x) => escapeHtml(String(x).trim())).join(', ');
-    cards.push(`<div class="d-inline-block border p-2 m-2" style="width:240px">
-      ${fields.front_enable !== false ? `<div><strong>${escapeHtml(formatStudentName(s))}</strong><br/>${img}<br/>${escapeHtml(s.register_no)}</div>` : ''}
-      ${fields.back_enable !== false ? `<div class="mt-2 small">${addr}<br/>Mob: ${escapeHtml(s.mobile_no || s.father_mobile_1 || '')}</div>` : ''}
-    </div>`);
+
+  const baseStudents = await studentsForReport(fields, memberId, 'student_id_card.php', audit);
+  const ids = baseStudents.map((s) => Number(s.id)).filter((id) => Number.isInteger(id));
+  if (!ids.length) {
+    return { ...lookups, frontEnable, backEnable, count: 0, reportHtml: '<p class="text-muted mb-0">No students found.</p>' };
   }
-  return { ...lookups, count: students.length, reportHtml: wrapReportHtml('Student ID Cards', cards.join('') || '<p>No students found.</p>') };
+
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT id, register_no, uregister_no, student_name, student_initial, course_id, academic_year, student_bg,
+       IF(CAST(student_dob AS CHAR) LIKE '0000-00-00%', NULL, CAST(student_dob AS CHAR)) AS student_dob,
+       mobile_no, father_mobile_1, door_no, street, post, taluk, district, state, pincode
+     FROM student_profile_tb WHERE id IN (${ids.join(',')}) ORDER BY register_no ASC`,
+  );
+
+  const [courseMap, bloodGroupMap] = await Promise.all([
+    loadCourseMap(rows.map((r) => r.course_id)),
+    loadBloodGroupMap(rows.map((r) => r.student_bg)),
+  ]);
+
+  const enriched = [];
+  for (const s of rows) {
+    const photoUrl = await studentIdCardPhotoUrl(s.register_no);
+    if (!photoUrl) continue;
+    const course = courseMap.get(String(s.course_id || '').trim());
+    enriched.push({
+      registerNo: s.register_no,
+      uregisterNo: s.uregister_no,
+      name: formatStudentName(s),
+      academicYear: s.academic_year,
+      courseName: course?.course_name || '',
+      degreeName: course?.degree_name || '',
+      departmentName: course?.department_name && course.department_name !== '-' ? course.department_name : '',
+      dob: s.student_dob,
+      bloodGroup: bloodGroupMap.get(String(s.student_bg || '').trim()) || '',
+      mobile: s.mobile_no,
+      fatherMobile: s.father_mobile_1,
+      doorNo: s.door_no,
+      street: s.street,
+      post: s.post,
+      taluk: s.taluk,
+      district: s.district,
+      pincode: s.pincode,
+      photoUrl,
+      barcodeUrl: await studentBarcodeUrl(s.register_no),
+    });
+  }
+
+  const { count, reportHtml } = buildStudentIdCardReport(enriched, { frontEnable, backEnable });
+  return { ...lookups, frontEnable, backEnable, count, reportHtml };
 }
 
 export async function loadPhotoEmptyScreen(memberId, fields = {}, audit = {}) {

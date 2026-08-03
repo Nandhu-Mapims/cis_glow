@@ -1,7 +1,14 @@
 import crypto from 'crypto';
 
-const ENCRYPTION_KEY = 'igrapixkey1';
-const IV = '1234567891011121';
+// Key/IV MUST match the legacy PHP app's password.php exactly (both hardcode the same
+// values) — this column is shared with the still-active legacy app, which does its own
+// AES-128-CTR decrypt() using a static IV. A per-account random IV is not an option
+// here without also changing legacy: it would make either app unable to decrypt
+// passwords the other one just wrote. Defaults below match the current legacy values
+// so behavior is unchanged; override via env if the legacy app's constants are ever
+// rotated (update both apps together).
+const ENCRYPTION_KEY = process.env.LEGACY_PASSWORD_KEY || 'igrapixkey1';
+const IV = process.env.LEGACY_PASSWORD_IV || '1234567891011121';
 
 function getKey() {
   const keyBuffer = Buffer.alloc(16, 0);

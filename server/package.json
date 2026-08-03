@@ -15,6 +15,7 @@
     "test:all": "node scripts/run-all-module-tests.js --all",
     "test:crud": "node ../test/run.js",
     "test:latency": "node scripts/run-all-module-tests.js --all --json",
+    "check:sql": "node scripts/check-raw-sql-interpolation.js",
     "db:pull": "prisma db pull",
     "db:normalize-dates": "node scripts/normalize-zero-dates.js --phase1 --dry-run",
     "db:normalize-dates:apply": "node scripts/normalize-zero-dates.js --phase1 --apply",

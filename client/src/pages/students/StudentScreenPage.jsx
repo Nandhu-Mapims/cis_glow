@@ -4,6 +4,7 @@ import api from '../../api/client';
 import { printReportHtml } from '../../utils/printReport';
 import AlumniEditPanel from './AlumniEditPanel';
 import AlumniIdCardPanel from './AlumniIdCardPanel';
+import StudentIdCardPanel from './StudentIdCardPanel';
 import AddressLabelPanel from './AddressLabelPanel';
 import CollageGeneratePanel from './CollageGeneratePanel';
 import CollageImagePanel from './CollageImagePanel';
@@ -752,7 +753,7 @@ export default function StudentScreenPage() {
       title={meta.title}
       legacy={meta.legacy}
       actions={(
-        data?.reportHtml && screen !== 'alumni-id-card' ? (
+        data?.reportHtml && screen !== 'alumni-id-card' && screen !== 'id-card' ? (
           <button
             type="button"
             className="btn btn-outline-primary btn-sm"
@@ -775,6 +776,8 @@ export default function StudentScreenPage() {
         <AlumniEditPanel data={data} busy={busy} onLoad={load} onSave={save} />
       ) : screen === 'alumni-id-card' ? (
         <AlumniIdCardPanel data={data} busy={busy} onGenerate={load} />
+      ) : screen === 'id-card' ? (
+        <StudentIdCardPanel data={data} busy={busy} onGenerate={load} />
       ) : screen === 'collage-generate' ? (
         <CollageGeneratePanel data={data} busy={busy} onGenerate={load} />
       ) : screen === 'collage-image' ? (
@@ -817,7 +820,7 @@ export default function StudentScreenPage() {
         </div>
       </div>
       )}
-      {data?.reportHtml && meta.type !== 'upload' && screen !== 'alumni-id-card' && screen !== 'attachments-report' && (
+      {data?.reportHtml && meta.type !== 'upload' && screen !== 'alumni-id-card' && screen !== 'id-card' && screen !== 'attachments-report' && (
         <div className="card cis-student-report-output">
           <div className="card-body report-html" dangerouslySetInnerHTML={{ __html: data.reportHtml }} />
         </div>
