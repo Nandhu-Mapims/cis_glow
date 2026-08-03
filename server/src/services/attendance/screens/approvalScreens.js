@@ -6,6 +6,37 @@ import { htmlTable, loadStaffCategories, parseDateRange, searchStaffByCategory }
 
 const STATUS_LABELS = { 0: 'Pending', 1: 'Approved', 2: 'Rejected', 3: 'Cancelled' };
 
+/** `created_dt`/`updated_dt` default to the zero date ('0000-00-00 00:00:00')
+ * on these tables, which Prisma's raw-query row decoder can't parse as a
+ * DateTime — it throws before the row even reaches JS, so aliasing a safe
+ * CAST(...) alongside `A.*` doesn't help; the raw column still has to be
+ * excluded from the selected list entirely. */
+const REQUEST_COLUMNS = {
+  att_leave_request: [
+    'id', 'request_id', 'staff_id', 'staff_img', 'leave_for', 'from_date', 'to_date',
+    'l_session', 'leave_type', 'status', 'reason_for', 'comments', 'req_comments',
+    'req_reference', 'created_ip', 'created_by', 'updated_ip', 'updated_by', 'del',
+  ],
+  att_defaulter: [
+    'id', 'request_id', 'staff_id', 'staff_img', 'leave_auth', 'leave_type', 'leave_stype',
+    'leave_for', 'from_date', 'to_date', 'f_session', 't_session', 'status', 'req_comments',
+    'comments', 'req_reference', 'created_ip', 'created_by', 'updated_ip', 'updated_by', 'del',
+  ],
+  att_permission_request: [
+    'id', 'request_id', 'staff_id', 'staff_img', 'from_date', 'to_date', 'p_type', 'status',
+    'comments', 'req_reference', 'created_ip', 'created_by', 'updated_ip', 'updated_by', 'del',
+  ],
+};
+
+function safeRequestColumns(table, alias = 'A') {
+  const cols = REQUEST_COLUMNS[table];
+  if (!cols) throw new Error(`Unknown attendance request table: ${table}`);
+  const list = cols.map((c) => `${alias}.${c}`).join(', ');
+  return `${list},
+       IF(CAST(${alias}.created_dt AS CHAR) LIKE '0000-00-00%', '', CAST(${alias}.created_dt AS CHAR)) AS created_dt,
+       IF(CAST(${alias}.updated_dt AS CHAR) LIKE '0000-00-00%', '', CAST(${alias}.updated_dt AS CHAR)) AS updated_dt`;
+}
+
 /** Unlike most screens, the legacy approval pages (staff_leave_approve.php et
  * al.) don't default an empty date filter to "today" — they only add a
  * `from_date >= / <=` clause when the operator actually typed one, so an
@@ -29,7 +60,7 @@ async function loadPendingRequests(table, fromDate, toDate, status, staffIds = [
   if (fromDate) dateSql += ` AND DATE(A.from_date) >= '${escapeSql(fromDate)}'`;
   if (toDate) dateSql += ` AND DATE(A.from_date) <= '${escapeSql(toDate)}'`;
   return prisma.$queryRawUnsafe(
-    `SELECT A.*, B.staff_id AS emp_id, B.staff_name, B.staff_initial, B.staff_title, B.att_category
+    `SELECT ${safeRequestColumns(table)}, B.staff_id AS emp_id, B.staff_name, B.staff_initial, B.staff_title, B.att_category
      FROM ${table} AS A
      INNER JOIN staff_profile_tb AS B ON A.staff_id=B.id
      WHERE A.del=1 AND B.del=1${dateSql}
@@ -52,9 +83,28 @@ async function loadStatusCounts(table) {
   return { total, pending: byStatus[0], approved: byStatus[1], rejected: byStatus[2], cancelled: byStatus[3] };
 }
 
+const REQUEST_MORE_COLUMNS = {
+  att_leave_request_more: [
+    'id', 'request_id', 'staff_id', 'req_date', 'r_session', 'r_att', 'm_att',
+    'cl_days', 'el_days', 'od_days', 'lop_days', 'off_days', 'status',
+    'created_ip', 'created_by', 'updated_ip', 'updated_by', 'del',
+  ],
+  att_defaulter_more: [
+    'id', 'request_id', 'staff_id', 'req_date', 'r_session', 'a_info', 'a_matt', 'a_eatt',
+    'm_att', 'e_att', 'cl_days', 'el_days', 'od_days', 'lop_days', 'off_days', 'h_days',
+    'comments', 'status', 'created_ip', 'created_by', 'updated_ip', 'updated_by', 'del',
+  ],
+};
+
 async function loadRequestDetail(tableMore, requestId) {
+  const cols = REQUEST_MORE_COLUMNS[tableMore];
+  const select = cols
+    ? `${cols.join(', ')},
+       IF(CAST(created_dt AS CHAR) LIKE '0000-00-00%', '', CAST(created_dt AS CHAR)) AS created_dt,
+       IF(CAST(updated_dt AS CHAR) LIKE '0000-00-00%', '', CAST(updated_dt AS CHAR)) AS updated_dt`
+    : '*';
   return prisma.$queryRawUnsafe(
-    `SELECT * FROM ${tableMore} WHERE del=1 AND request_id=${Number(requestId)} ORDER BY req_date ASC`,
+    `SELECT ${select} FROM ${tableMore} WHERE del=1 AND request_id=${Number(requestId)} ORDER BY req_date ASC`,
   );
 }
 
@@ -68,7 +118,8 @@ export async function loadLeaveApproveScreen(memberId, fields = {}, audit = {}) 
   const rid = parseOptionalId(fields.rid);
   if (rid) {
     const header = requests.find((r) => Number(r.id) === rid) || (await prisma.$queryRawUnsafe(
-      `SELECT A.*, B.staff_id AS emp_id, B.staff_name, B.att_category FROM att_leave_request A
+      `SELECT ${safeRequestColumns('att_leave_request')}, B.staff_id AS emp_id, B.staff_name, B.att_category
+       FROM att_leave_request A
        INNER JOIN staff_profile_tb B ON A.staff_id=B.id WHERE A.id=${rid} LIMIT 1`,
     ))[0];
     const more = await loadRequestDetail('att_leave_request_more', rid);
@@ -148,7 +199,8 @@ export async function loadPermissionApproveScreen(memberId, fields = {}, audit =
   const rid = parseOptionalId(fields.rid);
   if (rid) {
     detail = (await prisma.$queryRawUnsafe(
-      `SELECT A.*, B.staff_id AS emp_id, B.staff_name FROM att_permission_request A
+      `SELECT ${safeRequestColumns('att_permission_request')}, B.staff_id AS emp_id, B.staff_name
+       FROM att_permission_request A
        INNER JOIN staff_profile_tb B ON A.staff_id=B.id WHERE A.id=${rid} LIMIT 1`,
     ))[0];
   }
@@ -201,7 +253,8 @@ export async function loadDefaulterApproveScreen(memberId, fields = {}, audit = 
   const rid = parseOptionalId(fields.rid);
   if (rid) {
     const header = (await prisma.$queryRawUnsafe(
-      `SELECT A.*, B.staff_id AS emp_id, B.staff_name, B.att_category FROM att_defaulter A
+      `SELECT ${safeRequestColumns('att_defaulter')}, B.staff_id AS emp_id, B.staff_name, B.att_category
+       FROM att_defaulter A
        INNER JOIN staff_profile_tb B ON A.staff_id=B.id WHERE A.id=${rid} LIMIT 1`,
     ))[0];
     const more = await loadRequestDetail('att_defaulter_more', rid);
