@@ -1,6 +1,6 @@
 # CIS CRUD Test Checklist
 
-> Last run: **2026-08-03T03:23:25.356Z**
+> Last run: **2026-08-03T03:37:39.027Z**
 > API: `http://localhost:4000`
 > Mutations: **read-only** (set `TEST_MUTATIONS=1` to test create/update/delete)
 
@@ -17,17 +17,17 @@
 
 | Module | Pass | Total | Status |
 |--------|-----:|------:|--------|
-| attendance | 0 | 1 | ❌ Needs attention |
+| library | 0 | 1 | ❌ Needs attention |
 
 ---
 
 ## Detailed checklist
 
-### Attendance
+### Library
 
 | Status | Op | Test | Screen | Notes |
 |--------|----|------|--------|-------|
-| ❌ | Read | Load staff attendance: smr-leave-approve | smr-leave-approve | smr-leave-approve failed (500): {"message":"Unable to load staff attendance screen"} |
+| ❌ | Read | Load setup: entry-report | entry-report | entry-report failed (500): {"message":"Unable to load library form"} |
 
 ---
 

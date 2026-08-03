@@ -6,19 +6,19 @@
     "skip": 0,
     "mutationsEnabled": false,
     "apiBase": "http://localhost:4000",
-    "ranAt": "2026-08-03T03:23:25.356Z"
+    "ranAt": "2026-08-03T03:37:39.027Z"
   },
   "results": [
     {
-      "id": "attendance.read.staff.smr-leave-approve",
-      "module": "attendance",
+      "id": "library.read.setup.entry-report",
+      "module": "library",
       "op": "R",
-      "name": "Load staff attendance: smr-leave-approve",
-      "screen": "smr-leave-approve",
+      "name": "Load setup: entry-report",
+      "screen": "entry-report",
       "mutation": false,
       "status": "fail",
-      "durationMs": 258,
-      "error": "smr-leave-approve failed (500): {\"message\":\"Unable to load staff attendance screen\"}"
+      "durationMs": 1028,
+      "error": "entry-report failed (500): {\"message\":\"Unable to load library form\"}"
     }
   ]
 }
