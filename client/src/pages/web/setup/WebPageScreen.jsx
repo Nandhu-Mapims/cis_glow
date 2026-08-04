@@ -56,8 +56,8 @@ export default function WebPageScreen({ data, busy, readOnly, onLoad, onSave }) 
             <div className="col-12"><label className="form-label text-muted small">Page type: {data?.pageType}</label></div>
             <div className="col-12"><textarea className="form-control" rows={12} placeholder="HTML content" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} disabled={readOnly} /></div>
             <div className="col-12 d-flex flex-wrap gap-3">
-              <label><input type="radio" name="publish" checked={form.enabled} onChange={() => setForm({ ...form, enabled: true })} disabled={readOnly} /> Enable</label>
-              <label><input type="radio" name="publish" checked={!form.enabled} onChange={() => setForm({ ...form, enabled: false })} disabled={readOnly} /> Draft</label>
+              <label><input className="me-2" type="radio" name="publish" checked={form.enabled} onChange={() => setForm({ ...form, enabled: true })} disabled={readOnly} /> Enable</label>
+              <label><input className="me-2" type="radio" name="publish" checked={!form.enabled} onChange={() => setForm({ ...form, enabled: false })} disabled={readOnly} /> Draft</label>
             </div>
           </div>
           {!readOnly && <button type="submit" className="btn btn-primary mt-3" disabled={busy}>Save page</button>}

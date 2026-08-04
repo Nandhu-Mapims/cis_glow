@@ -121,7 +121,7 @@ export default function FeeScholarshipSetup() {
             <div className="d-flex flex-wrap gap-3 pt-1">
               {(data?.classOptions || []).map((year) => (
                 <label key={year.value} className="mb-0">
-                  <input
+                  <input className="me-2"
                     type="radio"
                     name="currentYear"
                     value={year.value}

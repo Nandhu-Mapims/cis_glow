@@ -36,7 +36,7 @@ export default function StaffRentalSetup({ data, busy, onLoad, onSave }) {
                   { value: 'category', label: 'Category' },
                 ].map((opt) => (
                   <label key={opt.value} className="me-2">
-                    <input type="radio" name="searchBy" checked={searchBy === opt.value} onChange={() => setSearchBy(opt.value)} /> {opt.label}
+                    <input className="me-2" type="radio" name="searchBy" checked={searchBy === opt.value} onChange={() => setSearchBy(opt.value)} /> {opt.label}
                   </label>
                 ))}
               </div>

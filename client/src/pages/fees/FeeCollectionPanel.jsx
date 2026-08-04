@@ -432,6 +432,7 @@ export default function FeeCollectionPanel() {
                     {BANK_OPTIONS.map((opt) => (
                       <label key={opt.value} className="cis-fee-bank-option">
                         <input
+                          className="me-2"
                           type="radio"
                           name="pay_bank"
                           value={opt.value}

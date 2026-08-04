@@ -334,9 +334,9 @@ export default function DashboardWidgetShell({
           </div>
 
           {showYearPickers && shell?.yearOptions && (
-            <div className="cis-dash-year-card">
-              <div className="row g-2 align-items-end">
-                <div className="col-md-3">
+            <div className="row g-2 align-items-stretch">
+              <div className="col-md-4">
+                <div className="cis-dash-year-card h-100">
                   <label className="form-label">U.G (Regular)</label>
                   <select
                     className="form-select"
@@ -348,7 +348,9 @@ export default function DashboardWidgetShell({
                     ))}
                   </select>
                 </div>
-                <div className="col-md-3">
+              </div>
+              <div className="col-md-4">
+                <div className="cis-dash-year-card h-100">
                   <label className="form-label">U.G (Additional)</label>
                   <select
                     className="form-select"
@@ -360,7 +362,9 @@ export default function DashboardWidgetShell({
                     ))}
                   </select>
                 </div>
-                <div className="col-md-3">
+              </div>
+              <div className="col-md-4">
+                <div className="cis-dash-year-card h-100">
                   <label className="form-label">P.G</label>
                   <select
                     className="form-select"

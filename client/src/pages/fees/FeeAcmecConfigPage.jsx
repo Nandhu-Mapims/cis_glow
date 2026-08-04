@@ -118,10 +118,10 @@ export default function FeeAcmecConfigPage() {
                 <label className="form-label">Search By</label>
                 <div>
                   <label className="me-3">
-                    <input type="radio" checked={fields.searchBy === 'roll_no'} onChange={() => setFields({ ...fields, searchBy: 'roll_no' })} /> Roll No
+                    <input className="me-2" type="radio" checked={fields.searchBy === 'roll_no'} onChange={() => setFields({ ...fields, searchBy: 'roll_no' })} /> Roll No
                   </label>
                   <label>
-                    <input type="radio" checked={fields.searchBy === 'batch'} onChange={() => setFields({ ...fields, searchBy: 'batch' })} /> Batch
+                    <input className="me-2" type="radio" checked={fields.searchBy === 'batch'} onChange={() => setFields({ ...fields, searchBy: 'batch' })} /> Batch
                   </label>
                 </div>
               </div>
@@ -212,7 +212,7 @@ export default function FeeAcmecConfigPage() {
                         <>
                           {['scst', 'sca', 'bc', 'mbc'].map((val) => (
                             <label key={val} className="me-2">
-                              <input type="radio" name="cSship" checked={form.casteScholarship === val} onChange={() => patchForm('casteScholarship', val)} /> {val.toUpperCase()}
+                              <input className="me-2" type="radio" name="cSship" checked={form.casteScholarship === val} onChange={() => patchForm('casteScholarship', val)} /> {val.toUpperCase()}
                             </label>
                           ))}
                           <label className="d-block mt-2">

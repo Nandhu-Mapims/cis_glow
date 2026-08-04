@@ -274,7 +274,7 @@ export function PersonalEditTab({ form, setForm, options }) {
             <div className="d-flex gap-3 pt-1">
               {['I', 'II'].map((u) => (
                 <label key={u} className="small">
-                  <input type="radio" name="unitType" checked={form.unitType === u} onChange={() => setForm((p) => ({ ...p, unitType: u }))} />
+                  <input className="me-2" type="radio" name="unitType" checked={form.unitType === u} onChange={() => setForm((p) => ({ ...p, unitType: u }))} />
                   {' '}{u}
                 </label>
               ))}
@@ -296,7 +296,7 @@ export function PersonalEditTab({ form, setForm, options }) {
             <div className="d-flex gap-3 pt-1">
               {['Full Time', 'Part Time'].map((jt) => (
                 <label key={jt} className="small">
-                  <input type="radio" name="jobType" checked={form.jobType === jt} onChange={() => setForm((p) => ({ ...p, jobType: jt }))} />
+                  <input className="me-2" type="radio" name="jobType" checked={form.jobType === jt} onChange={() => setForm((p) => ({ ...p, jobType: jt }))} />
                   {' '}{jt}
                 </label>
               ))}
@@ -307,7 +307,7 @@ export function PersonalEditTab({ form, setForm, options }) {
             <div className="d-flex gap-3 pt-1">
               {['academic', 'fixed'].map((pt) => (
                 <label key={pt} className="small">
-                  <input type="radio" name="payrollType" checked={form.payrollType === pt} onChange={() => setForm((p) => ({ ...p, payrollType: pt, attCategory: '' }))} />
+                  <input className="me-2" type="radio" name="payrollType" checked={form.payrollType === pt} onChange={() => setForm((p) => ({ ...p, payrollType: pt, attCategory: '' }))} />
                   {' '}{pt}
                 </label>
               ))}
@@ -335,7 +335,7 @@ export function PersonalEditTab({ form, setForm, options }) {
             <div className="d-flex gap-3 pt-1">
               {['Male', 'Female'].map((g) => (
                 <label key={g} className="small">
-                  <input type="radio" name="gender" checked={form.gender === g} onChange={() => setForm((p) => ({ ...p, gender: g }))} />
+                  <input className="me-2" type="radio" name="gender" checked={form.gender === g} onChange={() => setForm((p) => ({ ...p, gender: g }))} />
                   {' '}{g}
                 </label>
               ))}
@@ -350,7 +350,7 @@ export function PersonalEditTab({ form, setForm, options }) {
             <div className="d-flex gap-3 pt-1">
               {['Unmarried', 'Married'].map((m) => (
                 <label key={m} className="small">
-                  <input type="radio" name="maritalStatus" checked={form.maritalStatus === m} onChange={() => setForm((p) => ({ ...p, maritalStatus: m }))} />
+                  <input className="me-2" type="radio" name="maritalStatus" checked={form.maritalStatus === m} onChange={() => setForm((p) => ({ ...p, maritalStatus: m }))} />
                   {' '}{m}
                 </label>
               ))}

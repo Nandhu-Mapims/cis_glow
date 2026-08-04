@@ -363,24 +363,42 @@
 
 .cis-dash-jump {
   display: flex;
+  aspect-ratio: 1/1;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   padding: 0.875rem 0.5rem;
   border-radius: 14px;
   border: 1px solid var(--cis-border);
   background: var(--cis-bg);
-  text-decoration: none;
   color: var(--cis-text);
-  transition: border-color var(--cis-motion), background var(--cis-motion), transform var(--cis-motion), box-shadow var(--cis-motion);
+  text-decoration: none !important;
+  transition: border-color var(--cis-motion), background var(--cis-motion), transform var(--cis-motion), box-shadow var(--cis-motion), opacity var(--cis-motion)  ;
 }
 
 .cis-dash-jump:hover {
   border-color: rgba(var(--cis-accent-rgb), 0.85);
   background: var(--cis-accent-soft);
-  transform: translateY(-2px);
+  /* background: var(--cis-primary-soft); */
   box-shadow: 0 8px 18px rgba(26, 26, 26, 0.06);
   color: var(--cis-text);
+}
+.cis-dash-jumps-grid:has(.cis-dash-jump:hover) .cis-dash-jump:not(:hover){
+  /* use okhcl to set the background color to var(--cis-primary-soft) */
+  /* background: oklch(from var(--cis-primary-soft) l c h / 0.5);
+  border-color: oklch(from var(--cis-primary-soft) l c h / 0.5); */
+  opacity: 0.5;
+}
+/* current .cis-dash-jump:hover element next element */
+.cis-dash-jumps-grid:has(.cis-dash-jump:hover) .cis-dash-jump:hover + .cis-dash-jump{
+    background: oklch(from var(--cis-primary-soft) l c h / 0.5);
+    border-color: oklch(from var(--cis-primary-soft) l c h / 0.5);
+}
+/* current .cis-dash-jump:hover element before element */
+.cis-dash-jumps-grid:has(.cis-dash-jump:hover) .cis-dash-jump:has(+ .cis-dash-jump:hover){
+  background: oklch(from var(--cis-primary-soft) l c h / 0.5);
+  border-color: oklch(from var(--cis-primary-soft) l c h / 0.5);
 }
 
 .cis-dash-jump:focus-visible {
@@ -389,25 +407,26 @@
 }
 
 .cis-dash-jump-icon {
-  width: 40px;
-  height: 40px;
+  width: 100px;
+  height: 100px;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--cis-primary-soft);
+  /* background: var(--cis-primary-soft); */
   color: var(--cis-primary);
-  font-size: 1rem;
-  transition: background var(--cis-motion), color var(--cis-motion);
+  font-size: 3rem;
+  transition: background var(--cis-motion), color var(--cis-motion), transform var(--cis-motion);
 }
 
 .cis-dash-jump:hover .cis-dash-jump-icon {
-  background: var(--cis-primary);
-  color: #fff;
+  /* background: var(--cis-primary); */
+  color: var(--cis-primary);
+  transform:scale(1.1);
 }
 
 .cis-dash-jump-label {
-  font-size: 0.75rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   text-align: center;

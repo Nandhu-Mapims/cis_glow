@@ -159,7 +159,7 @@ export default function StipendNativeReportPage({
               <div className="d-flex flex-wrap gap-3">
                 {['bank', 'gross_pay', 'lop_amount', 'pf', 'esi', 'tds_amount', 'prof_tax'].map((value) => (
                   <label key={value}>
-                    <input type="radio" name="report_for" value={value} checked={reportFor === value} onChange={(e) => setReportFor(e.target.value)} />
+                    <input className="me-2" type="radio" name="report_for" value={value} checked={reportFor === value} onChange={(e) => setReportFor(e.target.value)} />
                     {' '}{value.replace(/_/g, ' ')}
                   </label>
                 ))}

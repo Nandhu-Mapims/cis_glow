@@ -59,7 +59,7 @@ export default function BlockSetupSetup({ data, busy, onLoad, onSave }) {
                   <td>{index + 1}</td>
                   <td className="text-nowrap">
                     <label className="me-2">
-                      <input
+                      <input className="me-2"
                         type="radio"
                         name={`blockType-${row.key}`}
                         checked={row.blockType === 'Hostel'}
@@ -68,7 +68,7 @@ export default function BlockSetupSetup({ data, busy, onLoad, onSave }) {
                       Hostel
                     </label>
                     <label>
-                      <input
+                      <input className="me-2"
                         type="radio"
                         name={`blockType-${row.key}`}
                         checked={row.blockType === 'Quarters'}
@@ -87,7 +87,7 @@ export default function BlockSetupSetup({ data, busy, onLoad, onSave }) {
                       { value: 'Second', label: '2' },
                     ].map(({ value, label }) => (
                       <label key={value} className="me-2">
-                        <input
+                        <input className="me-2"
                           type="radio"
                           name={`floor-${row.key}`}
                           checked={row.floor === value}

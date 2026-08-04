@@ -26,7 +26,7 @@ function PeriodCell({ period, cellId, onChange, disabled }) {
       <div className="period-setup-period-label">P: {period.periodList}</div>
       <div className="period-setup-session">
         <label className="me-2">
-          <input
+          <input className="me-2"
             type="radio"
             name={`session-${cellId}`}
             checked={period.session !== 'afternoon'}
@@ -36,7 +36,7 @@ function PeriodCell({ period, cellId, onChange, disabled }) {
           {' '}FN
         </label>
         <label>
-          <input
+          <input className="me-2"
             type="radio"
             name={`session-${cellId}`}
             checked={period.session === 'afternoon'}

@@ -83,7 +83,7 @@ export default function FeeFineSetup() {
           <label className="form-label d-block">Academic Type</label>
           {['Regular', 'Additional', 'Break'].map((type) => (
             <label key={type} className="me-3">
-              <input
+              <input className="me-2"
                 type="radio"
                 name="academicType"
                 value={type}
@@ -143,7 +143,7 @@ export default function FeeFineSetup() {
                         </td>
                         <td>
                           <label className="me-3">
-                            <input
+                            <input className="me-2"
                               type="radio"
                               name={`fineType-${index}`}
                               checked={row.fineType !== 'per_day'}
@@ -152,7 +152,7 @@ export default function FeeFineSetup() {
                             {' '}One Time
                           </label>
                           <label>
-                            <input
+                            <input className="me-2"
                               type="radio"
                               name={`fineType-${index}`}
                               checked={row.fineType === 'per_day'}

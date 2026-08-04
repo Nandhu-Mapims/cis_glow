@@ -125,8 +125,8 @@ function EventForm({ form, setForm, eventTypes, busy, onSubmit, onDelete, attach
         <div className="col-md-6">
           <label className="form-label">Web view</label>
           <div className="d-flex gap-3">
-            <label><input type="radio" checked={form.webView} onChange={() => setForm({ ...form, webView: true })} /> Yes</label>
-            <label><input type="radio" checked={!form.webView} onChange={() => setForm({ ...form, webView: false })} /> No</label>
+            <label><input className="me-2" type="radio" checked={form.webView} onChange={() => setForm({ ...form, webView: true })} /> Yes</label>
+            <label><input className="me-2" type="radio" checked={!form.webView} onChange={() => setForm({ ...form, webView: false })} /> No</label>
           </div>
         </div>
         {onDelete && (

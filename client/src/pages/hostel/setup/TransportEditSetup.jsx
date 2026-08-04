@@ -73,7 +73,7 @@ export default function TransportEditSetup({ data, busy, onLoad, onSave }) {
           <label className="form-label">Vehicle Type</label>
           <div className="d-flex gap-3 pt-2">
             {['Bus', 'Van', 'Auto'].map((type) => (
-              <label key={type}><input type="radio" checked={form.vehicleType === type} onChange={() => set('vehicleType', type)} /> {type}</label>
+              <label key={type}><input className="me-2" type="radio" checked={form.vehicleType === type} onChange={() => set('vehicleType', type)} /> {type}</label>
             ))}
           </div>
         </div>

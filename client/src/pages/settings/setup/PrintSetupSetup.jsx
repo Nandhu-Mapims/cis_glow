@@ -93,7 +93,7 @@ export default function PrintSetupSetup({ data, busy, onLoad, onSave }) {
             <div>
               {['none', 'css', 'php'].map((v) => (
                 <label key={v} className="me-3">
-                  <input type="radio" name="pageNo" checked={form.pageNo === v} onChange={() => setField('pageNo', v)} />
+                  <input className="me-2" type="radio" name="pageNo" checked={form.pageNo === v} onChange={() => setField('pageNo', v)} />
                   {' '}{v === 'none' ? 'None' : v === 'css' ? 'Page: x' : 'Page: x of y'}
                 </label>
               ))}

@@ -214,7 +214,7 @@ export default function CampActivityEditSetup() {
             <div className="col-sm-8 d-flex flex-wrap gap-3">
               {[['1', 'Confirm'], ['4', 'Not Yet Confirm'], ['2', 'Postpone'], ['3', 'Cancel']].map(([value, label]) => (
                 <label key={value}>
-                  <input type="radio" name="event_status" value={value} checked={form.eventStatus === value} onChange={() => setField('eventStatus', value)} />
+                  <input className="me-2" type="radio" name="event_status" value={value} checked={form.eventStatus === value} onChange={() => setField('eventStatus', value)} />
                   {' '}{label}
                 </label>
               ))}
@@ -224,8 +224,8 @@ export default function CampActivityEditSetup() {
           <div className="mb-3 row g-2">
             <label className="col-sm-2 col-form-label">Web View</label>
             <div className="col-sm-8 d-flex gap-3">
-              <label><input type="radio" name="web_view" value="1" checked={form.webView === '1'} onChange={() => setField('webView', '1')} /> Yes</label>
-              <label><input type="radio" name="web_view" value="0" checked={form.webView === '0'} onChange={() => setField('webView', '0')} /> No</label>
+              <label><input className="me-2" type="radio" name="web_view" value="1" checked={form.webView === '1'} onChange={() => setField('webView', '1')} /> Yes</label>
+              <label><input className="me-2" type="radio" name="web_view" value="0" checked={form.webView === '0'} onChange={() => setField('webView', '0')} /> No</label>
             </div>
           </div>
 

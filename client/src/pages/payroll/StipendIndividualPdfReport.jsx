@@ -133,7 +133,7 @@ export default function StipendIndividualPdfReport() {
             <label className="form-label d-block">Copy</label>
             {['Original Copy', 'Duplicate Copy', 'Default Copy'].map((value) => (
               <label key={value} className="me-3">
-                <input
+                <input className="me-2"
                   type="radio"
                   name="copy_type"
                   value={value}

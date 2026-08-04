@@ -31,7 +31,7 @@ export default function ResourcesBarcodeSetup({ data, busy, onLoad, onSave }) {
       </form>
       <div className="mb-3">
         {[1, 2, 3, 4].map((n) => (
-          <label key={n} className="me-3"><input type="radio" checked={copiesPerLabel === n} onChange={() => setCopiesPerLabel(n)} /> {n} copies</label>
+          <label key={n} className="me-3"><input className="me-2" type="radio" checked={copiesPerLabel === n} onChange={() => setCopiesPerLabel(n)} /> {n} copies</label>
         ))}
       </div>
       <div className="row g-2">

@@ -154,7 +154,7 @@ export default function StaffReport() {
               <div className="d-flex flex-wrap gap-3">
                 {['Regular', 'Discontinue', 'All'].map((value) => (
                   <label key={value}>
-                    <input type="radio" name="discontinued" value={value} checked={discontinued === value} onChange={() => setDiscontinued(value)} />
+                    <input className="me-2" type="radio" name="discontinued" value={value} checked={discontinued === value} onChange={() => setDiscontinued(value)} />
                     {' '}{value}
                   </label>
                 ))}

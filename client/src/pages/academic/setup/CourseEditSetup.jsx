@@ -40,8 +40,8 @@ function CourseEditForm({ data, busy, onBack, onSave, onDelete }) {
         <div className="col-md-6">
           <label className="form-label">Full Time / Part Time</label>
           <div>
-            <label className="me-3"><input type="radio" checked={form.courseTime === 'Full Time'} onChange={() => setField('courseTime', 'Full Time')} /> Full Time</label>
-            <label><input type="radio" checked={form.courseTime === 'Part Time'} onChange={() => setField('courseTime', 'Part Time')} /> Part Time</label>
+            <label className="me-3"><input className="me-2" type="radio" checked={form.courseTime === 'Full Time'} onChange={() => setField('courseTime', 'Full Time')} /> Full Time</label>
+            <label><input className="me-2" type="radio" checked={form.courseTime === 'Part Time'} onChange={() => setField('courseTime', 'Part Time')} /> Part Time</label>
           </div>
         </div>
         <div className="col-md-6"><label className="form-label">Degree</label><input className="form-control" required value={form.degreeName} onChange={(e) => setField('degreeName', e.target.value)} /></div>

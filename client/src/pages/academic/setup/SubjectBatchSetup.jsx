@@ -117,7 +117,7 @@ export default function SubjectBatchSetup() {
           <div className="col-sm-8">
             {Array.from({ length: data.totalSemester || 0 }, (_, i) => i + 1).map((yr) => (
               <label key={yr} className="me-3">
-                <input type="radio" checked={String(semester) === String(yr)} onChange={() => onSemesterChange(yr)} /> {yr}
+                <input className="me-2" type="radio" checked={String(semester) === String(yr)} onChange={() => onSemesterChange(yr)} /> {yr}
               </label>
             ))}
           </div>

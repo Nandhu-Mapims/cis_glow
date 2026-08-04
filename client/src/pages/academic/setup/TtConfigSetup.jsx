@@ -182,7 +182,7 @@ export default function TtConfigSetup() {
               {(data.totalSemester || 0) > 0 ? (
                 Array.from({ length: data.totalSemester }, (_, i) => i + 1).map((yr) => (
                   <label key={yr} className="me-3">
-                    <input
+                    <input className="me-2"
                       type="radio"
                       name="ttConfigYear"
                       checked={String(semester) === String(yr)}

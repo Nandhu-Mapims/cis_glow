@@ -150,8 +150,8 @@ export default function CampActivityAddSetup() {
         <div className="mb-3 row g-2">
           <label className="col-sm-2 col-form-label">Web View</label>
           <div className="col-sm-8 d-flex gap-3">
-            <label><input type="radio" name="web_view" value="1" checked={form.webView === '1'} onChange={() => setField('webView', '1')} /> Yes</label>
-            <label><input type="radio" name="web_view" value="0" checked={form.webView === '0'} onChange={() => setField('webView', '0')} /> No</label>
+            <label><input className="me-2" type="radio" name="web_view" value="1" checked={form.webView === '1'} onChange={() => setField('webView', '1')} /> Yes</label>
+            <label><input className="me-2" type="radio" name="web_view" value="0" checked={form.webView === '0'} onChange={() => setField('webView', '0')} /> No</label>
           </div>
         </div>
 

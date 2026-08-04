@@ -73,7 +73,7 @@ export default function AlumniEditPanel({ data, busy, onLoad, onSave }) {
             <label className="form-label small text-muted mb-2">Search by</label>
             <div className="d-flex flex-column gap-1 mb-3">
               <label className="mb-0">
-                <input
+                <input className="me-2"
                   type="radio"
                   name="alumni_search_by"
                   value="name"
@@ -83,7 +83,7 @@ export default function AlumniEditPanel({ data, busy, onLoad, onSave }) {
                 {' '}Name
               </label>
               <label className="mb-0">
-                <input
+                <input className="me-2"
                   type="radio"
                   name="alumni_search_by"
                   value="roll_no"
@@ -193,7 +193,7 @@ export default function AlumniEditPanel({ data, busy, onLoad, onSave }) {
                       <label className="form-label">Gender</label>
                       <div className="d-flex gap-3">
                         <label className="mb-0">
-                          <input
+                          <input className="me-2"
                             type="radio"
                             name="gender"
                             value="male"
@@ -203,7 +203,7 @@ export default function AlumniEditPanel({ data, busy, onLoad, onSave }) {
                           {' '}Male
                         </label>
                         <label className="mb-0">
-                          <input
+                          <input className="me-2"
                             type="radio"
                             name="gender"
                             value="female"

@@ -1,0 +1,23 @@
+services:
+  backend:
+    build:
+      context: ./server
+    env_file:
+      - ./server/.env
+    environment:
+      PORT: 2003
+      CLIENT_URL: http://localhost:1003
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "2003:2003"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./client
+    depends_on:
+      - backend
+    ports:
+      - "1003:1003"
+    restart: unless-stopped

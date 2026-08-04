@@ -147,7 +147,7 @@ export default function DashboardWidgetCard({
       {ChartComponent && <ChartComponent rows={chart.rows} />}
 
       {safeHtml ? (
-        <div className="cis-widget-collapse">
+        <div className="cis-widget-collapse mt-3">
           {/* Chart widgets hide their (possibly huge) table until asked for; every
               other widget shows the full — but shrunk & scrollable — table so it can
               be read in place without expanding. */}

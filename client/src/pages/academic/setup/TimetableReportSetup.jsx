@@ -32,8 +32,8 @@ export default function TimetableReportSetup() {
         <div className="col-sm-4">
           <label className="form-label">Type</label>
           <div>
-            <label className="me-3"><input type="radio" checked={passType === 'Theory'} onChange={() => setPassType('Theory')} /> Theory</label>
-            <label><input type="radio" checked={passType === 'Clinical'} onChange={() => setPassType('Clinical')} /> Clinical/Practical</label>
+            <label className="me-3"><input className="me-2" type="radio" checked={passType === 'Theory'} onChange={() => setPassType('Theory')} /> Theory</label>
+            <label><input className="me-2" type="radio" checked={passType === 'Clinical'} onChange={() => setPassType('Clinical')} /> Clinical/Practical</label>
           </div>
         </div>
         <div className="col-sm-2">

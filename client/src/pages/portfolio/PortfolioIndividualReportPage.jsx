@@ -199,7 +199,7 @@ export default function PortfolioIndividualReportPage() {
                 <label className="form-label">Search By</label>
                 <div>
                   <label className="me-3">
-                    <input
+                    <input className="me-2"
                       type="radio"
                       name="searchBy"
                       value="roll_no"
@@ -209,7 +209,7 @@ export default function PortfolioIndividualReportPage() {
                     {' '}Roll No
                   </label>
                   <label>
-                    <input
+                    <input className="me-2"
                       type="radio"
                       name="searchBy"
                       value="batch"

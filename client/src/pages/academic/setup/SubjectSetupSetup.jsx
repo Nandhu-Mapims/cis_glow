@@ -173,7 +173,7 @@ export default function SubjectSetupSetup() {
             <div className="col-sm-8">
               {Array.from({ length: data.totalSemester || 0 }, (_, i) => i + 1).map((yr) => (
                 <label key={yr} className="me-3">
-                  <input
+                  <input className="me-2"
                     type="radio"
                     name="semester"
                     checked={String(semester) === String(yr)}

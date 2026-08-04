@@ -36,7 +36,7 @@ export default function AddressLabelPanel({ data, busy, onGenerate }) {
             <div className="form-label">Search By</div>
             <div className="d-flex flex-wrap gap-3">
               <label className="mb-0">
-                <input
+                <input className="me-2"
                   type="radio"
                   name="search_by"
                   value="batch"
@@ -46,7 +46,7 @@ export default function AddressLabelPanel({ data, busy, onGenerate }) {
                 {' '}Batch
               </label>
               <label className="mb-0">
-                <input
+                <input className="me-2"
                   type="radio"
                   name="search_by"
                   value="year"
@@ -77,7 +77,7 @@ export default function AddressLabelPanel({ data, busy, onGenerate }) {
             <div className="d-flex flex-wrap gap-3">
               {['Regular', 'Discontinue', 'All'].map((value) => (
                 <label key={value} className="mb-0">
-                  <input
+                  <input className="me-2"
                     type="radio"
                     name="display_opt"
                     value={value}

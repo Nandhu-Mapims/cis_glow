@@ -177,7 +177,7 @@ export default function PayrollGroupReport() {
             <div className="d-flex flex-wrap gap-3">
               {(data?.reportTypeOptions || []).filter((opt) => opt.visible).map((opt) => (
                 <label key={opt.value}>
-                  <input
+                  <input className="me-2"
                     type="radio"
                     name="report_for"
                     value={opt.value}
