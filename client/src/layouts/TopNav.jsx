@@ -580,7 +580,7 @@ export default function TopNav({
   const { pathname, search } = useLocation();
   const [query, setQuery] = useState('');
   const searchRef = useRef(null);
-  const logoUrl = settings?.institutionLogoUrl || '/legacy/img/global_images/logo.png';
+  const logoUrl = '/img/institution-logo.png';
   const shortName = settings?.institutionShortName || 'CIS';
   const results = useMemo(() => searchMenuItems(menu, query), [menu, query]);
 
@@ -601,11 +601,7 @@ export default function TopNav({
         <div className="cis-topnav-bar cis-topnav-bar-single">
           <Link to="/dashboard" className="cis-topnav-brand">
             <span className="cis-topnav-logo">
-              <img
-                src={logoUrl}
-                alt=""
-                onError={(e) => { e.currentTarget.src = '/legacy/img/global_images/logo.png'; }}
-              />
+              <img src={logoUrl} alt="" />
             </span>
             <span className="cis-topnav-brand-text">
               <strong>{shortName}</strong>
@@ -664,11 +660,7 @@ export default function TopNav({
         <div className="cis-topnav-drawer-head">
           <Link to="/dashboard" className="cis-topnav-brand" onClick={handleNavigate}>
             <span className="cis-topnav-logo">
-              <img
-                src={logoUrl}
-                alt=""
-                onError={(e) => { e.currentTarget.src = '/legacy/img/global_images/logo.png'; }}
-              />
+              <img src={logoUrl} alt="" />
             </span>
             <span className="cis-topnav-brand-text">
               <strong>{shortName}</strong>

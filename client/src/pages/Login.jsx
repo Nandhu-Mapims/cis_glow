@@ -48,7 +48,6 @@ export default function Login() {
     }
   };
 
-  const logoUrl = settings?.institutionLogoUrl || '/legacy/img/global_images/logo.png';
   const institutionName = settings?.institutionShortName || 'APDCH';
   const pageTitle = settings?.adminTitle || `${institutionName} Central Login`;
 
@@ -59,28 +58,39 @@ export default function Login() {
 
   return (
     <div className="login-page">
-      <div className="login-theme-slot">
-        <ThemeControlMenu />
-      </div>
+      <aside className="login-hero">
+        <div className="login-hero-mark">
+          <img src="/img/institution-logo.png" alt="" />
+        </div>
 
-      <main className="login-card-wrap">
-        <div className="login-card">
-          <div className="login-card-brand">
-            <img className="login-card-logo" src={logoUrl} alt="" />
-            <div>
-              <p className="login-card-eyebrow">Campus Information System</p>
-              <p className="login-card-name">{institutionName}</p>
-            </div>
-          </div>
+        <div className="login-hero-copy">
+          <h2>
+            Hello<br />{institutionName}!
+          </h2>
+          <p>
+            Manage students, staff, attendance, fees and academics from one
+            connected campus system.
+          </p>
+        </div>
 
-          <div className="login-card-head">
+        <p className="login-hero-footer">© {new Date().getFullYear()} {institutionName}. All rights reserved.</p>
+      </aside>
+
+      <main className="login-form-pane">
+        <div className="login-theme-slot">
+          <ThemeControlMenu />
+        </div>
+
+        <div className="login-form-wrap">
+          <img className="login-card-banner" src="/img/login-banner.png" alt={institutionName} />
+
+          <div className="login-card-head ps-2">
             <h1>Sign in</h1>
             <p>{pageTitle}</p>
           </div>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className='p-2'>
             <div className="login-field">
-              <label className="login-field-label" htmlFor="login-username">Username</label>
               <div className="login-field-control">
                 <i className="fa fa-user" aria-hidden="true" />
                 <input
@@ -97,7 +107,6 @@ export default function Login() {
             </div>
 
             <div className="login-field">
-              <label className="login-field-label" htmlFor="login-password">Password</label>
               <div className="login-field-control">
                 <i className="fa fa-lock" aria-hidden="true" />
                 <input

@@ -33,9 +33,12 @@ export default function DashboardWidgetShell({
   const [attendanceDate, setAttendanceDate] = useState(todayIso());
   const [academicYears, setAcademicYears] = useState({ ugr: '', uga: '', pgr: '' });
   const [widgetHtml, setWidgetHtml] = useState({});
-  const [widgetLoading, setWidgetLoading] = useState(false);
+  // Widget ids currently in flight — each group's panels flip from skeleton to content the
+  // moment their own request lands, independent of slower sibling groups.
+  const [pendingWidgetIds, setPendingWidgetIds] = useState(() => new Set());
   const [widgetError, setWidgetError] = useState(null);
 
+  const widgetLoading = pendingWidgetIds.size > 0;
   const widgetCount = shell?.widgets?.length || 0;
 
   const loadedWidgetCount = useMemo(
@@ -44,49 +47,60 @@ export default function DashboardWidgetShell({
   );
 
   const loadWidgets = useCallback(async (shellData, date, years) => {
-    if (!shellData?.widgetGroups || Object.keys(shellData.widgetGroups).length === 0) {
+    const groups = Object.values(shellData?.widgetGroups || {});
+    if (groups.length === 0) {
       setWidgetHtml({});
-      setWidgetLoading(false);
+      setPendingWidgetIds(new Set());
       return;
     }
 
-    setWidgetLoading(true);
+    setPendingWidgetIds(new Set(groups.flat()));
     setWidgetError(null);
     const dateUnix = Math.floor(new Date(`${date}T12:00:00`).getTime() / 1000);
-    const nextHtml = {};
+    const failedGroups = [];
 
-    try {
-      const groups = Object.values(shellData.widgetGroups);
-      const results = await Promise.all(
-        groups.map((widgetIds) => {
-          const hasStaffCurrent = widgetIds.includes('staff_current');
-          const params = {
-            w: widgetIds.join(','),
-            d: hasStaffCurrent ? date : dateUnix,
-            ugr: years.ugr,
-            uga: years.uga,
-            pgr: years.pgr,
-          };
-          if (hasStaffCurrent) {
-            params.c = '1';
-            params.t = new Date().toTimeString().slice(0, 5);
-          }
-          return api.get('/api/dashboard/widgets', { params });
-        }),
-      );
+    // Groups are independent panels — one slow/heavy group (e.g. staff attendance) shouldn't
+    // hold up already-arrived panels, and a group that fails shouldn't blank the rest.
+    await Promise.allSettled(
+      groups.map(async (widgetIds) => {
+        const hasStaffCurrent = widgetIds.includes('staff_current');
+        const params = {
+          w: widgetIds.join(','),
+          d: hasStaffCurrent ? date : dateUnix,
+          ugr: years.ugr,
+          uga: years.uga,
+          pgr: years.pgr,
+        };
+        if (hasStaffCurrent) {
+          params.c = '1';
+          params.t = new Date().toTimeString().slice(0, 5);
+        }
 
-      results.forEach((res) => {
-        (res.data.widgets || []).forEach((widget) => {
-          nextHtml[widget.id] = widget.html;
-        });
-      });
-      setWidgetHtml(nextHtml);
-    } catch (err) {
-      setWidgetError(err.response?.data?.message || 'Failed to load dashboard widgets');
-      setWidgetHtml({});
-    } finally {
-      setWidgetLoading(false);
-    }
+        try {
+          const res = await api.get('/api/dashboard/widgets', { params });
+          const groupHtml = {};
+          (res.data.widgets || []).forEach((widget) => {
+            groupHtml[widget.id] = widget.html;
+          });
+          setWidgetHtml((prev) => ({ ...prev, ...groupHtml }));
+        } catch {
+          failedGroups.push(...widgetIds);
+        } finally {
+          setPendingWidgetIds((prev) => {
+            if (prev.size === 0) return prev;
+            const next = new Set(prev);
+            widgetIds.forEach((id) => next.delete(id));
+            return next;
+          });
+        }
+      }),
+    );
+
+    setWidgetError(
+      failedGroups.length
+        ? `${failedGroups.length} panel${failedGroups.length > 1 ? 's' : ''} took too long to load and were skipped — try refreshing.`
+        : null,
+    );
   }, []);
 
   const fetchShell = useCallback(async (params = {}) => {
@@ -127,7 +141,6 @@ export default function DashboardWidgetShell({
   }, [fetchShell, loadWidgets]);
 
   const handleRefresh = async () => {
-    setWidgetLoading(true);
     setWidgetError(null);
     try {
       const shellRes = await fetchShell({
@@ -140,14 +153,11 @@ export default function DashboardWidgetShell({
       await loadWidgets(shellRes, attendanceDate, academicYears);
     } catch (err) {
       setWidgetError(err.response?.data?.message || 'Failed to refresh dashboard');
-    } finally {
-      setWidgetLoading(false);
     }
   };
 
   const applyYears = async (nextYears) => {
     setAcademicYears(nextYears);
-    setWidgetLoading(true);
     try {
       const shellRes = await fetchShell({
         attendanceDate,
@@ -159,8 +169,6 @@ export default function DashboardWidgetShell({
       await loadWidgets(shellRes, attendanceDate, nextYears);
     } catch (err) {
       setWidgetError(err.response?.data?.message || 'Failed to apply academic years');
-    } finally {
-      setWidgetLoading(false);
     }
   };
 
@@ -397,7 +405,7 @@ export default function DashboardWidgetShell({
                 key={widget.id}
                 widget={widget}
                 html={widgetHtml[widget.id]}
-                loading={widgetLoading}
+                loading={pendingWidgetIds.has(widget.id)}
               />
             ))}
 

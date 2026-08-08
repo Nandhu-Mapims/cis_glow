@@ -7,16 +7,25 @@ import { PageLoading } from '../components/PageShell';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { cachedByDate, peekSessionCache } from '../utils/idbCache';
 
-// v2: widget payloads can now carry a separate `chart` field alongside `html`
-// (see widgetDispatcher.js) — bumped so a v1 cache with the old shape isn't replayed.
-const DASHBOARD_CACHE_VERSION = 'v2';
+// Shell (page frame: identity, register date, widget list/groups) and widgets (the actual
+// per-panel HTML) are cached and fetched separately on purpose — the shell is cheap and
+// should paint immediately, while widget queries (esp. staff attendance) can be slow. See
+// loadForDate()/loadWidgets() below. v2: widget payloads can carry a `chart` field
+// alongside `html` (see widgetDispatcher.js) — bumped so a v1 cache with the old shape
+// isn't replayed.
+const DASHBOARD_SHELL_CACHE_VERSION = 'v1';
+const DASHBOARD_WIDGETS_CACHE_VERSION = 'v2';
 // Today's panels can still change through the day, so we revalidate more eagerly than
 // the default session TTL; a past date's panels are settled history (see idbCache.js).
 const DASHBOARD_TODAY_TTL_MS = 90_000;
 const DATE_DEBOUNCE_MS = 400;
 
-function dashboardCacheKey(date) {
-  return `dashboard:${DASHBOARD_CACHE_VERSION}:${date}`;
+function dashboardShellCacheKey(date) {
+  return `dashboard-shell:${DASHBOARD_SHELL_CACHE_VERSION}:${date}`;
+}
+
+function dashboardWidgetsCacheKey(date) {
+  return `dashboard-widgets:${DASHBOARD_WIDGETS_CACHE_VERSION}:${date}`;
 }
 
 const MODULE_JUMPS = [
@@ -62,19 +71,22 @@ function greetingForHour(hour) {
 export default function Dashboard() {
   const { user } = useAuth();
   const { settings, menu } = useOutletContext();
-  // Only "today" is synchronously peekable (sessionStorage); a past date's cached panels
-  // live in IndexedDB and only arrive once the load effect below has run.
-  const cached = peekSessionCache(dashboardCacheKey(todayIso()));
-  const [dashboard, setDashboard] = useState(cached?.dashboard ?? null);
-  const [loading, setLoading] = useState(!cached);
+  // Only "today" is synchronously peekable (sessionStorage); a past date's cached shell/
+  // widgets live in IndexedDB and only arrive once the load effect below has run.
+  const cachedShell = peekSessionCache(dashboardShellCacheKey(todayIso()));
+  const cachedWidgets = peekSessionCache(dashboardWidgetsCacheKey(todayIso()));
+  const [dashboard, setDashboard] = useState(cachedShell?.dashboard ?? null);
+  const [loading, setLoading] = useState(!cachedShell);
   const [loadError, setLoadError] = useState(null);
-  const [attendanceDate, setAttendanceDate] = useState(cached?.attendanceDate ?? todayIso());
-  const [widgetHtml, setWidgetHtml] = useState(cached?.widgetHtml ?? {});
-  const [widgetCharts, setWidgetCharts] = useState(cached?.widgetCharts ?? {});
-  const [widgetLoading, setWidgetLoading] = useState(false);
+  const [attendanceDate, setAttendanceDate] = useState(cachedShell?.attendanceDate ?? todayIso());
+  const [widgetHtml, setWidgetHtml] = useState(cachedWidgets?.widgetHtml ?? {});
+  const [widgetCharts, setWidgetCharts] = useState(cachedWidgets?.widgetCharts ?? {});
+  // Widget ids currently in flight — each group's panels flip from skeleton to content the
+  // moment their own request lands, independent of slower sibling groups (see loadWidgets).
+  const [pendingWidgetIds, setPendingWidgetIds] = useState(() => new Set());
   const [widgetError, setWidgetError] = useState(null);
   const [academicYears, setAcademicYears] = useState(
-    cached?.academicYears ?? { ugr: '', uga: '', pgr: '' },
+    cachedShell?.academicYears ?? { ugr: '', uga: '', pgr: '' },
   );
   const [statusNotice, setStatusNotice] = useState(null);
   const [expandAllTick, setExpandAllTick] = useState(0);
@@ -82,7 +94,7 @@ export default function Dashboard() {
 
   const bootstrappedRef = useRef(false);
   const dateRefreshTimer = useRef(null);
-  const loadedDateRef = useRef(cached?.attendanceDate ?? null);
+  const loadedDateRef = useRef(cachedShell?.attendanceDate ?? null);
   const academicYearsRef = useRef(academicYears);
   const dashboardRef = useRef(dashboard);
   const settingsRef = useRef(settings);
@@ -91,6 +103,7 @@ export default function Dashboard() {
   dashboardRef.current = dashboard;
   settingsRef.current = settings;
 
+  const widgetLoading = pendingWidgetIds.size > 0;
   const widgetCount = dashboard?.widgets?.length || 0;
   const memberName = user?.memberName || dashboard?.memberName || 'there';
   const greeting = greetingForHour(new Date().getHours());
@@ -103,92 +116,118 @@ export default function Dashboard() {
     [widgetHtml],
   );
 
+  // Fetches widget panels one group at a time and reveals each as it lands — a slow/heavy
+  // group (e.g. staff attendance on a date with lots of records) shouldn't hold the whole
+  // grid on skeletons while every other panel is already sitting in memory. Wrapped in the
+  // same stale-while-revalidate cache as the shell so a revisit paints instantly and just
+  // quietly reconfirms in the background.
   const loadWidgets = useCallback(async (shell, date, years, forceRefresh = false) => {
-    if (!shell?.widgetGroups || Object.keys(shell.widgetGroups).length === 0) {
+    const groups = Object.values(shell?.widgetGroups || {});
+    if (groups.length === 0) {
       setWidgetHtml({});
       setWidgetCharts({});
-      setWidgetLoading(false);
-      return { html: {}, chart: {} };
+      setPendingWidgetIds(new Set());
+      return { widgetHtml: {}, widgetCharts: {} };
     }
 
-    setWidgetLoading(true);
-    setWidgetError(null);
-    const dateUnix = Math.floor(new Date(`${date}T12:00:00`).getTime() / 1000);
-    const nextHtml = {};
-    const nextCharts = {};
+    return cachedByDate(
+      dashboardWidgetsCacheKey(date),
+      date,
+      async () => {
+        setPendingWidgetIds(new Set(groups.flat()));
+        setWidgetError(null);
+        const dateUnix = Math.floor(new Date(`${date}T12:00:00`).getTime() / 1000);
+        const nextHtml = {};
+        const nextCharts = {};
+        const failedGroups = [];
 
-    const groups = Object.values(shell.widgetGroups);
-    // Widget groups are independent panels — one slow/heavy group (e.g. staff
-    // attendance on a date with lots of records) shouldn't take every other
-    // already-loaded panel down with it. allSettled + per-group fallback HTML
-    // keeps the rest of the dashboard usable and tells the user which panels
-    // specifically failed instead of wiping the whole grid.
-    const settled = await Promise.allSettled(
-      groups.map((widgetIds) => {
-        const hasStaffCurrent = widgetIds.includes('staff_current');
-        const params = {
-          w: widgetIds.join(','),
-          d: hasStaffCurrent ? date : dateUnix,
-          ugr: years.ugr,
-          uga: years.uga,
-          pgr: years.pgr,
-        };
-        if (hasStaffCurrent) {
-          params.c = '1';
-          params.t = new Date().toTimeString().slice(0, 5);
-        }
-        if (forceRefresh) params.cRefresh = 1;
-        return api.get('/api/dashboard/widgets', { params, timeout: 90000 })
-          .then((res) => ({ widgetIds, res }));
-      }),
+        await Promise.allSettled(
+          groups.map(async (widgetIds) => {
+            const hasStaffCurrent = widgetIds.includes('staff_current');
+            const params = {
+              w: widgetIds.join(','),
+              d: hasStaffCurrent ? date : dateUnix,
+              ugr: years.ugr,
+              uga: years.uga,
+              pgr: years.pgr,
+            };
+            if (hasStaffCurrent) {
+              params.c = '1';
+              params.t = new Date().toTimeString().slice(0, 5);
+            }
+            if (forceRefresh) params.cRefresh = 1;
+
+            try {
+              const res = await api.get('/api/dashboard/widgets', { params, timeout: 90000 });
+              const groupHtml = {};
+              const groupCharts = {};
+              (res.data.widgets || []).forEach((widget) => {
+                groupHtml[widget.id] = widget.html;
+                nextHtml[widget.id] = widget.html;
+                if (widget.chart) {
+                  groupCharts[widget.id] = widget.chart;
+                  nextCharts[widget.id] = widget.chart;
+                }
+              });
+              // Reveal this group's panels the moment they land instead of waiting for
+              // every group to finish — this is what makes the grid fill in one-by-one.
+              setWidgetHtml((prev) => ({ ...prev, ...groupHtml }));
+              setWidgetCharts((prev) => ({ ...prev, ...groupCharts }));
+            } catch {
+              failedGroups.push(...widgetIds);
+            } finally {
+              setPendingWidgetIds((prev) => {
+                if (prev.size === 0) return prev;
+                const next = new Set(prev);
+                widgetIds.forEach((id) => next.delete(id));
+                return next;
+              });
+            }
+          }),
+        );
+
+        setWidgetError(
+          failedGroups.length
+            ? `${failedGroups.length} panel${failedGroups.length > 1 ? 's' : ''} took too long to load and were skipped — try refreshing.`
+            : null,
+        );
+
+        return { widgetHtml: nextHtml, widgetCharts: nextCharts };
+      },
+      {
+        ttlMs: forceRefresh ? 0 : (date === todayIso() ? DASHBOARD_TODAY_TTL_MS : undefined),
+        onCache: (cachedPayload) => {
+          // Paint instantly from a prior visit; the fetcher above (still running unless the
+          // cache is fresh enough to skip it) will quietly confirm/update group-by-group.
+          setWidgetHtml(cachedPayload.widgetHtml || {});
+          setWidgetCharts(cachedPayload.widgetCharts || {});
+        },
+      },
     );
-
-    const failedGroups = [];
-    settled.forEach((outcome, idx) => {
-      if (outcome.status === 'fulfilled') {
-        (outcome.value.res.data.widgets || []).forEach((widget) => {
-          nextHtml[widget.id] = widget.html;
-          if (widget.chart) nextCharts[widget.id] = widget.chart;
-        });
-      } else {
-        failedGroups.push(...groups[idx]);
-      }
-    });
-
-    setWidgetHtml(nextHtml);
-    setWidgetCharts(nextCharts);
-    setWidgetError(
-      failedGroups.length
-        ? `${failedGroups.length} panel${failedGroups.length > 1 ? 's' : ''} took too long to load and were skipped — try refreshing.`
-        : null,
-    );
-    setWidgetLoading(false);
-    return { html: nextHtml, chart: nextCharts };
   }, []);
 
-  const applyPayload = useCallback((payload, announce = false) => {
-    if (!payload) return;
-    setDashboard(payload.dashboard);
-    setAttendanceDate(payload.attendanceDate);
-    setAcademicYears(payload.academicYears || academicYearsRef.current);
-    setWidgetHtml(payload.widgetHtml || {});
-    setWidgetCharts(payload.widgetCharts || {});
-    loadedDateRef.current = payload.attendanceDate;
-    if (announce) {
-      setStatusNotice(`Updated panels for ${formatDisplayDate(payload.attendanceDate)}`);
-    }
-  }, []);
-
-  // Fetches (or serves from cache) the dashboard shell + widgets for one attendance date.
-  // Today's panels are cached in sessionStorage with a short TTL (still changing through
-  // the day); any other date is cached in IndexedDB with a long TTL, since a closed day's
-  // panels aren't expected to change — see idbCache.js.
+  // Fetches (or serves from cache) just the page shell — identity, register date, widget
+  // list/groups — for one attendance date. This is cheap (metadata only) and is what
+  // unblocks first paint; widget content loads separately and progressively via
+  // loadWidgets(). Today's shell is cached in sessionStorage with a short TTL (still
+  // changing through the day); any other date is cached in IndexedDB with a long TTL,
+  // since a closed day's shell isn't expected to change — see idbCache.js.
   const loadForDate = useCallback(async (date, { dashboardOverride, force = false, announce = false } = {}) => {
-    setWidgetLoading(true);
     setWidgetError(null);
     try {
-      const payload = await cachedByDate(
-        dashboardCacheKey(date),
+      const applyShell = (shellPayload, isFresh) => {
+        setDashboard(shellPayload.dashboard);
+        setAttendanceDate(shellPayload.attendanceDate);
+        setAcademicYears(shellPayload.academicYears || academicYearsRef.current);
+        loadedDateRef.current = shellPayload.attendanceDate;
+        setLoading(false);
+        if (isFresh && announce) {
+          setStatusNotice(`Updated panels for ${formatDisplayDate(shellPayload.attendanceDate)}`);
+        }
+      };
+
+      const shellPayload = await cachedByDate(
+        dashboardShellCacheKey(date),
         date,
         async () => {
           const dashboardData = dashboardOverride
@@ -198,24 +237,25 @@ export default function Dashboard() {
             uga: settingsRef.current?.ugaAcademicYear || '',
             pgr: settingsRef.current?.pgAcademicYear || '',
           };
-          const { html, chart } = await loadWidgets(dashboardData, date, years, force);
-          return {
-            dashboard: dashboardData,
-            attendanceDate: date,
-            academicYears: years,
-            widgetHtml: html,
-            widgetCharts: chart,
-          };
+          return { dashboard: dashboardData, attendanceDate: date, academicYears: years };
         },
         {
           ttlMs: force ? 0 : (date === todayIso() ? DASHBOARD_TODAY_TTL_MS : undefined),
-          onCache: (cachedPayload) => applyPayload(cachedPayload),
-          onFresh: (freshPayload) => applyPayload(freshPayload, announce),
+          onCache: (cachedShellPayload) => applyShell(cachedShellPayload, false),
+          onFresh: (freshShellPayload) => applyShell(freshShellPayload, true),
         },
       );
+
       bootstrappedRef.current = true;
       setLoading(false);
-      return payload;
+
+      const { widgetHtml: html, widgetCharts: chart } = await loadWidgets(
+        shellPayload.dashboard,
+        shellPayload.attendanceDate,
+        shellPayload.academicYears,
+        force,
+      );
+      return { ...shellPayload, widgetHtml: html, widgetCharts: chart };
     } catch (err) {
       if (!dashboardRef.current) {
         setLoadError(err.response?.data?.message || 'Could not load dashboard');
@@ -224,10 +264,8 @@ export default function Dashboard() {
       bootstrappedRef.current = true;
       setLoading(false);
       return null;
-    } finally {
-      setWidgetLoading(false);
     }
-  }, [loadWidgets, applyPayload]);
+  }, [loadWidgets]);
 
   useEffect(() => {
     let cancelled = false;
@@ -474,7 +512,7 @@ export default function Dashboard() {
                 widget={widget}
                 html={widgetHtml[widget.id]}
                 chart={widgetCharts[widget.id]}
-                loading={widgetLoading}
+                loading={pendingWidgetIds.has(widget.id)}
                 expandAllTick={expandAllTick}
                 collapseAllTick={collapseAllTick}
               />
