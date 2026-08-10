@@ -1,5 +1,45 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
+import { LEGACY_ROUTE_MAP } from '../utils/legacyRoutes';
+
+// Reverse of LEGACY_ROUTE_MAP: modern route -> set of legacy php filenames that lead there.
+const ROUTE_TO_LEGACY = (() => {
+  const map = new Map();
+  Object.entries(LEGACY_ROUTE_MAP).forEach(([php, route]) => {
+    const base = route.split('?')[0];
+    if (!map.has(base)) map.set(base, new Set());
+    map.get(base).add(php);
+  });
+  return map;
+})();
+
+function buildAllowedLegacyLinks(menu) {
+  const set = new Set();
+  (menu || []).forEach((category) => {
+    (category.mainMenus || []).forEach((mainMenu) => {
+      (mainMenu.subMenus || []).forEach((sub) => {
+        if (sub.link) set.add(String(sub.link).trim().toLowerCase());
+      });
+    });
+  });
+  return set;
+}
+
+// Hide a hub tile only when we can positively confirm the user lacks access to every
+// legacy screen behind it. Routes with no known legacy mapping, or while permission
+// data hasn't loaded yet, are left visible — false negatives (wrongly hiding a screen
+// the user can use) are worse than false positives here.
+function filterLinksByPermission(links, menu) {
+  const allowed = buildAllowedLegacyLinks(menu);
+  if (allowed.size === 0) return links;
+  return links.filter((item) => {
+    const base = String(item.to || '').split('?')[0];
+    const legacyFiles = ROUTE_TO_LEGACY.get(base);
+    if (!legacyFiles) return true;
+    return [...legacyFiles].some((php) => allowed.has(php));
+  });
+}
 
 export function PageLoading({ message = 'Loading…' }) {
   return (
@@ -196,8 +236,9 @@ export function ModuleHub({
     return <PageError message={error} onRetry={onRetry} />;
   }
 
-  const normalizedLinks = links.map(normalizeHubLink);
-  const sections = groupHubLinks(links);
+  const visibleLinks = useMemo(() => filterLinksByPermission(links, menu), [links, menu]);
+  const normalizedLinks = visibleLinks.map(normalizeHubLink);
+  const sections = groupHubLinks(visibleLinks);
   const screenCount = normalizedLinks.length;
   const heroSubtitle = subtitle || `Choose a screen below — ${screenCount} available in this module.`;
 

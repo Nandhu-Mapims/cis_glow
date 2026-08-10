@@ -1,5 +1,7 @@
 import { prisma } from '../../../config/prisma.js';
 import { auditFields, logAdminSetup } from './setupAudit.js';
+import { GLOBAL_ACCESS_TYPE } from '../../../utils/accessType.js';
+import { loadMenuCatalog, buildMenuGroups } from './menuMatrixShared.js';
 
 const PAGE = 'authentication_add.php';
 
@@ -12,7 +14,7 @@ async function loadUsersWithFlag(selectedId = '') {
   const configuredSet = new Set(configured.map((r) => String(r.user_id)));
 
   const rows = await prisma.web_account_setup.findMany({
-    where: { del: 1, access_type: { not: 'Global' } },
+    where: { del: 1, access_type: { not: GLOBAL_ACCESS_TYPE } },
     orderBy: { member_id: 'asc' },
     select: { id: true, member_id: true, member_name: true },
   });
@@ -24,83 +26,41 @@ async function loadUsersWithFlag(selectedId = '') {
   }));
 }
 
-async function loadMenuMatrix(userId) {
-  const categories = await prisma.admin_menu_category_tb.findMany({
-    where: { del: 1 },
-    orderBy: { category_order: 'asc' },
-    select: { id: true },
-  });
-  const categoryOrder = categories.map((c) => c.id);
+async function loadMenuMatrix(userId, sourceUserId = '') {
+  const { menus, categoryOrder } = await loadMenuCatalog();
 
-  const menus = await prisma.basic_admin_menu_tb.findMany({
-    where: { del: 1, menu_enable: 1, category_id: { not: 0 } },
-    select: {
-      id: true,
-      category_id: true,
-      main_menu_name: true,
-      main_menu_order: true,
-      sub_menu_name: true,
-      sub_menu_link: true,
-      sub_menu_order: true,
-    },
-    orderBy: [{ main_menu_order: 'asc' }, { sub_menu_order: 'asc' }],
-  });
-
+  // Copy mode: pre-check the matrix with the source user's permissions instead
+  // of the target's own, so the admin reviews/adjusts before Save persists it
+  // against the target (userId). Nothing is written until Save is submitted.
+  const authSourceUserId = sourceUserId && sourceUserId !== String(userId) ? sourceUserId : userId;
   const authRows = await prisma.authentication_tb.findMany({
-    where: { del: 1, user_id: Number(userId) },
-    select: { menu_id: true, authentication: true },
+    where: { del: 1, user_id: Number(authSourceUserId), authentication: 1 },
+    select: { menu_id: true },
   });
-  const authMap = new Map(authRows.map((r) => [r.menu_id, r.authentication === 1]));
+  const checkedMenuIds = new Set(authRows.map((r) => r.menu_id));
 
-  const mainMenus = [];
-  const seenMain = new Set();
-  for (const menu of menus) {
-    if (!menu.sub_menu_link) continue;
-    if (!seenMain.has(menu.main_menu_name)) {
-      seenMain.add(menu.main_menu_name);
-      mainMenus.push(menu.main_menu_name);
-    }
-  }
-
-  mainMenus.sort((a, b) => {
-    const aCat = menus.find((m) => m.main_menu_name === a)?.category_id || 0;
-    const bCat = menus.find((m) => m.main_menu_name === b)?.category_id || 0;
-    const aIdx = categoryOrder.indexOf(aCat);
-    const bIdx = categoryOrder.indexOf(bCat);
-    if (aIdx !== bIdx) return aIdx - bIdx;
-    const aOrder = menus.find((m) => m.main_menu_name === a)?.main_menu_order || 0;
-    const bOrder = menus.find((m) => m.main_menu_name === b)?.main_menu_order || 0;
-    return aOrder - bOrder;
-  });
-
-  const groups = mainMenus.map((mainName) => {
-    const items = menus
-      .filter((m) => m.main_menu_name === mainName && m.sub_menu_link)
-      .map((m) => ({
-        menuId: m.id,
-        label: m.sub_menu_name || 'Direct',
-        checked: authMap.get(m.id) === true,
-      }));
-    return { mainMenu: mainName, items };
-  });
-
-  return groups;
+  return buildMenuGroups(menus, categoryOrder, checkedMenuIds);
 }
 
 export async function loadMenuAuth(memberId, fields = {}, query = {}, audit = {}) {
   const selectedUser = String(
     fields.member_id || query.uid || query.member_id || '',
   ).trim();
+  const copyFromUser = String(fields.copy_from_user || '').trim();
 
   const users = await loadUsersWithFlag(selectedUser);
-  const menuGroups = selectedUser ? await loadMenuMatrix(selectedUser) : [];
+  const menuGroups = selectedUser ? await loadMenuMatrix(selectedUser, copyFromUser) : [];
 
   if (!audit.skipLog) {
-    await logAdminSetup(PAGE, 'View', 'Successful', selectedUser || 'form', memberId, audit);
+    const description = copyFromUser
+      ? `User id->${selectedUser} (previewing permissions copied from user id->${copyFromUser})`
+      : selectedUser || 'form';
+    await logAdminSetup(PAGE, 'View', 'Successful', description, memberId, audit);
   }
   return {
     users,
     selectedUser,
+    copiedFromUser: copyFromUser || null,
     menuGroups,
   };
 }

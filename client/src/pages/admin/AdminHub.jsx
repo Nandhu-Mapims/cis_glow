@@ -8,6 +8,8 @@ const LINKS = [
   { to: '/admin/setup/access-restriction', title: 'Login Restrictions', desc: 'Time/day/IP access rules', icon: 'fa fa-lock' },
   { to: '/admin/setup/dept-auth', title: 'Department Auth', desc: 'Dept/course scope per user', icon: 'fa fa-building' },
   { to: '/admin/setup/menu-auth', title: 'Menu Permissions', desc: 'Sidebar menu checkboxes', icon: 'fa fa-list' },
+  { to: '/admin/setup/role-manager', title: 'Role Manager', desc: 'Define reusable permission roles', icon: 'fa fa-id-badge' },
+  { to: '/admin/setup/assign-roles', title: 'Assign Roles', desc: 'Grant a user one or more roles', icon: 'fa fa-user-circle' },
   { to: '/admin/setup/dashboard-access', title: 'Dashboard Widgets', desc: 'Per-user dashboard boxes', icon: 'fa fa-th-large' },
   { to: '/admin/setup/change-password', title: 'Change Password', desc: 'Update your profile and password', icon: 'fa fa-key' },
   { to: '/admin/setup/otp-reset', title: 'Reset Account', desc: 'Bulk reset passwords to default', icon: 'fa fa-refresh' },

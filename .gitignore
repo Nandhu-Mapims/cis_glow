@@ -52,3 +52,7 @@ Desktop.ini
 
 # Optional local tooling
 .cursor/
+
+# Full DB dumps - never commit, way over GitHub's 100MB limit
+apdchedu_cisapp.sql
+*.sql

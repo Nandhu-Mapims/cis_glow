@@ -107,6 +107,15 @@ export const FILE_STORAGE_MAP = [
     publicUrl: '/legacy/files/documents/{filename}',
     secureUrl: '/api/files/documents/{filename}',
   },
+  {
+    folder: 'library_ebook',
+    purpose: 'Library E-Book PDF uploads (legacy library_book_add.php / library_book_edit.php)',
+    dbTable: 'book_tb',
+    dbColumn: 'ebook_attachment',
+    modernUpload: 'POST /api/library/setup/book-add|book-edit/save (ebookFile base64)',
+    publicUrl: '/legacy/files/library_ebook/{filename}',
+    secureUrl: '/api/files/library_ebook/{filename}',
+  },
 ];
 
 export const IMG_STORAGE_NOTE = {

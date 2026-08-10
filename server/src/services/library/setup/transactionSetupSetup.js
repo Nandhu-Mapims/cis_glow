@@ -5,7 +5,12 @@ import { auditFields, logLibrarySetup } from '../setupAudit.js';
 const PAGE = 'transaction_setup.php';
 
 export async function loadTransactionSetupSetup(memberId, _fields = {}, audit = {}) {
-  const rows = await prisma.$queryRawUnsafe('SELECT * FROM library_setup_tb WHERE id = 1 AND del = 1 LIMIT 1');
+  // Legacy `transaction_setup.php` reads this single config row with no `del`
+  // filter at all (`SELECT * FROM library_setup_tb WHERE id=1`) — this table
+  // is not soft-delete managed like most others. Adding `AND del=1` here
+  // previously made the form load blank whenever the row's `del` value
+  // wasn't exactly 1.
+  const rows = await prisma.$queryRawUnsafe('SELECT * FROM library_setup_tb WHERE id = 1 LIMIT 1');
   const row = rows[0] || {};
   await logLibrarySetup(PAGE, 'View', 'Successful', '', memberId, audit);
   return {

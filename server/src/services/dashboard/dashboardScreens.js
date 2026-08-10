@@ -1,5 +1,6 @@
 import { prisma } from '../../config/prisma.js';
 import { DASHBOARD_WIDGET_LABELS, groupWidgets } from './dashboardMeta.js';
+import { isGlobalAccessType } from '../../utils/accessType.js';
 
 export const STUDENT_DASHBOARD_WIDGETS = new Set([
   'ug_attendance', 'ug_attendance_add', 'pg_attendance', 'internship_attendance',
@@ -32,7 +33,7 @@ async function loadDashboardWidgetRows(user) {
     `;
 
   let rows = await fetchRows(userId);
-  if (rows.length === 0 && user.access_type === 'Global') {
+  if (rows.length === 0 && isGlobalAccessType(user.access_type)) {
     rows = await fetchRows('1');
   }
   return rows;

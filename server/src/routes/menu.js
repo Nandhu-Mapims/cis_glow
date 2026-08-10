@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../config/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { isGlobalAccessType } from '../utils/accessType.js';
 
 function normalizeLegacyPath(legacyLink) {
   return String(legacyLink || '').replace(/^\//, '').trim().split('?')[0];
@@ -40,7 +41,7 @@ router.get('/', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     const accessType = req.user.accessType;
-    const isGlobal = accessType === 'Global';
+    const isGlobal = isGlobalAccessType(accessType);
 
     const categories = await prisma.admin_menu_category_tb.findMany({
       where: { del: 1 },

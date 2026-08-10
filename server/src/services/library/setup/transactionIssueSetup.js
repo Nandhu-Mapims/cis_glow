@@ -1,82 +1,106 @@
-import { prisma } from '../../../config/prisma.js';
-import { escapeSql } from '../../../utils/sqlSafe.js';
-import { auditFields, formatDateDisplay, logLibrarySetup, toIsoDate } from '../setupAudit.js';
+import {
+  checkOpenTransfer,
+  findBookByAccession,
+  findLibraryMember,
+  findOpenTransactionForBook,
+  getLibrarySetupLimits,
+  loadIssuedBooksForMember,
+  memberLimitDuration,
+  saveLibraryTransaction,
+} from '../libraryShared.js';
+import { addDaysIso, formatDateDisplay, logLibrarySetup, todayIso } from '../setupAudit.js';
 
 const PAGE = 'library_transaction1.php';
 
+// Book Issue — student/staff-first flow (library_transaction1.php + transaction_more1.php).
+// Step 1: resolve student/staff by register/staff ID, compute issue limit + currently
+//         issued books.
+// Step 2: once an accession number is supplied, resolve the book (transfer / other-holder
+//         / already-held-by-this-person / free) and render the Issue or Return sub-form.
 export async function loadTransactionIssueSetup(memberId, fields = {}, audit = {}) {
   const registerNo = String(fields.registerNo || '').trim().toUpperCase();
-  let member = null;
-  if (registerNo) {
-    const student = await prisma.student_profile_tb.findFirst({
-      where: { del: 1, register_no: registerNo },
-      select: { register_no: true, student_name: true, student_initial: true },
-    });
-    if (student) {
-      member = { registerNo: student.register_no, name: `${student.student_initial || ''} ${student.student_name}`.trim() };
+  const accessionNo = String(fields.bookId || fields.accessionNo || '').trim();
+  const limits = await getLibrarySetupLimits();
+
+  if (!registerNo) {
+    await logLibrarySetup(PAGE, 'View', 'Successful', '', memberId, audit);
+    return { registerNo: '', member: null, limits, book: null };
+  }
+
+  const member = await findLibraryMember(registerNo);
+  if (!member) {
+    await logLibrarySetup(PAGE, 'View', 'Successful', registerNo, memberId, audit);
+    return { registerNo, member: null, error: 'Invalid Student/Staff ID....', limits, book: null };
+  }
+
+  const { limit, duration } = memberLimitDuration(member, limits);
+  const issued = await loadIssuedBooksForMember(member.registerNo);
+  const limitExceeded = issued.count >= limit;
+
+  const result = {
+    registerNo: member.registerNo,
+    member,
+    issuedCount: issued.count,
+    issuedBooks: issued.books,
+    limit,
+    duration,
+    limitExceeded,
+    limits,
+    book: null,
+  };
+
+  if (limitExceeded) {
+    await logLibrarySetup(PAGE, 'View', 'Successful', registerNo, memberId, audit);
+    return result;
+  }
+
+  if (accessionNo) {
+    const book = await findBookByAccession(accessionNo);
+    if (!book) {
+      result.book = { error: 'Invalid Resource....' };
     } else {
-      const staff = await prisma.staff_profile_tb.findFirst({
-        where: { del: 1, staff_id: registerNo },
-        select: { staff_id: true, staff_name: true, staff_initial: true },
-      });
-      if (staff) {
-        member = { registerNo: staff.staff_id, name: `${staff.staff_initial || ''} ${staff.staff_name}`.trim() };
+      const transferTo = await checkOpenTransfer(accessionNo);
+      if (transferTo) {
+        result.book = { ...book, error: `Resource trasfer to ${transferTo}.....` };
+      } else {
+        const otherHolder = await findOpenTransactionForBook(accessionNo, { excludeRegisterNo: member.registerNo });
+        if (otherHolder) {
+          result.book = { ...book, error: `Issued to ${otherHolder.register_no}.....` };
+        } else {
+          const own = await findOpenTransactionForBook(accessionNo, { onlyRegisterNo: member.registerNo });
+          if (own) {
+            result.book = {
+              ...book,
+              mode: 'return',
+              transId: Number(own.id),
+              checkOutDate: formatDateDisplay(own.check_out_date),
+              dueDate: formatDateDisplay(own.due_date),
+              returnDate: todayIso(),
+            };
+          } else {
+            const checkOutDate = todayIso();
+            const dueDate = addDaysIso(checkOutDate, duration);
+            result.book = {
+              ...book,
+              mode: 'issue',
+              checkOutDate,
+              dueDate,
+              referenceCopyWarning: book.referenceCopy,
+            };
+          }
+        }
       }
     }
   }
 
-  const setup = await prisma.library_setup_tb.findFirst({ where: { del: 1 } });
   await logLibrarySetup(PAGE, 'View', 'Successful', registerNo, memberId, audit);
-  return {
-    registerNo,
-    member,
-    checkOutDate: toIsoDate(fields.checkOutDate) || new Date().toISOString().slice(0, 10),
-    dueDate: fields.dueDate || '',
-    limits: setup ? {
-      ugLimit: setup.ug_limit,
-      ugDuration: setup.ug_duration,
-      pgLimit: setup.pg_limit,
-      pgDuration: setup.pg_duration,
-      staffLimit: setup.staff_limit,
-      staffDuration: setup.staff_duration,
-    } : null,
-  };
+  return result;
 }
 
 export async function saveTransactionIssueSetup(payload, memberId, audit = {}) {
-  const bookId = String(payload.bookId || '').trim();
-  const registerNo = String(payload.registerNo || '').trim().toUpperCase();
-  const checkOutDate = toIsoDate(payload.checkOutDate);
-  const dueDate = toIsoDate(payload.dueDate);
-
-  if (!bookId || !registerNo) {
-    return { success: false, message: 'Check Book ID and Student/Staff ID.' };
-  }
-
-  const outstanding = await prisma.$queryRawUnsafe(
-    `SELECT COUNT(*) AS cnt FROM library_transaction_tb
-     WHERE del = 1 AND book_id = '${escapeSql(bookId)}'
-       AND (check_in_date = '0000-00-00 00:00:00' OR check_in_date IS NULL)`,
-  );
-  if (Number(outstanding[0]?.cnt || 0) > 0) {
-    await logLibrarySetup(PAGE, 'Issued', 'Unsuccessful', `Already Issued ${bookId}`, memberId, audit);
-    return { success: false, message: 'Book ID Already Issued.' };
-  }
-
-  const { create } = auditFields(memberId, audit);
-  await prisma.library_transaction_tb.create({
-    data: {
-      register_no: registerNo,
-      book_id: bookId,
-      check_out_date: checkOutDate ? new Date(`${checkOutDate}T00:00:00`) : new Date(),
-      due_date: dueDate ? new Date(`${dueDate}T00:00:00`) : new Date(),
-      check_in_date: new Date('1970-01-01'),
-      is_damage: 0,
-      status: '',
-      ...create,
-    },
-  });
-
-  await logLibrarySetup(PAGE, 'Issued', 'Successful', `${registerNo} | ${bookId}`, memberId, audit);
-  return { success: true, message: 'Issued...', ...(await loadTransactionIssueSetup(memberId, {}, { ...audit, skipLog: true })) };
+  const result = await saveLibraryTransaction(payload.action, payload, memberId, audit, PAGE);
+  return {
+    ...result,
+    ...(await loadTransactionIssueSetup(memberId, {}, { ...audit, skipLog: true })),
+  };
 }

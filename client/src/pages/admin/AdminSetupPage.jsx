@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useOutletContext, useParams, useSearchParams } from 'react-router-dom';
 import { SetupPageShell } from '../../components/PageShell';
 import SetupAlerts from '../../components/SetupAlerts';
+import { useAuth } from '../../auth/AuthContext';
+import { isGlobalAccessType } from '../../utils/accessType';
 import { ADMIN_SCREEN_META } from './adminSetupMeta';
 import { useAdminSetupApi } from './setup/useAdminSetupApi';
 import AccountAddForm from './setup/AccountAddForm';
@@ -15,6 +17,8 @@ import OtpResetSetup from './setup/OtpResetSetup';
 import CommitteeAccessSetup from './setup/CommitteeAccessSetup';
 import StaffAuthSetup from './setup/StaffAuthSetup';
 import DeptAuthV1Setup from './setup/DeptAuthV1Setup';
+import RoleManagerSetup from './setup/RoleManagerSetup';
+import AssignRolesSetup from './setup/AssignRolesSetup';
 import './AdminSetupPage.css';
 
 const SETUP_COMPONENTS = {
@@ -30,6 +34,8 @@ const SETUP_COMPONENTS = {
   'staff-auth-hod': StaffAuthSetup,
   'staff-auth-page': StaffAuthSetup,
   'dept-auth-v1': DeptAuthV1Setup,
+  'role-manager': RoleManagerSetup,
+  'assign-roles': AssignRolesSetup,
 };
 
 export default function AdminSetupPage({ screen: screenProp, initialFields = null }) {
@@ -41,6 +47,8 @@ export default function AdminSetupPage({ screen: screenProp, initialFields = nul
 
   const { data, busy, error, notice, setError, setNotice, load, save } = useAdminSetupApi(screen);
   const { settings, menu } = useOutletContext();
+  const { user } = useAuth();
+  const isGlobal = isGlobalAccessType(user?.accessType);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -70,9 +78,13 @@ export default function AdminSetupPage({ screen: screenProp, initialFields = nul
   }, [load, searchParams, setError]);
 
   const handleSave = useCallback(async (fields, files = []) => {
+    if (!isGlobal) {
+      setError('Only Super Admin can save changes here. You have view-only access to this module.');
+      return null;
+    }
     setError(null);
     return save(fields, files);
-  }, [save, setError]);
+  }, [save, setError, isGlobal]);
 
   if (!meta) {
     return (
@@ -114,12 +126,19 @@ export default function AdminSetupPage({ screen: screenProp, initialFields = nul
       )}
       loading={loading}
       alerts={(
-        <SetupAlerts
-          notice={notice}
-          error={error}
-          busy={busy}
-          onDismissNotice={() => setNotice(null)}
-        />
+        <>
+          {!isGlobal && (
+            <div className="alert alert-warning py-2 px-3 mb-2" role="status">
+              View-only access — only Super Admin can save changes in the Admin module.
+            </div>
+          )}
+          <SetupAlerts
+            notice={notice}
+            error={error}
+            busy={busy}
+            onDismissNotice={() => setNotice(null)}
+          />
+        </>
       )}
       cardClassName="cis-setup-card admin-setup-card"
       rootClassName="cis-setup-root admin-setup-root admin-native-root"

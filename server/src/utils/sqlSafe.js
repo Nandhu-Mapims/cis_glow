@@ -42,3 +42,29 @@ export function normalizeLegacyIp(ip) {
   if (value === '::1') value = '127.0.0.1';
   return value.slice(0, 15);
 }
+
+// log_tb.log_timestamp (and similar legacy DATETIME columns) store naive local
+// wall-clock strings, not UTC — the app's DB session timezone matches the
+// institution's local timezone. Prisma has no way to know that: it reads these
+// columns back as if the digits were UTC (slaps a trailing Z on them), so any
+// `new Date()`-based comparison against a Prisma-read or Prisma-bound DateTime is
+// silently offset by the local UTC delta (e.g. +5:30 for Asia/Kolkata) — recent
+// rows look hours old, or old rows look "recent" for hours. Comparisons against
+// these columns must go through raw SQL using a wall-clock string formatted in
+// the same timezone the column was written in, not a JS Date object.
+export function formatLocalTimestamp(date, timeZone) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(date).reduce((acc, part) => {
+    acc[part.type] = part.value;
+    return acc;
+  }, {});
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`;
+}

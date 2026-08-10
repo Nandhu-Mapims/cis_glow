@@ -1,0 +1,82 @@
+.searchable-select {
+  position: relative;
+}
+
+.searchable-select-trigger {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  background: var(--cis-surface);
+  color: var(--cis-text);
+  padding-right: 2rem;
+}
+
+.searchable-select-summary {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchable-select.is-disabled .searchable-select-trigger {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.searchable-select-clear {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: var(--cis-text-subtle);
+  line-height: 1;
+  font-size: 1.1rem;
+  padding: 0 0.25rem;
+  cursor: pointer;
+}
+
+.searchable-select-clear:hover {
+  color: var(--cis-text);
+}
+
+.searchable-select-panel {
+  /* position/top/left/width are set inline (SearchableSelect.jsx) from the
+     trigger's bounding rect -- this panel is portaled to document.body so it
+     isn't clipped by an ancestor's `overflow-x: auto` (which forces
+     `overflow-y: auto` too, per the CSS spec, on setup-card wrappers that
+     use it for wide tables). */
+  z-index: 1050;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  border-radius: 0.375rem;
+  overflow: hidden;
+  background: var(--cis-surface);
+  border: 1px solid var(--cis-border);
+  padding: 0.5rem;
+}
+
+.searchable-select-list {
+  max-height: 280px;
+  overflow-y: auto;
+  margin-top: 0.5rem;
+}
+
+.searchable-select-item {
+  background: var(--cis-surface);
+  color: var(--cis-text);
+  transition: background-color 0.15s ease;
+}
+
+.searchable-select-item:hover {
+  background: var(--cis-bg-subtle);
+}
+
+.searchable-select-item--selected {
+  background: var(--cis-primary-soft);
+}
+
+.searchable-select-item + .searchable-select-item {
+  border-top: 1px solid var(--cis-border) !important;
+}

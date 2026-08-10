@@ -5,21 +5,30 @@ import { auditFields, logLibrarySetup } from '../setupAudit.js';
 
 const PAGE = 'library_book_cate.php';
 
-const CATEGORIES = ['Department', 'Resource Type', 'Course Type', 'Subject'];
+// Internal category key -> dropdown label, exactly as in library_book_cate.php's
+// <select name="category">. Value sent/stored is the key; label shown differs for
+// Department ("Branch") and Transfer ("Transfer To").
+const CATEGORIES = [
+  { value: 'Department', label: 'Branch' },
+  { value: 'Resource', label: 'Resource' },
+  { value: 'Source', label: 'Source' },
+  { value: 'Subject', label: 'Subject' },
+  { value: 'Transfer', label: 'Transfer To' },
+];
+const CATEGORY_VALUES = new Set(CATEGORIES.map((c) => c.value));
 
 function mapRow(row) {
   return {
     id: row.id,
     name: row.category_name,
     order: row.category_order,
-    enabled: row.del === 1,
   };
 }
 
 export async function loadBookCategorySetup(memberId, fields = {}, audit = {}) {
-  const category = String(fields.category || CATEGORIES[0]);
+  const category = CATEGORY_VALUES.has(fields.category) ? fields.category : CATEGORIES[0].value;
   const rows = await prisma.book_category_tb.findMany({
-    where: { category, del: { in: [1, 2] } },
+    where: { category, del: 1 },
     orderBy: { category_order: 'asc' },
     select: bookCategorySelect,
   });
@@ -27,7 +36,7 @@ export async function loadBookCategorySetup(memberId, fields = {}, audit = {}) {
   return {
     categories: CATEGORIES,
     selectedCategory: category,
-    rows: rows.length ? rows.map(mapRow) : [{ order: 1, name: '', enabled: true }],
+    rows: rows.length ? rows.map(mapRow) : [{ order: 1, name: '' }],
   };
 }
 
@@ -39,6 +48,7 @@ export async function saveBookCategorySetup(payload, memberId, audit = {}) {
     const id = parseId(payload.id);
     try {
       const { update } = auditFields(memberId, audit);
+      // Soft delete: del=1 is active, del=0 is deleted (see library_book_cate.php delete branch).
       await prisma.book_category_tb.update({ where: { id }, data: { del: 0, ...update } });
       await logLibrarySetup(PAGE, 'Delete', 'Successful', String(id), memberId, audit);
       return { success: true, message: 'Your details are deleted...', ...(await loadBookCategorySetup(memberId, { category }, { ...audit, skipLog: true })) };
@@ -48,13 +58,20 @@ export async function saveBookCategorySetup(payload, memberId, audit = {}) {
   }
 
   const { create, update } = auditFields(memberId, audit);
+  // Legacy behavior: mark the ENTIRE category soft-deleted first, then re-insert/
+  // re-activate every row that was posted back. Any row missing from the posted
+  // grid is therefore left deleted, even if the user never clicked its trash icon.
+  // This is intentional legacy parity (see doc §3 "Business logic / edge cases"),
+  // not a bug to silently "fix" here.
   await prisma.book_category_tb.updateMany({ where: { category, del: 1 }, data: { del: 0, ...update } });
 
   const rows = Array.isArray(payload.rows) ? payload.rows : [];
   for (const row of rows) {
     const name = String(row.name || '').trim();
     const order = Number(row.order) || 0;
-    const delVal = row.enabled === false ? 2 : 1;
+    // Note: legacy computes $del_val from act_enable[] but never uses it in the
+    // INSERT/UPDATE SQL (dead code) — there is no "enable" toggle concept here.
+    // Existing rows are always reactivated with del=1 on save.
     if (!row.id) {
       if (!name) continue;
       await prisma.book_category_tb.create({
@@ -63,7 +80,7 @@ export async function saveBookCategorySetup(payload, memberId, audit = {}) {
     } else {
       await prisma.book_category_tb.update({
         where: { id: Number(row.id) },
-        data: { category, category_name: name, category_order: order, del: delVal, ...update },
+        data: { category, category_name: name, category_order: order, del: 1, ...update },
       });
     }
   }

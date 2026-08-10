@@ -1,6 +1,7 @@
 import { prisma } from '../../../config/prisma.js';
 import { parseId } from '../../../utils/sqlSafe.js';
 import { auditFields, logAdminSetup } from './setupAudit.js';
+import { GLOBAL_ACCESS_TYPE } from '../../../utils/accessType.js';
 
 const PAGE = 'access.php';
 
@@ -31,7 +32,7 @@ function formatTime(dt) {
 
 async function loadMemberOptions(selectedId = '') {
   const rows = await prisma.web_account_setup.findMany({
-    where: { del: 1, access_type: { not: 'Global' } },
+    where: { del: 1, access_type: { not: GLOBAL_ACCESS_TYPE } },
     orderBy: { member_id: 'asc' },
     select: { id: true, member_id: true, member_name: true },
   });

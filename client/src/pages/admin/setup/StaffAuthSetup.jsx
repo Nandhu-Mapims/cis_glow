@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import SearchableSelect from '../../../components/SearchableSelect';
 
 const MODE_COPY = {
   hod: {
@@ -54,18 +55,14 @@ export default function StaffAuthSetup({ data, busy, onLoad, onSave }) {
         <div className="card-body">
           <label className="form-label mb-1" htmlFor="staff_auth_user">{copy.userLabel}</label>
           <p className="text-muted small mb-2">{copy.hint}</p>
-          <select
+          <SearchableSelect
             id="staff_auth_user"
-            className="form-select"
+            options={data.staffOptions || []}
             value={data.selectedStaff || ''}
             disabled={busy}
-            onChange={(e) => onLoad({ staff_id: e.target.value })}
-          >
-            <option value="">-- Select one --</option>
-            {data.staffOptions?.map((u) => (
-              <option key={u.value} value={u.value}>{u.label}</option>
-            ))}
-          </select>
+            searchPlaceholder="Search by name..."
+            onChange={(val) => onLoad({ staff_id: val })}
+          />
         </div>
       </div>
 

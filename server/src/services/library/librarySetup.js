@@ -1,4 +1,4 @@
-import { loadLibraryDashboard, saveLibraryDashboard } from './setup/dashboardSetup.js';
+import { loadLibraryDashboard, saveLibraryDashboard, loadLibraryDashboardReport, saveLibraryDashboardReport } from './setup/dashboardSetup.js';
 import { loadBookCategorySetup, saveBookCategorySetup } from './setup/bookCategorySetup.js';
 import { loadBookAddSetup, saveBookAddSetup } from './setup/bookAddSetup.js';
 import { loadBookEditSetup, saveBookEditSetup } from './setup/bookEditSetup.js';
@@ -19,6 +19,7 @@ import { loadResourceTransferSetup, saveResourceTransferSetup } from './setup/re
 
 const VALID_SCREENS = new Set([
   'dashboard',
+  'dashboard-report',
   'book-category',
   'book-add',
   'book-edit',
@@ -40,6 +41,7 @@ const VALID_SCREENS = new Set([
 
 const LOADERS = {
   dashboard: loadLibraryDashboard,
+  'dashboard-report': loadLibraryDashboardReport,
   'book-category': loadBookCategorySetup,
   'book-add': loadBookAddSetup,
   'book-edit': loadBookEditSetup,
@@ -61,6 +63,7 @@ const LOADERS = {
 
 const SAVERS = {
   dashboard: saveLibraryDashboard,
+  'dashboard-report': saveLibraryDashboardReport,
   'book-category': saveBookCategorySetup,
   'book-add': saveBookAddSetup,
   'book-edit': saveBookEditSetup,

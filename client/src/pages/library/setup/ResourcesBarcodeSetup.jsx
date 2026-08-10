@@ -21,8 +21,9 @@ export default function ResourcesBarcodeSetup({ data, busy, onLoad, onSave }) {
         </div>
         <div className="col-md-2">
           <select className="form-select" value={filters.department} onChange={(e) => setFilters((p) => ({ ...p, department: e.target.value }))}>
-            <option value="">All Department</option>
+            <option value="">--All Department--</option>
             {data?.departments?.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            <option value="others">Others</option>
           </select>
         </div>
         <div className="col-md-2"><input className="form-control" placeholder="From A.No" value={filters.fromAccession} onChange={(e) => setFilters((p) => ({ ...p, fromAccession: e.target.value }))} /></div>
@@ -34,14 +35,16 @@ export default function ResourcesBarcodeSetup({ data, busy, onLoad, onSave }) {
           <label key={n} className="me-3"><input className="me-2" type="radio" checked={copiesPerLabel === n} onChange={() => setCopiesPerLabel(n)} /> {n} copies</label>
         ))}
       </div>
-      <div className="row g-2">
-        {data?.rows?.map((row) => (
-          <div key={row.id} className="col-md-3 border p-2 text-center">
+      {data?.hasFilter && !data?.rows?.length && <p className="text-danger">No records found...</p>}
+      <div id="final_result_span" className="row g-2">
+        {(data?.rows || []).flatMap((row) => Array.from({ length: copiesPerLabel }, (_, copyIndex) => (
+          <div key={`${row.id}-${copyIndex}`} className="col-md-3 border p-2 text-center">
             <div className="fw-bold">{row.accessionNo}</div>
-            <div className="small">{row.resourceName}</div>
+            <div className="small">{row.callNumber}</div>
+            <div className="small text-muted">Copy {row.copyNo}</div>
             <div className="small text-muted">{row.authorName}</div>
           </div>
-        ))}
+        )))}
       </div>
     </>
   );

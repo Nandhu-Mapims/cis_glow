@@ -6,7 +6,9 @@ import { authMiddleware } from '../middleware/auth.js';
 import { accessCheck } from '../services/accessCheck.js';
 import { countRecentFailedLogins, insertLog } from '../services/logService.js';
 import { decrypt, normalizeUsername } from '../services/password.js';
+import { isGlobalAccessType } from '../utils/accessType.js';
 import { createSessionId, signToken } from '../utils/jwt.js';
+import { formatLocalTimestamp } from '../utils/sqlSafe.js';
 
 const router = Router();
 
@@ -33,16 +35,7 @@ async function getInstitutionTimezone() {
 }
 
 function formatTimestamp(timeZone) {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).format(new Date()).replace(',', '').replace(/\//g, '-');
+  return formatLocalTimestamp(new Date(), timeZone);
 }
 
 function buildUserProfile(user, sessionId) {
@@ -82,7 +75,7 @@ router.post('/login', loginRequestLimiter, async (req, res) => {
     const timeZone = await getInstitutionTimezone();
     const userDt = formatTimestamp(timeZone);
 
-    const failedCount = await countRecentFailedLogins(String(userIp));
+    const failedCount = await countRecentFailedLogins(String(userIp), timeZone);
     if (failedCount >= 5) {
       await insertLog(['index', 'View', 'Successful', '', userDt, String(userIp), userOs, usernameInput]);
       return res.status(429).json({
@@ -134,7 +127,7 @@ router.post('/login', loginRequestLimiter, async (req, res) => {
     let redirectTo = 'dashboard.php';
     if (user.reset_password) {
       redirectTo = 'otp_request.php';
-    } else if (user.access_type !== 'Global') {
+    } else if (!isGlobalAccessType(user.access_type)) {
       redirectTo = await resolveFirstMenuLink(user.id);
     }
 

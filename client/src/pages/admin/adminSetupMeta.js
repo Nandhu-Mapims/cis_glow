@@ -11,4 +11,7 @@ export const ADMIN_SCREEN_META = {
   'committee-access': { title: 'Committee Access', legacy: 'committee_access.php' },
   'staff-auth-hod': { title: 'HOD Page Authentication', legacy: 'staff_authentication_add.php' },
   'staff-auth-page': { title: 'Staff Page Authentication', legacy: 'staff_page_authentication_add.php' },
+  // No legacy equivalent -- new capability, see ADMIN_ROLE_MODULE_UPGRADE.md.
+  'role-manager': { title: 'Role Manager', legacy: null },
+  'assign-roles': { title: 'Assign Roles', legacy: null },
 };

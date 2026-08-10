@@ -4511,6 +4511,8 @@ model punchtimedetails_20201 {
   p_date DateTime @db.DateTime(0)
   sno    Int
   in_out String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20202 {
@@ -4524,6 +4526,8 @@ model punchtimedetails_20202 {
   p_date DateTime @db.DateTime(0)
   sno    Int
   in_out String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20203 {
@@ -4537,6 +4541,8 @@ model punchtimedetails_20203 {
   p_date DateTime @db.DateTime(0)
   sno    Int
   in_out String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20211 {
@@ -4550,6 +4556,8 @@ model punchtimedetails_20211 {
   p_date DateTime @db.DateTime(0)
   sno    Int
   in_out String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20212 {
@@ -4563,6 +4571,8 @@ model punchtimedetails_20212 {
   p_date DateTime @db.DateTime(0)
   sno    Int
   in_out String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20213 {
@@ -4576,6 +4586,8 @@ model punchtimedetails_20213 {
   p_date DateTime @db.DateTime(0)
   sno    Int
   in_out String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20221 {
@@ -4589,6 +4601,8 @@ model punchtimedetails_20221 {
   p_date DateTime @db.DateTime(0)
   sno    Int
   in_out String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20222 {
@@ -4602,6 +4616,8 @@ model punchtimedetails_20222 {
   p_date DateTime @db.DateTime(0)
   sno    Int
   in_out String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20223 {
@@ -4617,6 +4633,8 @@ model punchtimedetails_20223 {
   upload_dt      DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.DateTime(0)
   upload_dt_zone DateTime @default(now()) @db.Timestamp(0)
   in_out         String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20231 {
@@ -4632,6 +4650,8 @@ model punchtimedetails_20231 {
   upload_dt      DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.DateTime(0)
   upload_dt_zone DateTime @default(now()) @db.Timestamp(0)
   in_out         String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20232 {
@@ -4646,6 +4666,8 @@ model punchtimedetails_20232 {
   sno       Int
   upload_dt DateTime @default(now()) @db.Timestamp(0)
   in_out    String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20233 {
@@ -4660,6 +4682,8 @@ model punchtimedetails_20233 {
   sno       Int
   upload_dt DateTime @default(now()) @db.Timestamp(0)
   in_out    String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20241 {
@@ -4674,6 +4698,8 @@ model punchtimedetails_20241 {
   sno       Int
   upload_dt DateTime @default(now()) @db.Timestamp(0)
   in_out    String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20242 {
@@ -4688,6 +4714,8 @@ model punchtimedetails_20242 {
   sno       Int
   upload_dt DateTime @default(now()) @db.Timestamp(0)
   in_out    String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_202421 {
@@ -4702,6 +4730,8 @@ model punchtimedetails_202421 {
   sno       Int
   upload_dt DateTime @default(now()) @db.Timestamp(0)
   in_out    String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20243 {
@@ -4716,6 +4746,8 @@ model punchtimedetails_20243 {
   sno       Int
   upload_dt DateTime @default(now()) @db.Timestamp(0)
   in_out    String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20251 {
@@ -4730,6 +4762,8 @@ model punchtimedetails_20251 {
   sno       Int
   upload_dt DateTime @default(now()) @db.Timestamp(0)
   in_out    String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -4746,6 +4780,7 @@ model punchtimedetails_202511 {
   upload_dt DateTime @default(now()) @db.Timestamp(0)
   in_out    String   @db.VarChar(20)
 
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
   @@ignore
 }
 
@@ -4761,6 +4796,8 @@ model punchtimedetails_20252 {
   sno       Int
   upload_dt DateTime @default(now()) @db.Timestamp(0)
   in_out    String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20253 {
@@ -4775,6 +4812,8 @@ model punchtimedetails_20253 {
   sno       Int
   upload_dt DateTime @default(now()) @db.Timestamp(0)
   in_out    String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20261 {
@@ -4789,6 +4828,8 @@ model punchtimedetails_20261 {
   sno       Int
   upload_dt DateTime @default(now()) @db.Timestamp(0)
   in_out    String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_20262 {
@@ -4803,6 +4844,8 @@ model punchtimedetails_20262 {
   sno       Int
   upload_dt DateTime @db.Timestamp(0)
   in_out    String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_21032 {
@@ -4817,6 +4860,8 @@ model punchtimedetails_21032 {
   sno       Int
   upload_dt DateTime @default(now()) @db.Timestamp(0)
   in_out    String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model punchtimedetails_21183 {
@@ -4831,6 +4876,8 @@ model punchtimedetails_21183 {
   sno       Int
   upload_dt DateTime @default(now()) @db.Timestamp(0)
   in_out    String   @db.VarChar(20)
+
+  @@index([tktno, p_date], map: "idx_tktno_pdate")
 }
 
 model report_authority_tb {
@@ -6011,6 +6058,8 @@ model staff_log_tb {
   log_username    String   @db.VarChar(155)
   log_session     Int
   del             Int      @default(1)
+
+  @@index([log_timestamp, log_username], map: "idx_log_time_user")
 }
 
 model staff_membership_tb {
@@ -6337,6 +6386,7 @@ model staff_profile_tb {
   @@index([staff_id], map: "staff_id")
   @@index([staff_initial], map: "staff_initial")
   @@index([staff_name], map: "staff_name")
+  @@index([job_category, del], map: "idx_staff_category_del")
 }
 
 model staff_profile_tb_v3 {
@@ -7131,6 +7181,8 @@ model student_att_tb {
   del           Int      @default(1)
 
   @@index([course_type, academic_date, academic_year, odd_even_sem, att_period], map: "course_type")
+  @@index([course_id, del, academic_date(sort: Desc), att_period], map: "idx_att_course_del_datedesc_period")
+  @@index([course_id, academic_year, academic_type, current_year, del, academic_date], map: "idx_att_year_type_course_cur_del_date")
 }
 
 model student_attachment_tb {
@@ -7440,6 +7492,8 @@ model student_log_tb {
   log_username    String   @db.VarChar(155)
   log_session     Int
   del             Int      @default(1)
+
+  @@index([log_timestamp, log_username], map: "idx_log_time_user")
 }
 
 model student_pgatt_roster {
@@ -7641,6 +7695,7 @@ model student_profile_tb {
   @@index([register_no], map: "register_no")
   @@index([student_initial], map: "student_initial")
   @@index([student_name], map: "student_name")
+  @@index([course_id, academic_year, del], map: "idx_student_course_year_del")
 }
 
 model student_profile_tb_03112023 {
@@ -9447,6 +9502,9 @@ model web_account_setup {
   updated_ip     String   @db.VarChar(15)
   updated_by     String   @db.VarChar(70)
   del            Int      @default(1)
+
+  @@index([del, address_email], map: "idx_wa_del_email")
+  @@index([del, member_id], map: "idx_wa_del_member")
 }
 
 model web_account_setup_18122021 {
@@ -9533,11 +9591,11 @@ model web_positions_dlevel {
   level_desc String   @db.VarChar(225)
   level_head String   @default("") @db.VarChar(225)
   created_dt DateTime @default(now()) @db.Timestamp(0)
-  created_ip String   @db.VarChar(15)
-  created_by String   @db.VarChar(70)
+  created_ip String   @default("") @db.VarChar(15)
+  created_by String   @default("") @db.VarChar(70)
   updated_dt DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
-  updated_ip String   @db.VarChar(15)
-  updated_by String   @db.VarChar(70)
+  updated_ip String   @default("") @db.VarChar(15)
+  updated_by String   @default("") @db.VarChar(70)
   del        Int      @default(1)
 
   @@index([level_id], map: "idx_web_positions_dlevel_level_id")
@@ -9751,4 +9809,233 @@ model written_tests {
   updated_ip     String   @db.VarChar(15)
   updated_by     String   @db.VarChar(70)
   del            Int      @default(1)
+}
+
+model research_photos {
+  id          Int      @id @default(autoincrement())
+  ref_id      Int      @default(0)
+  photo_order Int      @default(0)
+  attachment  String   @default("") @db.VarChar(500)
+  created_dt  DateTime @default(now()) @db.Timestamp(0)
+  created_ip  String   @default("") @db.VarChar(15)
+  created_by  String   @default("") @db.VarChar(70)
+  updated_dt  DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
+  updated_ip  String   @default("") @db.VarChar(15)
+  updated_by  String   @default("") @db.VarChar(70)
+  del         Int      @default(1)
+}
+
+model research_program {
+  id                   Int       @id @default(autoincrement())
+  research_data        String    @default("") @db.VarChar(500)
+  registration_close   DateTime? @db.Date
+  from_date            DateTime? @db.Date
+  description          String?   @db.LongText
+  attachment           String    @default("") @db.VarChar(500)
+  venue                String    @default("") @db.VarChar(500)
+  web_view             Int       @default(1)
+  prog_time            String    @default("") @db.VarChar(255)
+  research_topic       String    @default("") @db.VarChar(500)
+  presenter_dr_name    String    @default("") @db.VarChar(255)
+  presenter_dr_desig   String    @default("") @db.VarChar(255)
+  presenter_dr_dept    String    @default("") @db.VarChar(255)
+  presenter_dr_college String    @default("") @db.VarChar(255)
+  presenter_dr_city    String    @default("") @db.VarChar(255)
+  target_link          String    @default("") @db.VarChar(500)
+  region               String    @default("") @db.VarChar(255)
+  member_view          Int       @default(0)
+  event_status         String    @default("") @db.VarChar(50)
+  event_types          String    @default("") @db.VarChar(500)
+  created_dt           DateTime  @default(now()) @db.Timestamp(0)
+  created_ip           String    @default("") @db.VarChar(15)
+  created_by           String    @default("") @db.VarChar(70)
+  updated_dt           DateTime  @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
+  updated_ip           String    @default("") @db.VarChar(15)
+  updated_by           String    @default("") @db.VarChar(70)
+  del                  Int       @default(1)
+}
+
+model role_menu_tb {
+  id             Int      @id @default(autoincrement())
+  role_id        Int
+  menu_id        Int
+  authentication Int      @default(0)
+  created_dt     DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
+  created_ip     String   @default("") @db.VarChar(15)
+  created_by     String   @default("") @db.VarChar(70)
+  updated_dt     DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
+  updated_ip     String   @default("") @db.VarChar(15)
+  updated_by     String   @default("") @db.VarChar(70)
+  del            Int      @default(1)
+
+  @@index([menu_id], map: "menu_id")
+  @@index([role_id], map: "role_id")
+}
+
+model role_tb {
+  id          Int      @id @default(autoincrement())
+  role_name   String   @db.VarChar(100)
+  description String   @default("") @db.VarChar(255)
+  created_dt  DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
+  created_ip  String   @default("") @db.VarChar(15)
+  created_by  String   @default("") @db.VarChar(70)
+  updated_dt  DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
+  updated_ip  String   @default("") @db.VarChar(15)
+  updated_by  String   @default("") @db.VarChar(70)
+  del         Int      @default(1)
+
+  @@index([del, role_name], map: "idx_role_del_name")
+}
+
+model user_role_tb {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  role_id    Int
+  created_dt DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
+  created_ip String   @default("") @db.VarChar(15)
+  created_by String   @default("") @db.VarChar(70)
+  updated_dt DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
+  updated_ip String   @default("") @db.VarChar(15)
+  updated_by String   @default("") @db.VarChar(70)
+  del        Int      @default(1)
+
+  @@index([role_id], map: "role_id")
+  @@index([user_id], map: "user_id")
+}
+
+model web_camp_event_type {
+  id         Int       @id @default(autoincrement())
+  title      String    @default("") @db.VarChar(255)
+  del        Int       @default(1) @db.TinyInt
+  created_dt DateTime? @db.DateTime(0)
+  created_ip String?   @db.VarChar(50)
+  created_by String?   @db.VarChar(100)
+  updated_dt DateTime? @db.DateTime(0)
+  updated_ip String?   @db.VarChar(50)
+  updated_by String?   @db.VarChar(100)
+}
+
+model web_camp_events {
+  id             Int       @id @default(autoincrement())
+  event_type     String    @default("") @db.VarChar(255)
+  title          String    @default("") @db.VarChar(255)
+  from_date      DateTime? @db.DateTime(0)
+  to_date        DateTime? @db.DateTime(0)
+  description    String?   @db.LongText
+  attachment     String    @default("") @db.VarChar(255)
+  venue          String    @default("") @db.VarChar(255)
+  total_patients String    @default("") @db.VarChar(50)
+  web_view       Int       @default(1) @db.TinyInt
+  event_status   Int       @default(1) @db.TinyInt
+  tags           String    @default("") @db.VarChar(255)
+  del            Int       @default(1) @db.TinyInt
+  created_dt     DateTime? @db.DateTime(0)
+  created_ip     String?   @db.VarChar(50)
+  created_by     String?   @db.VarChar(100)
+  updated_dt     DateTime? @db.DateTime(0)
+  updated_ip     String?   @db.VarChar(50)
+  updated_by     String?   @db.VarChar(100)
+}
+
+model web_camp_photos {
+  id           Int       @id @default(autoincrement())
+  photos_from  String    @default("") @db.VarChar(50)
+  ref_id       Int       @default(0)
+  title        String    @default("") @db.VarChar(255)
+  p_date       DateTime? @db.Date
+  photo_order  Int       @default(0)
+  attachment   String    @default("") @db.VarChar(255)
+  c_attachment String    @default("") @db.VarChar(255)
+  del          Int       @default(1) @db.TinyInt
+  created_dt   DateTime? @db.DateTime(0)
+  created_ip   String?   @db.VarChar(50)
+  created_by   String?   @db.VarChar(100)
+  updated_dt   DateTime? @db.DateTime(0)
+  updated_ip   String?   @db.VarChar(50)
+  updated_by   String?   @db.VarChar(100)
+}
+
+model web_event_type {
+  id         Int      @id @default(autoincrement())
+  title      String   @default("") @db.VarChar(255)
+  created_dt DateTime @default(now()) @db.Timestamp(0)
+  created_ip String   @default("") @db.VarChar(15)
+  created_by String   @default("") @db.VarChar(70)
+  updated_dt DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
+  updated_ip String   @default("") @db.VarChar(15)
+  updated_by String   @default("") @db.VarChar(70)
+  del        Int      @default(1)
+}
+
+model web_events {
+  id           Int       @id @default(autoincrement())
+  event_type   String    @default("") @db.VarChar(500)
+  title        String    @default("") @db.VarChar(500)
+  from_date    DateTime? @db.DateTime(0)
+  to_date      DateTime? @db.DateTime(0)
+  description  String?   @db.LongText
+  attachment   String    @default("") @db.VarChar(500)
+  venue        String    @default("") @db.VarChar(500)
+  tags         String    @default("") @db.VarChar(500)
+  web_view     Int       @default(1)
+  event_status Int       @default(1)
+  created_dt   DateTime  @default(now()) @db.Timestamp(0)
+  created_ip   String    @default("") @db.VarChar(15)
+  created_by   String    @default("") @db.VarChar(70)
+  updated_dt   DateTime  @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
+  updated_ip   String    @default("") @db.VarChar(15)
+  updated_by   String    @default("") @db.VarChar(70)
+  del          Int       @default(1)
+}
+
+model web_pages {
+  id           Int       @id @default(autoincrement())
+  page_type    String    @db.VarChar(50)
+  page_title   String    @default("") @db.VarChar(255)
+  page_order   Int       @default(0)
+  page_link    String    @default("") @db.VarChar(255)
+  page_content String?   @db.LongText
+  post_now     DateTime? @db.Date
+  page_enable  Int       @default(1)
+  created_dt   DateTime  @default(now()) @db.Timestamp(0)
+  created_ip   String    @default("") @db.VarChar(15)
+  created_by   String    @default("") @db.VarChar(70)
+  updated_dt   DateTime  @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
+  updated_ip   String    @default("") @db.VarChar(15)
+  updated_by   String    @default("") @db.VarChar(70)
+  del          Int       @default(1)
+}
+
+model web_photos {
+  id           Int       @id @default(autoincrement())
+  photos_from  String    @default("gallery") @db.VarChar(50)
+  ref_id       Int       @default(0)
+  title        String    @default("") @db.VarChar(500)
+  p_date       DateTime? @db.Date
+  photo_order  Int       @default(0)
+  attachment   String    @default("") @db.VarChar(500)
+  c_attachment String    @default("") @db.VarChar(500)
+  created_dt   DateTime  @default(now()) @db.Timestamp(0)
+  created_ip   String    @default("") @db.VarChar(15)
+  created_by   String    @default("") @db.VarChar(70)
+  updated_dt   DateTime  @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
+  updated_ip   String    @default("") @db.VarChar(15)
+  updated_by   String    @default("") @db.VarChar(70)
+  del          Int       @default(1)
+}
+
+model web_photos_gallery {
+  id          Int       @id @default(autoincrement())
+  n_date      DateTime? @db.Date
+  title       String    @default("") @db.VarChar(500)
+  description String?   @db.LongText
+  attachment  String    @default("") @db.VarChar(500)
+  web_view    Int       @default(1)
+  created_dt  DateTime  @default(now()) @db.Timestamp(0)
+  created_ip  String    @default("") @db.VarChar(15)
+  created_by  String    @default("") @db.VarChar(70)
+  updated_dt  DateTime  @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
+  updated_ip  String    @default("") @db.VarChar(15)
+  updated_by  String    @default("") @db.VarChar(70)
+  del         Int       @default(1)
 }

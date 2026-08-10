@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { prisma } from '../config/prisma.js';
 import { insertLog } from './logService.js';
+import { GLOBAL_ACCESS_TYPE } from '../utils/accessType.js';
 
 function parseTimeToMinutes(timeValue) {
   if (!timeValue) return 0;
@@ -105,7 +106,7 @@ export async function accessCheck({
   cookies = {},
   sessionId = '',
 }) {
-  if (authType === 'admin' || authType === 'Global') {
+  if (authType === 'admin' || authType === GLOBAL_ACCESS_TYPE) {
     await insertLog(['index', 'login', 'Successful', '', userDt, userIp, userOs, username], sessionId);
     return { success: true };
   }

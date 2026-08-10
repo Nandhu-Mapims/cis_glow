@@ -10,6 +10,7 @@ import {
 } from '../services/dashboard/dashboardScreens.js';
 import { loadOverallStrengthReport } from '../services/dashboard/studentStrengthOverall.js';
 import { loadCommunityStrengthReport } from '../services/dashboard/studentCommunityStrength.js';
+import { isGlobalAccessType } from '../utils/accessType.js';
 
 const router = Router();
 
@@ -53,11 +54,11 @@ async function loadDashboardWidgetRows(user) {
 
   let rows = await fetchRows(userId);
 
-  if (rows.length === 0 && user.access_type === 'Global') {
+  if (rows.length === 0 && isGlobalAccessType(user.access_type)) {
     rows = await fetchRows('1');
   }
 
-  if (rows.length === 0 && user.access_type === 'Global') {
+  if (rows.length === 0 && isGlobalAccessType(user.access_type)) {
     rows = Object.keys(DASHBOARD_WIDGET_LABELS).map((widgetName, index) => ({
       widget_name: widgetName,
       widget_order: index,

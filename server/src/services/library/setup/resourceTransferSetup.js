@@ -22,12 +22,13 @@ async function lookupBookTransfer(accessionNo) {
   if (!book) return { error: 'Book not found' };
 
   const issued = await prisma.$queryRawUnsafe(`
-    SELECT COUNT(*) AS cnt FROM library_transaction_tb
+    SELECT register_no FROM library_transaction_tb
     WHERE del = 1 AND book_id = '${acc}'
-      AND (check_in_date = '0000-00-00 00:00:00' OR check_in_date = '1970-01-01 00:00:00')
+      AND (check_in_date = '0000-00-00 00:00:00' OR check_in_date = '1970-01-01 00:00:00' OR check_in_date IS NULL)
+    LIMIT 1
   `);
-  if (Number(issued[0]?.cnt || 0) > 0) {
-    return { error: 'Book is currently issued' };
+  if (issued[0]) {
+    return { error: `Resource not available. Issued to ${issued[0].register_no}` };
   }
 
   const pending = await prisma.$queryRawUnsafe(`
@@ -89,7 +90,9 @@ export async function saveResourceTransferSetup(payload, memberId, audit = {}) {
 
   if (payload.action === 'transfer') {
     const accessionNo = String(payload.accessionNo || '').trim();
-    const transferTo = String(payload.transferTo || '').trim();
+    // Legacy strtoupper()s transfer_to before insert (harmless no-op for the numeric
+    // category id it actually stores, but kept for exact SQL parity).
+    const transferTo = String(payload.transferTo || '').trim().toUpperCase();
     const transferDate = toIsoDate(payload.transferDate);
     if (!accessionNo || !transferTo) {
       return { success: false, message: 'Check Book ID and Transfer ID....' };

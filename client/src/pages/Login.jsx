@@ -16,6 +16,8 @@ export default function Login() {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState(null);
@@ -55,6 +57,12 @@ export default function Login() {
   const displayError = error === 'Wrong! Username or Password.'
     ? 'Incorrect Member ID or password. Check your details and try again.'
     : error;
+
+  const handlePasswordKeyEvent = (event) => {
+    if (typeof event.getModifierState === 'function') {
+      setCapsLockOn(event.getModifierState('CapsLock'));
+    }
+  };
 
   return (
     <div className="login-page">
@@ -111,14 +119,32 @@ export default function Login() {
                 <i className="fa fa-lock" aria-hidden="true" />
                 <input
                   id="login-password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   maxLength={50}
                   autoComplete="current-password"
                   placeholder="Enter your password"
                   onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={handlePasswordKeyEvent}
+                  onKeyUp={handlePasswordKeyEvent}
+                  onBlur={() => setCapsLockOn(false)}
                 />
+                <button
+                  type="button"
+                  className="login-password-toggle"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                  tabIndex={-1}
+                  onClick={() => setShowPassword((v) => !v)}
+                >
+                  <i className={showPassword ? 'fa fa-eye-slash' : 'fa fa-eye'} aria-hidden="true" />
+                </button>
               </div>
+              {capsLockOn && (
+                <p className="login-caps-lock-warning" role="status">
+                  <i className="fa fa-exclamation-triangle" aria-hidden="true" /> Caps Lock is on
+                </p>
+              )}
             </div>
 
             <button className="login-submit" type="submit" disabled={loading}>

@@ -17,6 +17,13 @@ export default function BookCategorySetup({ data, busy, onLoad, onSave }) {
     await onSave({ category, rows });
   };
 
+  const handleDelete = async (row) => {
+    if (!row.id) return;
+    // eslint-disable-next-line no-alert
+    if (!window.confirm('Delete this entry?')) return;
+    await onSave({ category, action: 'delete', id: row.id });
+  };
+
   return (
     <form onSubmit={handleSave}>
       <div className="mb-3">
@@ -30,7 +37,7 @@ export default function BookCategorySetup({ data, busy, onLoad, onSave }) {
           }}
         >
           {(data?.categories || []).map((c) => (
-            <option key={c} value={c}>{c}</option>
+            <option key={c.value} value={c.value}>{c.label}</option>
           ))}
         </select>
       </div>
@@ -40,7 +47,7 @@ export default function BookCategorySetup({ data, busy, onLoad, onSave }) {
             <tr>
               <th>Order</th>
               <th>Name</th>
-              <th>Enabled</th>
+              <th />
             </tr>
           </thead>
           <tbody>
@@ -61,11 +68,15 @@ export default function BookCategorySetup({ data, busy, onLoad, onSave }) {
                   />
                 </td>
                 <td className="text-center">
-                  <input
-                    type="checkbox"
-                    checked={row.enabled !== false}
-                    onChange={(e) => setRows((p) => p.map((r, j) => (j === i ? { ...r, enabled: e.target.checked } : r)))}
-                  />
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-danger"
+                    title="Delete"
+                    disabled={!row.id || busy}
+                    onClick={() => handleDelete(row)}
+                  >
+                    <i className="fa fa-trash" aria-hidden="true" />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -76,7 +87,7 @@ export default function BookCategorySetup({ data, busy, onLoad, onSave }) {
         <button
           type="button"
           className="btn btn-sm btn-info"
-          onClick={() => setRows((p) => [...p, { key: `new-${Date.now()}`, order: p.length + 1, name: '', enabled: true }])}
+          onClick={() => setRows((p) => [...p, { key: `new-${Date.now()}`, order: p.length + 1, name: '' }])}
         >
           +
         </button>

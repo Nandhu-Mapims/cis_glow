@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import SearchableSelect from '../../../components/SearchableSelect';
 
 function MultiSelect({ options = [], value = [], onChange }) {
   return (
@@ -34,16 +35,15 @@ export default function CommitteeAccessSetup({ data, busy, onLoad, onSave }) {
       <div className="row g-3 mb-3">
         <div className="col-md-6">
           <label className="form-label" htmlFor="committee_user">User</label>
-          <select
+          <SearchableSelect
             id="committee_user"
-            className="form-select"
+            options={data.users || []}
             value={data.selectedUser || ''}
             disabled={busy}
-            onChange={(e) => onLoad({ user_name_ref: e.target.value })}
-          >
-            <option value="">--Select user--</option>
-            {data.users?.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
-          </select>
+            placeholder="--Select user--"
+            searchPlaceholder="Search by username or name..."
+            onChange={(val) => onLoad({ user_name_ref: val })}
+          />
         </div>
       </div>
 

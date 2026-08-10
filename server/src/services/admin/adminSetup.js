@@ -18,6 +18,8 @@ import {
   saveStaffAuthPage,
 } from './setup/staffAuthSetup.js';
 import { loadDeptAuthV1, saveDeptAuthV1 } from './setup/deptAuthV1Setup.js';
+import { loadRoleManager, saveRoleManager } from './setup/roleManagerSetup.js';
+import { loadAssignRoles, saveAssignRoles } from './setup/assignRolesSetup.js';
 
 const VALID_SCREENS = new Set([
   'account-add',
@@ -32,6 +34,8 @@ const VALID_SCREENS = new Set([
   'committee-access',
   'staff-auth-hod',
   'staff-auth-page',
+  'role-manager',
+  'assign-roles',
 ]);
 
 const LOADERS = {
@@ -47,6 +51,8 @@ const LOADERS = {
   'committee-access': loadCommitteeAccess,
   'staff-auth-hod': loadStaffAuthHod,
   'staff-auth-page': loadStaffAuthPage,
+  'role-manager': loadRoleManager,
+  'assign-roles': loadAssignRoles,
 };
 
 const SAVERS = {
@@ -62,6 +68,8 @@ const SAVERS = {
   'committee-access': (fields, memberId, _files, audit) => saveCommitteeAccess(fields, memberId, audit),
   'staff-auth-hod': (fields, memberId, _files, audit) => saveStaffAuthHod(fields, memberId, audit),
   'staff-auth-page': (fields, memberId, _files, audit) => saveStaffAuthPage(fields, memberId, audit),
+  'role-manager': (fields, memberId, _files, audit) => saveRoleManager(fields, memberId, audit),
+  'assign-roles': (fields, memberId, _files, audit) => saveAssignRoles(fields, memberId, audit),
 };
 
 export function assertAdminSetupScreen(screen) {

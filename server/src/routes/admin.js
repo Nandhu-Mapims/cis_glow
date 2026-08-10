@@ -5,10 +5,22 @@ import { loadAdminSetupScreen, saveAdminSetupScreen } from '../services/admin/ad
 import { listUsers } from '../services/admin/adminUsers.js';
 import { loadLogDashboard, loadLogDetails } from '../services/admin/logDashboard.js';
 import { auditContextFromRequest } from '../services/bridgeAuditLog.js';
+import { isGlobalAccessType } from '../utils/accessType.js';
 
 const router = Router();
 
 router.use(authMiddleware, menuAuthForModule('admin'));
+
+// Admin module is view-only for everyone except true super-admin (accessType 'Global').
+// Users with admin menu access (e.g. an "admin" role account that isn't Global) can open
+// and load every screen here, but only Global can actually persist a change — mirrors the
+// requested split between "can see the admin module" and "can create/edit users & access".
+function requireGlobalWrite(req, res, next) {
+  if (!isGlobalAccessType(req.user?.accessType)) {
+    return res.status(403).json({ message: 'Only Super Admin can save changes here. You have view-only access to this module.' });
+  }
+  return next();
+}
 
 function handleError(res, error, fallbackMessage) {
   console.error(fallbackMessage, error);
@@ -101,7 +113,7 @@ router.post('/log-details', async (req, res) => {
   }
 });
 
-router.post('/setup/:screen/save', async (req, res) => {
+router.post('/setup/:screen/save', requireGlobalWrite, async (req, res) => {
   try {
     const result = await saveAdminSetupScreen(
       req.params.screen,

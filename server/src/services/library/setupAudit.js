@@ -56,3 +56,14 @@ export function formatDateDisplay(value) {
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   return `${dd}-${mm}-${d.getFullYear()}`;
 }
+
+export function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function addDaysIso(isoDate, days) {
+  const base = isoDate ? new Date(`${isoDate}T00:00:00`) : new Date();
+  if (Number.isNaN(base.getTime())) return todayIso();
+  base.setDate(base.getDate() + (Number(days) || 0));
+  return base.toISOString().slice(0, 10);
+}

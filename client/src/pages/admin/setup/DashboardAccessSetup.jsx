@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import SearchableSelect from '../../../components/SearchableSelect';
 
 export default function DashboardAccessSetup({ data, busy, onLoad, onSave }) {
   const [widgets, setWidgets] = useState([]);
@@ -16,18 +17,14 @@ export default function DashboardAccessSetup({ data, busy, onLoad, onSave }) {
       <div className="row g-3 mb-4">
         <div className="col-md-6">
           <label className="form-label" htmlFor="dash_user">Select User</label>
-          <select
+          <SearchableSelect
             id="dash_user"
-            className="form-select"
+            options={data.users || []}
             value={selectedUser}
             disabled={busy}
-            onChange={(e) => onLoad({ a_id: e.target.value })}
-          >
-            <option value="">--Select One--</option>
-            {data.users?.map((u) => (
-              <option key={u.value} value={u.value}>{u.label}</option>
-            ))}
-          </select>
+            searchPlaceholder="Search by username or name..."
+            onChange={(val) => onLoad({ a_id: val })}
+          />
         </div>
       </div>
 

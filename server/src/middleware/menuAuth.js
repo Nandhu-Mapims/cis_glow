@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/prisma.js';
+import { isGlobalAccessType } from '../utils/accessType.js';
 
 const MODULE_MENU_PATTERNS = {
   students: ['student_%'],
@@ -139,7 +140,7 @@ export function menuAuthForModule(moduleKey) {
 
   return async (req, res, next) => {
     try {
-      if (req.user?.accessType === 'Global') {
+      if (isGlobalAccessType(req.user?.accessType)) {
         return next();
       }
       const allowed = await userHasModuleAccess(req.user.id, patterns);

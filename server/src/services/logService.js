@@ -1,4 +1,5 @@
 import { prisma } from '../config/prisma.js';
+import { formatLocalTimestamp } from '../utils/sqlSafe.js';
 
 function extractPageName(pageRef) {
   const withoutQuery = String(pageRef || '').split('?')[0];
@@ -31,16 +32,14 @@ export async function insertLog(logObject, sessionId = '') {
   });
 }
 
-export async function countRecentFailedLogins(ipAddress, minutes = 5) {
-  const past = new Date(Date.now() - minutes * 60 * 1000);
-  return prisma.log_tb.count({
-    where: {
-      log_ipaddress: ipAddress,
-      log_page: 'index',
-      log_status: { not: 'Successful' },
-      log_timestamp: { gte: past },
-    },
-  });
+export async function countRecentFailedLogins(ipAddress, timeZone = 'Asia/Kolkata', minutes = 5) {
+  const cutoff = formatLocalTimestamp(new Date(Date.now() - minutes * 60 * 1000), timeZone);
+  const rows = await prisma.$queryRaw`
+    SELECT COUNT(*) AS cnt FROM log_tb
+    WHERE log_ipaddress = ${ipAddress} AND log_page = 'index'
+      AND log_status != 'Successful' AND log_timestamp >= ${cutoff}
+  `;
+  return Number(rows[0]?.cnt || 0);
 }
 
 export async function getLastSuccessfulLogin(username) {
