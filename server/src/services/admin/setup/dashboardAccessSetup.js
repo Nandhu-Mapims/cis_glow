@@ -66,22 +66,41 @@ async function loadUserOptions(actorMemberId, selectedId = '') {
   }));
 }
 
-function buildWidgetRows(userId) {
-  const existing = userId
+function buildWidgetRows(userId, sourceUserId = '') {
+  const isCopying = Boolean(sourceUserId && sourceUserId !== String(userId));
+  // Explicit `select` (rather than fetching full rows) so Prisma never has
+  // to deserialize this table's updated_dt/created_dt columns -- some rows
+  // carry legacy zero-date ("0000-00-00...") values there that the typed
+  // Client API can't parse, even though nothing here reads those columns.
+  const widgetSelect = { id: true, widget_name: true, widget_order: true, status: true };
+  const targetPromise = userId
     ? prisma.dashboard_access.findMany({
       where: { del: 1, user_id: String(userId) },
       orderBy: { widget_order: 'asc' },
+      select: widgetSelect,
     })
     : Promise.resolve([]);
+  const sourcePromise = isCopying
+    ? prisma.dashboard_access.findMany({
+      where: { del: 1, user_id: String(sourceUserId) },
+      orderBy: { widget_order: 'asc' },
+      select: widgetSelect,
+    })
+    : targetPromise;
 
-  return existing.then((rows) => {
-    const byName = new Map(rows.map((r) => [r.widget_name, r]));
+  return Promise.all([targetPromise, sourcePromise]).then(([targetRows, sourceRows]) => {
+    // rowId always comes from the TARGET's own rows -- Save uses rowId to
+    // decide update-vs-create and must always act on the target, never a
+    // copy source.
+    const rowIdByName = new Map(targetRows.map((r) => [r.widget_name, r.id]));
     const widgets = [];
+    const seen = new Set();
 
-    for (const row of rows) {
+    for (const row of sourceRows) {
       if (!DASHBOARD_WIDGETS[row.widget_name]) continue;
+      seen.add(row.widget_name);
       widgets.push({
-        rowId: row.id,
+        rowId: rowIdByName.get(row.widget_name) || null,
         widgetName: row.widget_name,
         label: DASHBOARD_WIDGETS[row.widget_name],
         order: row.widget_order,
@@ -90,15 +109,14 @@ function buildWidgetRows(userId) {
     }
 
     for (const [widgetName, label] of Object.entries(DASHBOARD_WIDGETS)) {
-      if (!byName.has(widgetName)) {
-        widgets.push({
-          rowId: null,
-          widgetName,
-          label,
-          order: '',
-          enabled: false,
-        });
-      }
+      if (seen.has(widgetName)) continue;
+      widgets.push({
+        rowId: rowIdByName.get(widgetName) || null,
+        widgetName,
+        label,
+        order: '',
+        enabled: false,
+      });
     }
 
     return widgets;
@@ -107,15 +125,21 @@ function buildWidgetRows(userId) {
 
 export async function loadDashboardAccess(memberId, fields = {}, query = {}, audit = {}) {
   const selectedUser = String(fields.a_id || query.uid || '').trim();
+  const copyFromUser = String(fields.copy_from_user || '').trim();
+  const isCopying = Boolean(copyFromUser && copyFromUser !== selectedUser);
   const users = await loadUserOptions(memberId, selectedUser);
-  const widgets = selectedUser ? await buildWidgetRows(selectedUser) : [];
+  const widgets = selectedUser ? await buildWidgetRows(selectedUser, copyFromUser) : [];
 
   if (!audit.skipLog) {
-    await logAdminSetup(PAGE, 'View', 'Successful', selectedUser || 'form', memberId, audit);
+    const description = isCopying
+      ? `User id->${selectedUser} (previewing widgets copied from user id->${copyFromUser})`
+      : selectedUser || 'form';
+    await logAdminSetup(PAGE, 'View', 'Successful', description, memberId, audit);
   }
   return {
     users,
     selectedUser,
+    copiedFromUser: isCopying ? copyFromUser : null,
     widgets,
   };
 }

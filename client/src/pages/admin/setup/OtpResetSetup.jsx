@@ -34,7 +34,7 @@ export default function OtpResetSetup({ data, busy, onSave }) {
                 setSelected(e.target.checked ? new Set(allIds) : new Set());
               }}
             />
-            <span className="form-check-label">Check all</span>
+            <span className="form-check-label ms-2">Check all</span>
           </label>
         </div>
 
@@ -56,7 +56,7 @@ export default function OtpResetSetup({ data, busy, onSave }) {
                     });
                   }}
                 />
-                <span className={`form-check-label${account.pendingReset ? ' text-danger' : ''}`}>
+                <span className={`ms-2 form-check-label${account.pendingReset ? ' text-danger' : ''}`}>
                   {account.memberName}
                   {' '}
                   (
@@ -64,6 +64,13 @@ export default function OtpResetSetup({ data, busy, onSave }) {
                   )
                 </span>
               </label>
+              {data.canSeePasswords && (
+                <div className="small text-muted ms-4">
+                  Current password:
+                  {' '}
+                  <code>{account.currentPassword || '—'}</code>
+                </div>
+              )}
             </div>
           ))}
         </div>

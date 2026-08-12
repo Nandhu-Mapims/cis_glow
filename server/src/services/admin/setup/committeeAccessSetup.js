@@ -51,28 +51,41 @@ async function loadCommitteeOptions(selectedIds = []) {
 
 export async function loadCommitteeAccess(memberId, fields = {}, query = {}, audit = {}) {
   const selectedUser = String(fields.user_name_ref || query.uid || '').trim();
+  const copyFromUser = String(fields.copy_from_user || '').trim();
+  const isCopying = Boolean(copyFromUser && copyFromUser !== selectedUser);
 
   const users = await loadUserOptions(selectedUser);
   let recordId = null;
   let committeeOptions = await loadCommitteeOptions([]);
 
   if (selectedUser) {
-    const auth = await prisma.dept_authentication.findFirst({
+    // recordId always comes from the TARGET's own row -- Save uses it to
+    // decide update-vs-create and must always act on the target, never a
+    // copy source.
+    const targetAuth = await prisma.dept_authentication.findFirst({
       where: { del: 1, user_id: selectedUser },
     });
-    if (auth) {
-      recordId = auth.id;
-      committeeOptions = await loadCommitteeOptions(splitCsv(auth.event_committee));
+    recordId = targetAuth?.id || null;
+
+    const sourceAuth = isCopying
+      ? await prisma.dept_authentication.findFirst({ where: { del: 1, user_id: copyFromUser } })
+      : targetAuth;
+    if (sourceAuth) {
+      committeeOptions = await loadCommitteeOptions(splitCsv(sourceAuth.event_committee));
     }
   }
 
   if (!audit.skipLog) {
-    await logAdminSetup(PAGE, 'View', 'Successful', selectedUser || 'form', memberId, audit);
+    const description = isCopying
+      ? `User id->${selectedUser} (previewing committees copied from user id->${copyFromUser})`
+      : selectedUser || 'form';
+    await logAdminSetup(PAGE, 'View', 'Successful', description, memberId, audit);
   }
 
   return {
     users,
     selectedUser,
+    copiedFromUser: isCopying ? copyFromUser : null,
     recordId,
     committeeOptions,
   };

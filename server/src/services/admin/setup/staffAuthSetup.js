@@ -34,7 +34,7 @@ async function loadStaffOptions(mode, selectedId = '') {
   });
 }
 
-async function loadMenuMatrix(staffId, mode) {
+async function loadMenuMatrix(staffId, mode, sourceStaffId = '') {
   const regFilter = mode === 'hod' ? 0 : { not: 0 };
 
   const categories = await prisma.admin_staff_menu_category_tb.findMany({
@@ -64,11 +64,27 @@ async function loadMenuMatrix(staffId, mode) {
     orderBy: [{ main_menu_order: 'asc' }, { sub_menu_order: 'asc' }],
   });
 
-  const authRows = await prisma.admin_staff_authentication_tb.findMany({
+  // rowId always comes from the TARGET staff's own rows, regardless of
+  // copy mode -- Save uses rowId to decide update-vs-create, and it must
+  // always act on the target's record, never the copy source's.
+  const targetAuthRows = await prisma.admin_staff_authentication_tb.findMany({
     where: { del: 1, staff_id: Number(staffId) },
     select: { id: true, menu_id: true, authentication: true },
   });
-  const authMap = new Map(authRows.map((r) => [r.menu_id, { id: r.id, checked: r.authentication === 1 }]));
+  const rowIdMap = new Map(targetAuthRows.map((r) => [r.menu_id, r.id]));
+
+  const isCopying = sourceStaffId && sourceStaffId !== String(staffId);
+  let checkedMap = new Map(targetAuthRows.map((r) => [r.menu_id, r.authentication === 1]));
+  if (isCopying) {
+    const sourceAuthRows = await prisma.admin_staff_authentication_tb.findMany({
+      where: { del: 1, staff_id: Number(sourceStaffId) },
+      select: { menu_id: true, authentication: true },
+    });
+    checkedMap = new Map(sourceAuthRows.map((r) => [r.menu_id, r.authentication === 1]));
+  }
+  const authMap = new Map(
+    menus.map((m) => [m.id, { id: rowIdMap.get(m.id) || null, checked: checkedMap.get(m.id) === true }]),
+  );
 
   const mainMenus = [];
   const seenMain = new Set();
@@ -112,17 +128,23 @@ function pageForMode(mode) {
 
 export async function loadStaffAuthSetup(mode, memberId, fields = {}, query = {}, audit = {}) {
   const selectedStaff = String(fields.staff_id || query.uid || '').trim();
+  const copyFromStaff = String(fields.copy_from_staff || '').trim();
   const staffOptions = await loadStaffOptions(mode, selectedStaff);
-  const menuGroups = selectedStaff ? await loadMenuMatrix(selectedStaff, mode) : [];
+  const menuGroups = selectedStaff ? await loadMenuMatrix(selectedStaff, mode, copyFromStaff) : [];
+  const copiedFromStaff = copyFromStaff && copyFromStaff !== selectedStaff ? copyFromStaff : null;
 
   if (!audit.skipLog) {
-    await logAdminSetup(pageForMode(mode), 'View', 'Successful', selectedStaff || 'form', memberId, audit);
+    const description = copiedFromStaff
+      ? `User id->${selectedStaff} (previewing permissions copied from user id->${copiedFromStaff})`
+      : selectedStaff || 'form';
+    await logAdminSetup(pageForMode(mode), 'View', 'Successful', description, memberId, audit);
   }
 
   return {
     mode,
     staffOptions,
     selectedStaff,
+    copiedFromStaff,
     menuGroups,
   };
 }

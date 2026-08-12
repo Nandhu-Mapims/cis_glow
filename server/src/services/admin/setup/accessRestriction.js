@@ -24,7 +24,12 @@ function formatDateTime(dt) {
 
 function formatTime(dt) {
   if (!dt) return '';
-  const d = new Date(dt);
+  // access_tb TIME columns are CAST(...AS CHAR) into bare "HH:MM:SS" strings
+  // (see loadAccessRestriction) so they survive legacy zero-date rows --
+  // `new Date("HH:MM:SS")` alone is not a recognized format and always
+  // parses as Invalid Date, so anchor it to a real date first.
+  const str = String(dt).trim();
+  const d = /^\d{2}:\d{2}(:\d{2})?$/.test(str) ? new Date(`1970-01-01 ${str}`) : new Date(str);
   if (Number.isNaN(d.getTime())) return '';
   const pad = (n) => String(n).padStart(2, '0');
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -67,10 +72,32 @@ function mapAccessRow(row) {
   };
 }
 
+async function fetchAccessRow(userId) {
+  // Plain prisma.access_tb.findFirst() throws for any row with a legacy
+  // zero-date to_date/from_date ("0000-00-00...") -- Prisma's typed
+  // Client API can't deserialize it into a Date. Cast the date/time
+  // columns to CHAR in raw SQL instead (same fix already used for this
+  // exact table in accessCheck.js, the login-time access gate).
+  const rows = await prisma.$queryRaw`
+    SELECT id, user_id, local_access, random_id, random_id_1, random_id_2, random_id_3, random_id_4,
+           date_base,
+           CAST(from_date AS CHAR) AS from_date,
+           CAST(to_date AS CHAR) AS to_date,
+           day_base, allow_day,
+           CAST(allow_from_time AS CHAR) AS allow_from_time,
+           CAST(allow_to_time AS CHAR) AS allow_to_time
+    FROM access_tb
+    WHERE del = 1 AND user_id = ${userId}
+    LIMIT 1
+  `;
+  return rows[0] || null;
+}
+
 export async function loadAccessRestriction(memberId, fields = {}, query = {}, audit = {}) {
   const selectedMember = String(
     fields.member_id || query.member_id || query.uid || '',
   ).trim();
+  const copyFromUser = String(fields.copy_from_user || '').trim();
 
   const members = await loadMemberOptions(selectedMember);
   let access = null;
@@ -84,19 +111,31 @@ export async function loadAccessRestriction(memberId, fields = {}, query = {}, a
     if (account?.access_type?.toLowerCase() === 'global') {
       globalUser = true;
     } else {
-      const row = await prisma.access_tb.findFirst({
-        where: { del: 1, user_id: selectedMember },
-      });
-      if (row) access = mapAccessRow(row);
+      const isCopying = copyFromUser && copyFromUser !== selectedMember;
+      const sourceRow = await fetchAccessRow(isCopying ? copyFromUser : selectedMember);
+      if (sourceRow) {
+        access = mapAccessRow(sourceRow);
+        if (isCopying) {
+          // Preview only: keep pointing at the TARGET's own existing record
+          // (if any) so Save updates/creates for the target, never the
+          // source. Nothing is written until Save is submitted.
+          const targetRow = await fetchAccessRow(selectedMember);
+          access.accessId = targetRow?.id || null;
+        }
+      }
     }
   }
 
   if (!audit.skipLog) {
-    await logAdminSetup(PAGE, 'View', 'Successful', selectedMember || 'form', memberId, audit);
+    const description = copyFromUser
+      ? `User id->${selectedMember} (previewing restrictions copied from user id->${copyFromUser})`
+      : selectedMember || 'form';
+    await logAdminSetup(PAGE, 'View', 'Successful', description, memberId, audit);
   }
   return {
     members,
     selectedMember,
+    copiedFromUser: copyFromUser && copyFromUser !== selectedMember ? copyFromUser : null,
     globalUser,
     access,
   };

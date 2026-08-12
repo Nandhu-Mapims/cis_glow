@@ -45,7 +45,32 @@ export default function CommitteeAccessSetup({ data, busy, onLoad, onSave }) {
             onChange={(val) => onLoad({ user_name_ref: val })}
           />
         </div>
+
+        {data.selectedUser && (
+          <div className="col-md-6">
+            <label className="form-label" htmlFor="committee_copy_source">
+              Copy committees from (optional)
+            </label>
+            <SearchableSelect
+              id="committee_copy_source"
+              options={data.users?.filter((u) => u.value !== data.selectedUser) || []}
+              value={data.copiedFromUser || ''}
+              disabled={busy}
+              placeholder="--This user's own committees--"
+              searchPlaceholder="Search by username or name..."
+              onChange={(val) => onLoad({ user_name_ref: data.selectedUser, copy_from_user: val })}
+            />
+          </div>
+        )}
       </div>
+
+      {data.selectedUser && data.copiedFromUser && (
+        <div className="alert alert-info">
+          Showing committees copied from{' '}
+          <strong>{data.users?.find((u) => u.value === data.copiedFromUser)?.label || `user ${data.copiedFromUser}`}</strong>.
+          Nothing is saved yet — review below, adjust as needed, then Save to apply to the selected user.
+        </div>
+      )}
 
       {data.selectedUser && (
         <form

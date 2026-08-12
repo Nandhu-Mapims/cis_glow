@@ -26,7 +26,32 @@ export default function DashboardAccessSetup({ data, busy, onLoad, onSave }) {
             onChange={(val) => onLoad({ a_id: val })}
           />
         </div>
+
+        {selectedUser && (
+          <div className="col-md-6">
+            <label className="form-label" htmlFor="dash_copy_source">
+              Copy widgets from (optional)
+            </label>
+            <SearchableSelect
+              id="dash_copy_source"
+              options={data.users?.filter((u) => u.value !== selectedUser) || []}
+              value={data.copiedFromUser || ''}
+              disabled={busy}
+              placeholder="--This user's own widgets--"
+              searchPlaceholder="Search by username or name..."
+              onChange={(val) => onLoad({ a_id: selectedUser, copy_from_user: val })}
+            />
+          </div>
+        )}
       </div>
+
+      {selectedUser && data.copiedFromUser && (
+        <div className="alert alert-info">
+          Showing widgets copied from{' '}
+          <strong>{data.users?.find((u) => u.value === data.copiedFromUser)?.label || `user ${data.copiedFromUser}`}</strong>.
+          Nothing is saved yet — review below, adjust as needed, then Save to apply to the selected user.
+        </div>
+      )}
 
       {selectedUser && (
         <form

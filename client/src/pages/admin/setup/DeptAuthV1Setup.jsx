@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import SearchableSelect from '../../../components/SearchableSelect';
 
 function MultiSelect({ options = [], value = [], onChange, groups = null }) {
   if (groups?.length) {
@@ -74,16 +75,14 @@ export default function DeptAuthV1Setup({ data, busy, onLoad, onSave }) {
       <div className="row g-3 mb-3">
         <div className="col-md-8">
           <label className="form-label" htmlFor="dept_v1_user">Staff (HOD)</label>
-          <select
+          <SearchableSelect
             id="dept_v1_user"
-            className="form-select"
+            options={data.users || []}
             value={data.selectedStaff || ''}
             disabled={busy}
-            onChange={(e) => onLoad({ user_name_ref: e.target.value })}
-          >
-            <option value="">--Select user--</option>
-            {data.users?.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
-          </select>
+            searchPlaceholder="Search by username or name..."
+            onChange={(val) => onLoad({ user_name_ref: val })}
+          />
         </div>
       </div>
 

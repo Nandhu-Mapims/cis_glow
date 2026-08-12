@@ -63,8 +63,35 @@ export default function StaffAuthSetup({ data, busy, onLoad, onSave }) {
             searchPlaceholder="Search by name..."
             onChange={(val) => onLoad({ staff_id: val })}
           />
+
+          {data.selectedStaff && (
+            <>
+              <label className="form-label mb-1 mt-3" htmlFor="staff_auth_copy_source">
+                Copy permissions from (optional)
+              </label>
+              <SearchableSelect
+                id="staff_auth_copy_source"
+                options={data.staffOptions?.filter((s) => s.value !== data.selectedStaff) || []}
+                value={data.copiedFromStaff || ''}
+                disabled={busy}
+                placeholder="--This person's own permissions--"
+                searchPlaceholder="Search by name..."
+                onChange={(val) => onLoad({ staff_id: data.selectedStaff, copy_from_staff: val })}
+              />
+            </>
+          )}
         </div>
       </div>
+
+      {data.selectedStaff && data.copiedFromStaff && (
+        <div className="alert alert-info mt-3">
+          Showing permissions copied from{' '}
+          <strong>
+            {data.staffOptions?.find((s) => s.value === data.copiedFromStaff)?.label || `user ${data.copiedFromStaff}`}
+          </strong>
+          . Nothing is saved yet — review below, adjust as needed, then Save to apply to the selected person.
+        </div>
+      )}
 
       {!data.selectedStaff && (
         <div className="staff-auth-empty text-muted">{copy.empty}</div>

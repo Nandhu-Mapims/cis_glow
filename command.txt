@@ -1,0 +1,10 @@
+cd /home/mapims/cis/legacy-cis-modernized
+docker compose build --no-cache frontend
+docker compose up -d frontend
+docker image prune -f
+
+
+cd /home/mapims/cis/legacy-cis-modernized
+docker compose build --no-cache backend
+docker compose up -d backend
+docker image prune -f

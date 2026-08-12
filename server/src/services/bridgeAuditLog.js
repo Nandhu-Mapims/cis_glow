@@ -73,6 +73,7 @@ export function auditContextFromRequest(req) {
     sessionId: req.user?.sessionId || '',
     ip: normalizeLegacyIp(req.ip || req.headers['x-forwarded-for'] || ''),
     userAgent: req.headers['user-agent'] || '',
+    accessType: req.user?.accessType || '',
   };
 }
 

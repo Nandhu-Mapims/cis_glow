@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import SearchableSelect from '../../../components/SearchableSelect';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -27,29 +28,54 @@ export default function AccessRestrictionSetup({ data, busy, onLoad, onSave }) {
   if (!data) return null;
 
   const selectedMember = data.selectedMember || '';
+  const copiedFromUser = data.copiedFromUser || '';
+  const copySourceLabel = copiedFromUser
+    ? data.members?.find((m) => m.value === copiedFromUser)?.label
+    : '';
 
   return (
     <div className="admin-native-form">
       <div className="row g-3 mb-4">
         <div className="col-md-6">
           <label className="form-label" htmlFor="member_id">Select Member</label>
-          <select
+          <SearchableSelect
             id="member_id"
-            className="form-select"
+            options={data.members || []}
             value={selectedMember}
             disabled={busy}
-            onChange={(e) => onLoad({ member_id: e.target.value })}
-          >
-            <option value="">--Select--</option>
-            {data.members?.map((m) => (
-              <option key={m.value} value={m.value}>{m.label}</option>
-            ))}
-          </select>
+            searchPlaceholder="Search by username or name..."
+            onChange={(val) => onLoad({ member_id: val })}
+          />
         </div>
+
+        {selectedMember && !data.globalUser && (
+          <div className="col-md-6">
+            <label className="form-label" htmlFor="access_copy_source">
+              Copy restrictions from (optional)
+            </label>
+            <SearchableSelect
+              id="access_copy_source"
+              options={data.members?.filter((m) => m.value !== selectedMember) || []}
+              value={copiedFromUser}
+              disabled={busy}
+              placeholder="--This user's own restrictions--"
+              searchPlaceholder="Search by username or name..."
+              onChange={(val) => onLoad({ member_id: selectedMember, copy_from_user: val })}
+            />
+          </div>
+        )}
       </div>
 
       {data.globalUser && (
         <p className="text-muted">Global users are not restricted on this screen.</p>
+      )}
+
+      {selectedMember && copiedFromUser && (
+        <div className="alert alert-info">
+          Showing restrictions copied from <strong>{copySourceLabel || `user ${copiedFromUser}`}</strong>.
+          Nothing is saved yet — review the settings below, adjust as needed, then click Save to
+          apply them to the selected member.
+        </div>
       )}
 
       {selectedMember && !data.globalUser && access && (

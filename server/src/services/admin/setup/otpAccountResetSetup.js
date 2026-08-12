@@ -1,10 +1,14 @@
 import { prisma } from '../../../config/prisma.js';
+import { decrypt, encrypt } from '../../password.js';
+import { isGlobalAccessType } from '../../../utils/accessType.js';
 import { auditFields, logAdminSetup } from './setupAudit.js';
 
 const PAGE = 'otp_account_reset.php';
-const RESET_PASSWORD = 'RsETzLMn';
+const RESET_PASSWORD = 'cisdental@123';
 
 export async function loadOtpAccountReset(memberId, _fields = {}, _query = {}, audit = {}) {
+  const canSeePasswords = isGlobalAccessType(audit.accessType);
+
   const rows = await prisma.web_account_setup.findMany({
     where: { del: 1, member_id: { not: 'igrapix' } },
     orderBy: { id: 'asc' },
@@ -13,6 +17,7 @@ export async function loadOtpAccountReset(memberId, _fields = {}, _query = {}, a
       member_id: true,
       member_name: true,
       reset_password: true,
+      ...(canSeePasswords ? { password: true } : {}),
     },
   });
 
@@ -26,7 +31,9 @@ export async function loadOtpAccountReset(memberId, _fields = {}, _query = {}, a
       memberId: row.member_id,
       memberName: row.member_name,
       pendingReset: Boolean(row.reset_password),
+      ...(canSeePasswords ? { currentPassword: decrypt(row.password) } : {}),
     })),
+    canSeePasswords,
   };
 }
 
@@ -46,7 +53,7 @@ export async function saveOtpAccountReset(fields, memberId, audit = {}) {
   try {
     await prisma.web_account_setup.updateMany({
       where: { id: { in: ids }, del: 1 },
-      data: { reset_password: RESET_PASSWORD, ...update },
+      data: { password: encrypt(RESET_PASSWORD), reset_password: RESET_PASSWORD, ...update },
     });
 
     await logAdminSetup(PAGE, 'Update', 'Successful', `${ids.length} accounts`, memberId, audit);
