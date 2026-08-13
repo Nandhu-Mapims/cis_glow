@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import SearchableSelect from '../../../components/SearchableSelect';
 
 function formatDateInput(value) {
   if (!value) return '';
@@ -56,12 +57,12 @@ export default function SmsHistoryScreen({ data, busy, onLoad, onSave }) {
           </div>
           <div className="mb-2">
             <label className="form-label">User</label>
-            <select className="form-select" value={filters.user_by} onChange={(e) => setFilters((f) => ({ ...f, user_by: e.target.value }))}>
-              <option value="">--Select--</option>
-              {(data?.senders || []).map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
+            <SearchableSelect
+              options={data?.senders || []}
+              value={filters.user_by}
+              onChange={(val) => setFilters((f) => ({ ...f, user_by: val }))}
+              searchPlaceholder="Search users..."
+            />
           </div>
           <div className="mb-2">
             <label className="form-label">From</label>

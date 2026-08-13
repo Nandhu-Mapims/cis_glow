@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import SearchableSelect from '../../../components/SearchableSelect';
 
 function IncidentFields({ form, setForm, departmentOptions, busy }) {
   const update = (key, value) => setForm((f) => ({ ...f, [key]: value }));
@@ -10,10 +11,13 @@ function IncidentFields({ form, setForm, departmentOptions, busy }) {
       </div>
       <div className="col-md-4">
         <label className="form-label">Department</label>
-        <select className="form-select" value={form.category || ''} disabled={busy} onChange={(e) => update('category', e.target.value)}>
-          <option value="">--Select--</option>
-          {departmentOptions?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        <SearchableSelect
+          options={departmentOptions || []}
+          value={form.category || ''}
+          onChange={(val) => update('category', val)}
+          disabled={busy}
+          searchPlaceholder="Search departments..."
+        />
       </div>
       <div className="col-md-4">
         <label className="form-label">Title</label>

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 export default function WebPageScreen({ data, busy, readOnly, onLoad, onSave }) {
   const [pageId, setPageId] = useState('');
   const [form, setForm] = useState({ title: '', order: 1, link: '', content: '', postOn: '', enabled: true });
+  const [listFilter, setListFilter] = useState('');
 
   useEffect(() => { onLoad(); }, [onLoad]);
 
@@ -31,6 +32,13 @@ export default function WebPageScreen({ data, busy, readOnly, onLoad, onSave }) 
   return (
     <div className="row g-3">
       <div className="col-md-3">
+        <input
+          type="search"
+          className="form-control form-control-sm mb-2"
+          placeholder="Search pages..."
+          value={listFilter}
+          onChange={(e) => setListFilter(e.target.value)}
+        />
         <div className="list-group">
           <button
             type="button"
@@ -39,11 +47,13 @@ export default function WebPageScreen({ data, busy, readOnly, onLoad, onSave }) 
           >
             + Add New Page
           </button>
-          {(data?.pages || []).map((p) => (
-            <button key={p.id} type="button" className={`list-group-item list-group-item-action ${String(p.id) === pageId ? 'active' : ''}`} onClick={() => switchPage(p.id)}>
-              {p.title || `Page ${p.id}`}
-            </button>
-          ))}
+          {(data?.pages || [])
+            .filter((p) => !listFilter.trim() || (p.title || '').toLowerCase().includes(listFilter.trim().toLowerCase()))
+            .map((p) => (
+              <button key={p.id} type="button" className={`list-group-item list-group-item-action ${String(p.id) === pageId ? 'active' : ''}`} onClick={() => switchPage(p.id)}>
+                {p.title || `Page ${p.id}`}
+              </button>
+            ))}
         </div>
       </div>
       <div className="col-md-9">

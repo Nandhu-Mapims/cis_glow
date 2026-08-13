@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import CheckListSelect from '../../../components/CheckListSelect';
 
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -148,9 +149,12 @@ function EditView({ data, busy, onSave, onBack, listFilters }) {
         <SelectField form={form} set={set} name="resourceSubject" label="Subject" options={data?.subjects} />
         <div className="col-md-6">
           <label className="form-label">Branch</label>
-          <select multiple className="form-select" value={(form.resourceDepartment || []).map(String)} onChange={(e) => set('resourceDepartment', Array.from(e.target.selectedOptions).map((o) => o.value))}>
-            {(data?.departments || []).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-          </select>
+          <CheckListSelect
+            options={(data?.departments || []).map((d) => ({ value: String(d.id), label: d.name }))}
+            value={(form.resourceDepartment || []).map(String)}
+            onChange={(next) => set('resourceDepartment', next)}
+            searchPlaceholder="Search branches..."
+          />
         </div>
         <TextField form={form} set={set} name="callNumber" label="Call No." />
         <TextField form={form} set={set} name="copyNo" label="Copy No." />

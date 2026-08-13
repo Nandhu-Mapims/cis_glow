@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import CheckListSelect from '../../../components/CheckListSelect';
 
 export default function AttReportSetup({ data, busy, onLoad, onSave }) {
   const [fromDate, setFromDate] = useState('');
@@ -21,12 +22,8 @@ export default function AttReportSetup({ data, busy, onLoad, onSave }) {
       if (!byGroup.has(opt.group)) byGroup.set(opt.group, []);
       byGroup.get(opt.group).push(opt);
     }
-    return [...byGroup.entries()];
+    return [...byGroup.entries()].map(([label, options]) => ({ label, options }));
   }, [data?.courseYearOptions]);
-
-  const toggleKey = (value, checked) => {
-    setSelectedKeys((prev) => (checked ? [...prev, value] : prev.filter((k) => k !== value)));
-  };
 
   const run = () => onSave({ fromDate, toDate, courseKeys: selectedKeys, showEmpty, load: true });
 
@@ -35,19 +32,12 @@ export default function AttReportSetup({ data, busy, onLoad, onSave }) {
       <div className="row g-3 mb-3">
         <div className="col-md-4">
           <label className="form-label">Category</label>
-          <select
-            multiple
-            className="form-control"
-            style={{ minHeight: 160 }}
+          <CheckListSelect
+            groups={groupedOptions}
             value={selectedKeys}
-            onChange={(e) => setSelectedKeys([...e.target.selectedOptions].map((o) => o.value))}
-          >
-            {groupedOptions.map(([group, opts]) => (
-              <optgroup key={group} label={group}>
-                {opts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </optgroup>
-            ))}
-          </select>
+            onChange={setSelectedKeys}
+            searchPlaceholder="Search category..."
+          />
         </div>
         <div className="col-md-2">
           <label className="form-label">From</label>

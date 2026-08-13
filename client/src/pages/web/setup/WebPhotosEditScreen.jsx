@@ -15,6 +15,7 @@ export default function WebPhotosEditScreen({ data, busy, onLoad, onSave }) {
   const [form, setForm] = useState({ date: '', title: '', description: '', webView: true });
   const [photos, setPhotos] = useState([]);
   const [coverFile, setCoverFile] = useState(null);
+  const [listFilter, setListFilter] = useState('');
 
   useEffect(() => { onLoad(); }, [onLoad]);
   useEffect(() => {
@@ -34,17 +35,26 @@ export default function WebPhotosEditScreen({ data, busy, onLoad, onSave }) {
   return (
     <div className="row g-3">
       <div className="col-md-3">
+        <input
+          type="search"
+          className="form-control form-control-sm mb-2"
+          placeholder="Search galleries..."
+          value={listFilter}
+          onChange={(e) => setListFilter(e.target.value)}
+        />
         <div className="list-group">
-          {(data?.galleries || []).map((g) => (
-            <button
-              key={g.id}
-              type="button"
-              className={`list-group-item list-group-item-action ${String(g.id) === galleryId ? 'active' : ''}`}
-              onClick={() => pickGallery(String(g.id))}
-            >
-              {g.title || `Gallery ${g.id}`}
-            </button>
-          ))}
+          {(data?.galleries || [])
+            .filter((g) => !listFilter.trim() || (g.title || '').toLowerCase().includes(listFilter.trim().toLowerCase()))
+            .map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                className={`list-group-item list-group-item-action ${String(g.id) === galleryId ? 'active' : ''}`}
+                onClick={() => pickGallery(String(g.id))}
+              >
+                {g.title || `Gallery ${g.id}`}
+              </button>
+            ))}
         </div>
       </div>
       <div className="col-md-9">

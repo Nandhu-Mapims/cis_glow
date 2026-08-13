@@ -1,5 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
+import SearchableSelect from '../../../components/SearchableSelect';
+import CheckListSelect from '../../../components/CheckListSelect';
 import { printAaadarCertificate, printInternshipCertificate } from '../../../utils/printReport.js';
+
+function groupedCourseOptions(courseOptions) {
+  const groups = new Map();
+  for (const option of courseOptions || []) {
+    const key = option.group || 'Courses';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(option);
+  }
+  return [...groups.entries()].map(([label, options]) => ({
+    label,
+    options: options.map((o) => ({ value: o.courseRef, label: o.label })),
+  }));
+}
 
 export { default as ApproveScreen } from './ApproveScreen';
 
@@ -169,13 +184,6 @@ export function CertRequestScreen({ data, busy, onLoad, onSave }) {
   const selectedSub = (data?.subcategories || []).find((s) => String(s.id) === String(form.subcategoryId));
   const isPhotocopy = String(selectedSub?.format || '').toLowerCase() === 'photocopy';
 
-  const togglePhotocopyItem = (id) => {
-    setForm((f) => ({
-      ...f,
-      photocopyList: f.photocopyList.includes(id) ? f.photocopyList.filter((x) => x !== id) : [...f.photocopyList, id],
-    }));
-  };
-
   const submit = (e) => {
     e.preventDefault();
     onSave(form).then(() => setForm((f) => ({ ...f, subcategoryId: '', registerNo: '', photocopyList: [] })));
@@ -202,19 +210,11 @@ export function CertRequestScreen({ data, busy, onLoad, onSave }) {
           {isPhotocopy ? (
             <div className="col-12">
               <label className="form-label">Certificate For</label>
-              <div className="d-flex flex-wrap gap-3">
-                {(data?.photocopyItems || []).map((p) => (
-                  <label key={p.id} className="form-check">
-                    <input
-                      type="checkbox"
-                      className="form-check-input"
-                      checked={form.photocopyList.includes(p.id)}
-                      onChange={() => togglePhotocopyItem(p.id)}
-                    />
-                    <span className="form-check-label ms-1">{p.name}</span>
-                  </label>
-                ))}
-              </div>
+              <CheckListSelect
+                options={(data?.photocopyItems || []).map((p) => ({ value: String(p.id), label: p.name }))}
+                value={form.photocopyList.map(String)}
+                onChange={(next) => setForm((f) => ({ ...f, photocopyList: next }))}
+              />
             </div>
           ) : null}
           <div className="col-12"><button type="submit" className="btn btn-primary" disabled={busy}>Submit request</button></div>
@@ -257,33 +257,19 @@ export function TcDetailsScreen({ data, busy, onLoad, onSave }) {
     return onLoad({ courseRef, page: nextPage });
   };
 
-  const groupedCourses = (data?.courseOptions || []).reduce((groups, option) => {
-    const key = option.group || 'Courses';
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(option);
-    return groups;
-  }, {});
-
   const pagination = data?.pagination || { page: 1, pageSize: 50, total: 0, from: 0, to: 0 };
 
   return (
     <div>
       <div className="mb-3">
         <label className="form-label">Course</label>
-        <select
-          className="form-select"
+        <SearchableSelect
+          groups={groupedCourseOptions(data?.courseOptions)}
           value={data?.courseRef || ''}
-          onChange={(e) => loadCourse(e.target.value, 1)}
-        >
-          <option value="">Select course</option>
-          {Object.entries(groupedCourses).map(([group, options]) => (
-            <optgroup key={group} label={group}>
-              {options.map((option) => (
-                <option key={option.courseRef} value={option.courseRef}>{option.label}</option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
+          onChange={(val) => loadCourse(val, 1)}
+          placeholder="Select course"
+          searchPlaceholder="Search courses..."
+        />
       </div>
 
       {data?.courseRef ? (
@@ -588,13 +574,6 @@ export function InternshipGenerateScreen({ data, busy, onLoad }) {
     return onLoad(payload);
   };
 
-  const groupedCourses = (data?.courseOptions || []).reduce((acc, option) => {
-    const group = option.group || 'Courses';
-    if (!acc[group]) acc[group] = [];
-    acc[group].push(option);
-    return acc;
-  }, {});
-
   return (
     <div className="row g-3">
       <div className="col-lg-3">
@@ -629,16 +608,13 @@ export function InternshipGenerateScreen({ data, busy, onLoad }) {
             ) : (
               <div className="mb-3">
                 <label className="form-label">Course / Batch</label>
-                <select className="form-select" value={courseRef} onChange={(e) => { setCourseRef(e.target.value); if (e.target.value) onLoad({ searchBy: 'batch', searchInput: e.target.value }); }}>
-                  <option value="">--Select--</option>
-                  {Object.entries(groupedCourses).map(([group, options]) => (
-                    <optgroup key={group} label={group}>
-                      {options.map((option) => (
-                        <option key={option.courseRef} value={option.courseRef}>{option.label}</option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
+                <SearchableSelect
+                  groups={groupedCourseOptions(data?.courseOptions)}
+                  value={courseRef}
+                  onChange={(val) => { setCourseRef(val); if (val) onLoad({ searchBy: 'batch', searchInput: val }); }}
+                  placeholder="--Select--"
+                  searchPlaceholder="Search courses..."
+                />
               </div>
             )}
 
@@ -835,13 +811,6 @@ function AaadarCertificateScreen({ data, busy, onLoad, title }) {
     return onLoad(payload);
   };
 
-  const groupedCourses = (data?.courseOptions || []).reduce((acc, option) => {
-    const group = option.group || 'Courses';
-    if (!acc[group]) acc[group] = [];
-    acc[group].push(option);
-    return acc;
-  }, {});
-
   return (
     <div className="row g-3">
       <div className="col-lg-3">
@@ -876,16 +845,13 @@ function AaadarCertificateScreen({ data, busy, onLoad, title }) {
             ) : (
               <div className="mb-3">
                 <label className="form-label">Course / Batch</label>
-                <select className="form-select" value={courseRef} onChange={(e) => { setCourseRef(e.target.value); if (e.target.value) onLoad({ searchBy: 'batch', searchInput: e.target.value }); }}>
-                  <option value="">--Select--</option>
-                  {Object.entries(groupedCourses).map(([group, options]) => (
-                    <optgroup key={group} label={group}>
-                      {options.map((option) => (
-                        <option key={option.courseRef} value={option.courseRef}>{option.label}</option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
+                <SearchableSelect
+                  groups={groupedCourseOptions(data?.courseOptions)}
+                  value={courseRef}
+                  onChange={(val) => { setCourseRef(val); if (val) onLoad({ searchBy: 'batch', searchInput: val }); }}
+                  placeholder="--Select--"
+                  searchPlaceholder="Search courses..."
+                />
               </div>
             )}
 

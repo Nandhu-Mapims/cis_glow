@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import api from '../../../api/client';
 import ChipMultiSelect from '../../../components/ChipMultiSelect';
+import CheckListSelect from '../../../components/CheckListSelect';
 import HtmlRichTextEditor from '../../../components/HtmlRichTextEditor';
 import { DragHandle, useDragReorder } from '../../../hooks/useDragReorder';
 import { printReportHtml, printTaskManageReportSection } from '../../../utils/printReport';
@@ -290,13 +291,15 @@ export function CommitteeAddScreen({ data, busy, onLoad, onSave }) {
         required
       />
       <div className="mb-2"><label className="form-label">Logo</label><input type="file" className="form-control" onChange={(e) => setFile(e.target.files?.[0] || null)} /></div>
-      <div className="mb-3 d-flex flex-wrap gap-3">
-        {(data?.categories || []).map((c) => (
-          <label key={c.id}><input type="checkbox" checked={form.categories.includes(String(c.id))} onChange={(e) => {
-            const id = String(c.id);
-            setForm({ ...form, categories: e.target.checked ? [...form.categories, id] : form.categories.filter((x) => x !== id) });
-          }} /> {c.name}</label>
-        ))}
+      <div className="mb-3">
+        <span className="form-label" id="committee_add_categories_label">Categories</span>
+        <CheckListSelect
+          aria-labelledby="committee_add_categories_label"
+          options={(data?.categories || []).map((c) => ({ value: String(c.id), label: c.name }))}
+          value={form.categories}
+          onChange={(next) => setForm({ ...form, categories: next })}
+          searchPlaceholder="Search categories..."
+        />
       </div>
       <button type="submit" className="btn btn-primary" disabled={busy}>Save</button>
     </form>
@@ -418,26 +421,16 @@ export function CommitteeEditScreen({ data, busy, onLoad, onSave }) {
                 )}
                 {file && <div className="form-text mt-1">New file selected: {file.name}</div>}
               </div>
-          <div className="mb-3 d-flex flex-wrap gap-3">
-            {(data?.categories || []).map((c) => (
-                  <label key={c.id}>
-                    <input
-                      type="checkbox"
-                      disabled={busy}
-                      checked={(form.categories || []).includes(String(c.id))}
-                      onChange={(e) => {
-                const id = String(c.id);
-                const cats = form.categories || [];
-                        setForm({
-                          ...form,
-                          categories: e.target.checked ? [...cats, id] : cats.filter((x) => x !== id),
-                        });
-                      }}
-                    />
-                    {' '}
-                    {c.name}
-                  </label>
-            ))}
+          <div className="mb-3">
+            <span className="form-label" id="committee_edit_categories_label">Categories</span>
+            <CheckListSelect
+              aria-labelledby="committee_edit_categories_label"
+              options={(data?.categories || []).map((c) => ({ value: String(c.id), label: c.name }))}
+              value={form.categories || []}
+              disabled={busy}
+              onChange={(next) => setForm({ ...form, categories: next })}
+              searchPlaceholder="Search categories..."
+            />
           </div>
               <button
                 type="submit"

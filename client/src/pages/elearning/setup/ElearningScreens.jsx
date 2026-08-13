@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import api from '../../../api/client';
 import { Breadcrumbs, PageHeader, PageLoading } from '../../../components/PageShell';
 import DashboardLayout from '../../../layouts/DashboardLayout';
+import SearchableSelect from '../../../components/SearchableSelect';
 
 export function ElearnDashboardPage() {
   const { settings, menu } = useOutletContext();
@@ -80,7 +81,15 @@ export function ElearnReportScreen({ data, busy, onLoad }) {
     <div>
       <div className="row g-2 mb-3">
         <div className="col-md-3"><input type="date" className="form-control" value={date} onChange={(e) => setDate(e.target.value)} /></div>
-        <div className="col-md-5"><select className="form-control" value={courseId} onChange={(e) => setCourseId(e.target.value)}><option value="">All courses</option>{(data?.courseOptions || []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
+        <div className="col-md-5">
+          <SearchableSelect
+            options={data?.courseOptions || []}
+            value={courseId}
+            onChange={setCourseId}
+            placeholder="All courses"
+            searchPlaceholder="Search courses..."
+          />
+        </div>
         <div className="col-md-2"><button className="btn btn-info" type="button" disabled={busy} onClick={() => onLoad({ date, courseId })}>Go</button></div>
       </div>
       <table className="table table-bordered table-sm"><thead><tr><th>Session</th><th>Course</th><th>Subject</th><th>Period</th><th>Active</th></tr></thead>

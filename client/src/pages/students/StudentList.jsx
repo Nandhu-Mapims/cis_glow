@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/AuthContext';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Breadcrumbs, PageError, PageHeader, PageLoading } from '../../components/PageShell';
 import DataTable from '../../components/DataTable';
+import SearchableSelect from '../../components/SearchableSelect';
 
 const BREADCRUMBS = [
   { label: 'Home', to: '/dashboard' },
@@ -242,21 +243,17 @@ export default function StudentList() {
           ) : (
             <div className="cis-searchbar-field">
               <label className="cis-searchbar-label" htmlFor="batch">Course / batch</label>
-              <select
+              <SearchableSelect
                 id="batch"
-                className="form-select"
+                groups={courses.map((course) => ({
+                  label: `${course.courseName} | ${course.label}`,
+                  options: course.batchOptions,
+                }))}
                 value={batchValue}
-                onChange={(e) => handleBatchChange(e.target.value)}
-              >
-                <option value="">Select a course batch…</option>
-                {courses.map((course) => (
-                  <optgroup key={course.id} label={`${course.courseName} | ${course.label}`}>
-                    {course.batchOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+                onChange={handleBatchChange}
+                placeholder="Select a course batch…"
+                searchPlaceholder="Search course / batch..."
+              />
               <p className="cis-searchbar-hint">Lists every student admitted in the selected batch.</p>
             </div>
           )}

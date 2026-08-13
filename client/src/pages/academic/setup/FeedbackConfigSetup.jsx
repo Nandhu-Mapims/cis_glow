@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import LegacyDateTimeInput from '../../../components/LegacyDateTimeInput';
+import ChipMultiSelect from '../../../components/ChipMultiSelect';
 import { ensureLegacyDateTimePicker } from '../../../utils/legacyDateTimePickerLoader';
 import SetupAlerts from '../../fees/setup/SetupAlerts';
 import { useAcademicSetupApi } from './useAcademicSetupApi';
@@ -59,14 +60,10 @@ export default function FeedbackConfigSetup({ screen }) {
     else setSubjectRows([]);
   };
 
-  const toggleStaff = (rowIndex, staffId) => {
-    setSubjectRows((prev) => prev.map((row, i) => {
-      if (i !== rowIndex) return row;
-      const selected = new Set(row.selectedStaff || []);
-      if (selected.has(staffId)) selected.delete(staffId);
-      else selected.add(staffId);
-      return { ...row, selectedStaff: [...selected] };
-    }));
+  const setRowStaff = (rowIndex, nextSelected) => {
+    setSubjectRows((prev) => prev.map((row, i) => (
+      i === rowIndex ? { ...row, selectedStaff: nextSelected } : row
+    )));
   };
 
   const handleSave = async (e) => {
@@ -144,19 +141,14 @@ export default function FeedbackConfigSetup({ screen }) {
                     <td>{i + 1}</td>
                     <td>{row.type}</td>
                     <td>{row.subjectName}</td>
-                    <td>
-                      <div className="d-flex flex-wrap gap-2">
-                        {(row.staffOptions || []).map((s) => (
-                          <label key={s.value} className="small">
-                            <input
-                              type="checkbox"
-                              checked={(row.selectedStaff || []).includes(s.value)}
-                              onChange={() => toggleStaff(i, s.value)}
-                            />
-                            {' '}{s.label}
-                          </label>
-                        ))}
-                      </div>
+                    <td style={{ minWidth: 260 }}>
+                      <ChipMultiSelect
+                        options={row.staffOptions || []}
+                        value={row.selectedStaff || []}
+                        onChange={(next) => setRowStaff(i, next)}
+                        searchPlaceholder="Search staff..."
+                        listHeight={160}
+                      />
                     </td>
                   </tr>
                 ))}

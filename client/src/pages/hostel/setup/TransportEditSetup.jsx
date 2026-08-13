@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ConfirmModal from '../../fees/setup/ConfirmModal';
+import CheckListSelect from '../../../components/CheckListSelect';
 import { fileToPayload } from './TransportAddSetup';
 
 export default function TransportEditSetup({ data, busy, onLoad, onSave }) {
@@ -29,16 +30,6 @@ export default function TransportEditSetup({ data, busy, onLoad, onSave }) {
   const loadList = (next = {}) => onLoad({ search: next.search ?? search, page: next.page ?? page });
   const openEdit = (id) => onLoad({ id, search, page });
   const backToList = () => onLoad({ search: form?.listSearch || search, page: form?.listPage || page });
-
-  const toggleStop = (id) => {
-    const sid = String(id);
-    setForm((prev) => ({
-      ...prev,
-      stopIds: prev.stopIds.includes(sid)
-        ? prev.stopIds.filter((s) => s !== sid)
-        : [...prev.stopIds, sid],
-    }));
-  };
 
   if (data?.mode === 'edit' && form) {
     const set = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
@@ -89,13 +80,12 @@ export default function TransportEditSetup({ data, busy, onLoad, onSave }) {
         <div className="col-md-6"><label className="form-label">Contact</label><input className="form-control" value={form.contact} onChange={(e) => set('contact', e.target.value)} /></div>
         <div className="col-12">
           <label className="form-label">Stops</label>
-          <div className="row g-2">
-            {data.stops?.map((stop) => (
-              <div key={stop.id} className="col-md-4">
-                <label><input type="checkbox" checked={form.stopIds.includes(String(stop.id))} onChange={() => toggleStop(stop.id)} /> {stop.name}</label>
-              </div>
-            ))}
-          </div>
+          <CheckListSelect
+            options={(data.stops || []).map((stop) => ({ value: String(stop.id), label: stop.name }))}
+            value={form.stopIds}
+            onChange={(next) => set('stopIds', next)}
+            searchPlaceholder="Search stops..."
+          />
         </div>
         <div className="col-12"><button type="submit" className="btn btn-danger" disabled={busy}>Save</button></div>
       </form>

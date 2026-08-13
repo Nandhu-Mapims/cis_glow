@@ -9,6 +9,7 @@ import './CheckListSelect.css';
  */
 export default function CheckListSelect({
   options = [],
+  groups = null,
   value = [],
   onChange,
   multiple = true,
@@ -20,11 +21,30 @@ export default function CheckListSelect({
   const [query, setQuery] = useState('');
   const selectedSet = useMemo(() => new Set(value.map(String)), [value]);
 
+  const flatOptions = useMemo(
+    () => (groups ? groups.flatMap((g) => g.options) : options),
+    [groups, options],
+  );
+
+  const q = query.trim().toLowerCase();
+
+  const filteredGroups = useMemo(() => {
+    if (!groups) return null;
+    return groups
+      .map((g) => ({
+        ...g,
+        options: q ? g.options.filter((opt) => opt.label.toLowerCase().includes(q)) : g.options,
+      }))
+      .filter((g) => g.options.length > 0);
+  }, [groups, q]);
+
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    if (groups) return null;
     if (!q) return options;
     return options.filter((opt) => opt.label.toLowerCase().includes(q));
-  }, [options, query]);
+  }, [groups, options, q]);
+
+  const visibleOptions = groups ? (filteredGroups?.flatMap((g) => g.options) || []) : filtered;
 
   const toggle = (val) => {
     if (disabled) return;
@@ -39,13 +59,31 @@ export default function CheckListSelect({
     }
   };
 
-  const selectAll = () => onChange(filtered.map((o) => String(o.value)));
+  const selectAll = () => onChange(visibleOptions.map((o) => String(o.value)));
   const clearAll = () => onChange([]);
+
+  const renderRow = (opt) => {
+    const isSelected = selectedSet.has(String(opt.value));
+    return (
+      <label
+        key={String(opt.value)}
+        className={`check-list-select-row${isSelected ? ' is-selected' : ''}`}
+      >
+        <input
+          type={multiple ? 'checkbox' : 'radio'}
+          checked={isSelected}
+          disabled={disabled}
+          onChange={() => toggle(opt.value)}
+        />
+        <span className="check-list-select-label">{opt.label}</span>
+      </label>
+    );
+  };
 
   return (
     <div className={`check-list-select${disabled ? ' is-disabled' : ''}`}>
       <div className="check-list-select-toolbar">
-        {options.length > 8 && (
+        {flatOptions.length > 8 && (
           <input
             type="search"
             className="form-control form-control-sm check-list-select-search"
@@ -59,7 +97,7 @@ export default function CheckListSelect({
           <span className="check-list-select-count">
             {value.length > 0 ? `${value.length} selected` : 'None selected'}
           </span>
-          {multiple && !disabled && filtered.length > 0 && (
+          {multiple && !disabled && visibleOptions.length > 0 && (
             <span className="check-list-select-actions">
               <button type="button" onClick={selectAll}>Select all</button>
               <span aria-hidden="true">·</span>
@@ -74,25 +112,18 @@ export default function CheckListSelect({
         aria-multiselectable={multiple || undefined}
         aria-labelledby={ariaLabelledBy}
       >
-        {filtered.length === 0 ? (
+        {visibleOptions.length === 0 ? (
           <div className="check-list-select-empty">{emptyText}</div>
-        ) : filtered.map((opt) => {
-          const isSelected = selectedSet.has(String(opt.value));
-          return (
-            <label
-              key={String(opt.value)}
-              className={`check-list-select-row${isSelected ? ' is-selected' : ''}`}
-            >
-              <input
-                type={multiple ? 'checkbox' : 'radio'}
-                checked={isSelected}
-                disabled={disabled}
-                onChange={() => toggle(opt.value)}
-              />
-              <span className="check-list-select-label">{opt.label}</span>
-            </label>
-          );
-        })}
+        ) : groups ? (
+          filteredGroups.map((group) => (
+            <div key={group.label} className="check-list-select-group">
+              <div className="check-list-select-group-label">{group.label}</div>
+              {group.options.map(renderRow)}
+            </div>
+          ))
+        ) : (
+          filtered.map(renderRow)
+        )}
       </div>
     </div>
   );

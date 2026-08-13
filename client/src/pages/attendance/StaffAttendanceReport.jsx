@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import ReportPrintBar from '../../components/ReportPrintBar';
+import ChipMultiSelect from '../../components/ChipMultiSelect';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import '../students/StudentReport.css';
 
@@ -38,11 +39,6 @@ export default function StaffAttendanceReport() {
     };
     load();
   }, []);
-
-  const toggleCategory = (id) => {
-    const key = String(id);
-    setSelected((prev) => (prev.includes(key) ? prev.filter((v) => v !== key) : [...prev, key]));
-  };
 
   const generate = async (e) => {
     e.preventDefault();
@@ -92,19 +88,12 @@ export default function StaffAttendanceReport() {
         <div className="card-body">
           <div className="mb-3">
             <label className="form-label">Categories</label>
-            <div className="d-flex flex-wrap gap-2">
-              {categories.map((cat) => (
-                <label key={cat.id} className="btn btn-sm btn-outline-secondary">
-                  <input
-                    type="checkbox"
-                    className="me-1"
-                    checked={selected.includes(String(cat.id))}
-                    onChange={() => toggleCategory(cat.id)}
-                  />
-                  {cat.name}
-                </label>
-              ))}
-            </div>
+            <ChipMultiSelect
+              options={categories.map((cat) => ({ value: String(cat.id), label: cat.name }))}
+              value={selected}
+              onChange={setSelected}
+              searchPlaceholder="Search categories..."
+            />
           </div>
           <div className="row g-3 mb-3">
             <div className="col-md-3">

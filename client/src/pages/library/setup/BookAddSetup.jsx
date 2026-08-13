@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../../api/client';
 import { FormActionBar, FormSection, FormSectionNav, useScrollSpy } from '../../../components/FormShell';
+import CheckListSelect from '../../../components/CheckListSelect';
 
 const emptyForm = {
   resourceType: '', accessionNo: '', resourceName: '', resourceSubname: '', convertTitle: '', convertName: '', ebookFile: null, referenceCopy: false,
@@ -105,10 +106,12 @@ export default function BookAddSetup({ data, busy, onSave }) {
         <SelectField form={form} set={set} name="resourceSubject" label="Subject" options={data?.subjects} />
         <div className="col-md-6">
           <label className="form-label">Branch</label>
-          <select multiple className="form-select" value={(form.resourceDepartment || []).map(String)} onChange={(e) => set('resourceDepartment', Array.from(e.target.selectedOptions).map((o) => o.value))}>
-            {(data?.departments || []).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-          </select>
-          <div className="form-text">Ctrl/Cmd-click to select multiple branches.</div>
+          <CheckListSelect
+            options={(data?.departments || []).map((d) => ({ value: String(d.id), label: d.name }))}
+            value={(form.resourceDepartment || []).map(String)}
+            onChange={(next) => set('resourceDepartment', next)}
+            searchPlaceholder="Search branches..."
+          />
         </div>
         <TextField form={form} set={set} name="callNumber" label="Call No." placeholder="Catalogue call number" />
         <TextField form={form} set={set} name="copyNo" label="Copy No." />

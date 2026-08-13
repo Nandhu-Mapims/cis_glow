@@ -21,6 +21,7 @@ function matchesSearch(label, query) {
  */
 export default function SearchableSelect({
   options = [],
+  groups = null,
   value = '',
   onChange,
   placeholder = '--Select One--',
@@ -36,16 +37,30 @@ export default function SearchableSelect({
   const panelRef = useRef(null);
   const inputRef = useRef(null);
 
+  const flatOptions = useMemo(
+    () => (groups ? groups.flatMap((g) => g.options) : options),
+    [groups, options],
+  );
+
   const optionByValue = useMemo(
-    () => new Map(options.map((o) => [String(o.value), o])),
-    [options],
+    () => new Map(flatOptions.map((o) => [String(o.value), o])),
+    [flatOptions],
   );
   const selected = value ? optionByValue.get(String(value)) : null;
 
-  const filtered = useMemo(
-    () => options.filter((opt) => matchesSearch(opt.label, query.trim())),
-    [options, query],
-  );
+  const q = query.trim();
+
+  const filteredGroups = useMemo(() => {
+    if (!groups) return null;
+    return groups
+      .map((g) => ({ ...g, options: g.options.filter((opt) => matchesSearch(opt.label, q)) }))
+      .filter((g) => g.options.length > 0);
+  }, [groups, q]);
+
+  const filtered = useMemo(() => {
+    if (groups) return filteredGroups?.flatMap((g) => g.options) || [];
+    return options.filter((opt) => matchesSearch(opt.label, q));
+  }, [groups, filteredGroups, options, q]);
 
   const updateRect = () => {
     if (!rootRef.current) return;
@@ -150,6 +165,27 @@ export default function SearchableSelect({
           <div className="searchable-select-list" role="listbox">
             {filtered.length === 0 ? (
               <div className="p-3 text-muted small text-center">No matches found.</div>
+            ) : groups ? (
+              filteredGroups.map((group) => (
+                <div key={group.label} className="searchable-select-group">
+                  <div className="searchable-select-group-label">{group.label}</div>
+                  {group.options.map((opt) => {
+                    const isSelected = String(opt.value) === String(value);
+                    return (
+                      <button
+                        key={String(opt.value)}
+                        type="button"
+                        role="option"
+                        aria-selected={isSelected}
+                        className={`searchable-select-item w-100 text-start border-0 px-3 py-2${isSelected ? ' searchable-select-item--selected' : ''}`}
+                        onClick={() => pick(opt)}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))
             ) : filtered.map((opt) => {
               const isSelected = String(opt.value) === String(value);
               return (

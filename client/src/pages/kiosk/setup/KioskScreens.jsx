@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ConfirmModal from '../../fees/setup/ConfirmModal';
+import SearchableSelect from '../../../components/SearchableSelect';
 import { DragHandle, useDragReorder } from '../../../hooks/useDragReorder';
 
 export function MachineAccessScreen({ data, busy, onLoad, onSave }) {
@@ -12,8 +13,13 @@ export function MachineAccessScreen({ data, busy, onLoad, onSave }) {
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSave({ staffCategory, ...form }); }}>
       <div className="mb-2">
-        <input className="form-control" list="staff-cats" placeholder="Staff category" value={staffCategory} onChange={(e) => setStaffCategory(e.target.value)} />
-        <datalist id="staff-cats">{(data?.staffCategories || []).map((c) => <option key={c} value={c} />)}</datalist>
+        <SearchableSelect
+          options={(data?.staffCategories || []).map((c) => ({ value: c, label: c }))}
+          value={staffCategory}
+          onChange={setStaffCategory}
+          placeholder="Staff category"
+          searchPlaceholder="Search staff categories..."
+        />
         <button type="button" className="btn btn-sm btn-outline-info mt-2" onClick={() => onLoad({ staffCategory })}>Load groups</button>
       </div>
       <table className="table table-sm table-bordered">

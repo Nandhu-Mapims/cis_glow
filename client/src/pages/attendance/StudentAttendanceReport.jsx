@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import ReportPrintBar from '../../components/ReportPrintBar';
+import ChipMultiSelect from '../../components/ChipMultiSelect';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { buildAttendanceReportPrintHtml } from '../../utils/attendanceReportPrint';
 import '../students/StudentReport.css';
@@ -88,13 +89,10 @@ export default function StudentAttendanceReport({ variant = 'standard' }) {
     load();
   }, [loadFilters]);
 
-  const toggleCourse = (value) => {
-    setSelectedCourses((prev) => {
-      const next = prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value];
-      setSelectedSubjects([]);
-      loadFilters(academicYear, next);
-      return next;
-    });
+  const changeCourses = (next) => {
+    setSelectedCourses(next);
+    setSelectedSubjects([]);
+    loadFilters(academicYear, next);
   };
 
   const changeAcademicYear = async (year) => {
@@ -102,10 +100,6 @@ export default function StudentAttendanceReport({ variant = 'standard' }) {
     setSelectedCourses([]);
     setSelectedSubjects([]);
     await loadFilters(year);
-  };
-
-  const toggleSubject = (value) => {
-    setSelectedSubjects((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
   };
 
   const generate = async (e) => {
@@ -248,24 +242,15 @@ export default function StudentAttendanceReport({ variant = 'standard' }) {
 
           <div className="mb-3">
             <label className="form-label">Courses {loadingFilters && <span className="text-muted small">(loading…)</span>}</label>
-            {courseGroups.map((group) => (
-              <div key={group.groupLabel} className="mb-2">
-                <div className="small fw-semibold text-muted">{group.groupLabel}</div>
-                <div className="d-flex flex-wrap gap-2">
-                  {(group.options || []).map((opt) => (
-                    <label key={opt.value} className="btn btn-sm btn-outline-secondary">
-                      <input
-                        type="checkbox"
-                        className="me-1"
-                        checked={selectedCourses.includes(opt.value)}
-                        onChange={() => toggleCourse(opt.value)}
-                      />
-                      {opt.label}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))}
+            <ChipMultiSelect
+              options={courseGroups.flatMap((group) => (group.options || []).map((opt) => ({
+                ...opt,
+                group: group.groupLabel,
+              })))}
+              value={selectedCourses}
+              onChange={changeCourses}
+              searchPlaceholder="Search courses..."
+            />
           </div>
 
           {selectedCourses.length > 0 && (
@@ -274,19 +259,13 @@ export default function StudentAttendanceReport({ variant = 'standard' }) {
               {subjects.length === 0 ? (
                 <p className="text-muted small mb-0">No subjects found for the selected course(s).</p>
               ) : (
-              <div className="d-flex flex-wrap gap-2" style={{ maxHeight: 200, overflowY: 'auto' }}>
-                {subjects.map((sub) => (
-                  <label key={sub.value} className="btn btn-sm btn-outline-primary">
-                    <input
-                      type="checkbox"
-                      className="me-1"
-                      checked={selectedSubjects.includes(sub.value)}
-                      onChange={() => toggleSubject(sub.value)}
-                    />
-                    {sub.label}
-                  </label>
-                ))}
-              </div>
+                <ChipMultiSelect
+                  options={subjects}
+                  value={selectedSubjects}
+                  onChange={setSelectedSubjects}
+                  searchPlaceholder="Search subjects..."
+                  listHeight={200}
+                />
               )}
             </div>
           )}

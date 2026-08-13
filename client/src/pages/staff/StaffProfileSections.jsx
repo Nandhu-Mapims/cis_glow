@@ -1,4 +1,5 @@
 import { FormSection } from '../../components/FormShell';
+import CheckListSelect from '../../components/CheckListSelect';
 
 export function readFileAsBase64(file) {
   return new Promise((resolve, reject) => {
@@ -644,12 +645,10 @@ export function SkillsTab({ records, setRecords, options, groupKeys, showLanguag
                       {' '}{item.shortName || item.name}
                     </label>
                     {checked && subs.length > 0 && (
-                      <select
-                        multiple
-                        className="form-select form-select-sm"
+                      <CheckListSelect
+                        options={subs.map((s) => ({ value: s, label: s }))}
                         value={selected?.activityTypes || []}
-                        onChange={(e) => {
-                          const vals = [...e.target.selectedOptions].map((o) => o.value);
+                        onChange={(vals) => {
                           setRecords((p) => ({
                             ...p,
                             activities: {
@@ -660,9 +659,7 @@ export function SkillsTab({ records, setRecords, options, groupKeys, showLanguag
                             },
                           }));
                         }}
-                      >
-                        {subs.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
+                      />
                     )}
                   </div>
                 );

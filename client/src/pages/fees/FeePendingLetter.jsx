@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
-import FeeMultiDropdown from './FeeMultiDropdown';
+import CheckListSelect from '../../components/CheckListSelect';
 import { printFeePendingLetter } from '../../utils/printReport';
 import { FEE_SCREEN_META } from './feeModuleMeta';
 import FeePageShell, { feeBackAction, feeScreenBreadcrumbs } from './FeePageShell';
@@ -75,15 +75,15 @@ export default function FeePendingLetter() {
       <form className="card shadow-sm mb-3 cis-fee-filter-card" onSubmit={generate}>
         <div className="card-header py-2">Class selection</div>
         <div className="card-body">
-          <label className="form-label">
+          <span className="form-label" id="fee_letter_classes_label">
             Class <span className="text-danger">*</span>
-          </label>
-          <FeeMultiDropdown
+          </span>
+          <CheckListSelect
+            aria-labelledby="fee_letter_classes_label"
             value={selectedClasses}
-            groups={classGroups}
+            groups={classGroups.length ? classGroups : null}
             options={classOptions}
-            placeholder="Select one or more classes"
-            className="cis-fee-sms-class-dropdown"
+            searchPlaceholder="Search classes..."
             onChange={(next) => {
               setSelectedClasses(next);
               setHasGenerated(false);

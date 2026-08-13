@@ -128,6 +128,7 @@ export function WebResearchEditScreen({ data, busy, onLoad, onSave }) {
   const [programId, setProgramId] = useState('');
   const [form, setForm] = useState(empty());
   const [attachFile, setAttachFile] = useState(null);
+  const [listFilter, setListFilter] = useState('');
 
   useEffect(() => { onLoad(); }, [onLoad]);
   useEffect(() => {
@@ -143,17 +144,26 @@ export function WebResearchEditScreen({ data, busy, onLoad, onSave }) {
   return (
     <div className="row g-3">
       <div className="col-md-3">
+        <input
+          type="search"
+          className="form-control form-control-sm mb-2"
+          placeholder="Search research topics..."
+          value={listFilter}
+          onChange={(e) => setListFilter(e.target.value)}
+        />
         <div className="list-group">
-          {(data?.programs || []).map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              className={`list-group-item list-group-item-action ${String(p.id) === programId ? 'active' : ''}`}
-              onClick={() => pick(String(p.id))}
-            >
-              {p.topic}
-            </button>
-          ))}
+          {(data?.programs || [])
+            .filter((p) => !listFilter.trim() || (p.topic || '').toLowerCase().includes(listFilter.trim().toLowerCase()))
+            .map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className={`list-group-item list-group-item-action ${String(p.id) === programId ? 'active' : ''}`}
+                onClick={() => pick(String(p.id))}
+              >
+                {p.topic}
+              </button>
+            ))}
         </div>
       </div>
       <div className="col-md-9">

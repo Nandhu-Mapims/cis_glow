@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import CheckListSelect from '../../../components/CheckListSelect';
 
 export default function ParentMeetingSmsScreen({ data, busy, onLoad, onSave }) {
   const [selectedCourses, setSelectedCourses] = useState([]);
@@ -27,17 +28,12 @@ export default function ParentMeetingSmsScreen({ data, busy, onLoad, onSave }) {
     <div className="cis-setup-form">
       <div className="mb-3">
         <label className="form-label">Class</label>
-        <select
-          multiple
-          className="form-control"
-          size={10}
+        <CheckListSelect
+          options={data?.courseOptions || []}
           value={selectedCourses}
-          onChange={(e) => setSelectedCourses([...e.target.selectedOptions].map((o) => o.value))}
-        >
-          {(data?.courseOptions || []).map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+          onChange={setSelectedCourses}
+          searchPlaceholder="Search classes..."
+        />
       </div>
 
       <div className="row g-3 mb-3">

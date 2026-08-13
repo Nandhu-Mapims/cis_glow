@@ -1,3 +1,4 @@
+import SearchableSelect from '../../../components/SearchableSelect';
 import SetupAlerts from '../../fees/setup/SetupAlerts';
 
 function groupOptions(options) {
@@ -7,25 +8,22 @@ function groupOptions(options) {
     if (!groups.has(g)) groups.set(g, []);
     groups.get(g).push(opt);
   }
-  return [...groups.entries()];
+  return [...groups.entries()].map(([label, opts]) => ({ label, options: opts }));
 }
 
 export function ExamSelector({ label = 'Exam', value, options, onChange, disabled }) {
-  const grouped = groupOptions(options);
   return (
     <div className="mb-3 row g-2">
       <label className="col-sm-2 col-form-label">{label}</label>
       <div className="col-sm-4">
-        <select className="form-select" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}>
-          <option value="">--Select Exam--</option>
-          {grouped.map(([group, opts]) => (
-            <optgroup key={group} label={group}>
-              {opts.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
+        <SearchableSelect
+          groups={groupOptions(options)}
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
+          placeholder="--Select Exam--"
+          searchPlaceholder="Search exams..."
+        />
       </div>
     </div>
   );
@@ -61,21 +59,18 @@ export function CourseSemesterSelector({ courseGroups, value, onChange, disabled
 }
 
 export function CourseYearSelector({ label = 'Course & Academic year', options, value, onChange, disabled, wide = false }) {
-  const grouped = groupOptions(options);
   return (
     <div className="mb-3 row g-2">
       <label className="col-sm-2 col-form-label">{label}</label>
       <div className={wide ? 'col-sm-8' : 'col-sm-4'}>
-        <select className="form-select" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}>
-          <option value="">--Select Course--</option>
-          {grouped.map(([group, opts]) => (
-            <optgroup key={group} label={group}>
-              {opts.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
+        <SearchableSelect
+          groups={groupOptions(options)}
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
+          placeholder="--Select Course--"
+          searchPlaceholder="Search courses..."
+        />
       </div>
     </div>
   );

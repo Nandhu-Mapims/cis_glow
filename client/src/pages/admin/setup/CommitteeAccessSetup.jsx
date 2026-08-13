@@ -1,21 +1,6 @@
 import { useEffect, useState } from 'react';
 import SearchableSelect from '../../../components/SearchableSelect';
-
-function MultiSelect({ options = [], value = [], onChange }) {
-  return (
-    <select
-      className="form-select"
-      multiple
-      size={Math.min(10, Math.max(4, options.length || 4))}
-      value={value}
-      onChange={(e) => onChange([...e.target.selectedOptions].map((o) => o.value))}
-    >
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
-      ))}
-    </select>
-  );
-}
+import CheckListSelect from '../../../components/CheckListSelect';
 
 function selectedValues(options) {
   return options?.filter((o) => o.selected).map((o) => o.value) || [];
@@ -86,8 +71,9 @@ export default function CommitteeAccessSetup({ data, busy, onLoad, onSave }) {
           }}
         >
           <div className="mb-3">
-            <label className="form-label">Committee</label>
-            <MultiSelect
+            <span className="form-label" id="committee_options_label">Committee</span>
+            <CheckListSelect
+              aria-labelledby="committee_options_label"
               options={data.committeeOptions || []}
               value={committees}
               onChange={setCommittees}

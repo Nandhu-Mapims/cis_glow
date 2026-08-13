@@ -80,3 +80,18 @@
 .searchable-select-item + .searchable-select-item {
   border-top: 1px solid var(--cis-border) !important;
 }
+
+.searchable-select-group + .searchable-select-group {
+  margin-top: 0.375rem;
+  padding-top: 0.375rem;
+  border-top: 1px solid var(--cis-border);
+}
+
+.searchable-select-group-label {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--cis-text-subtle);
+}

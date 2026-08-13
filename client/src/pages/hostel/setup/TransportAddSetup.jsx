@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import CheckListSelect from '../../../components/CheckListSelect';
 
 function fileToPayload(file) {
   return new Promise((resolve, reject) => {
@@ -18,16 +19,6 @@ export default function TransportAddSetup({ data, busy, onLoad, onSave }) {
 
   useEffect(() => { onLoad(); }, [onLoad]);
   const set = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
-
-  const toggleStop = (id) => {
-    const sid = String(id);
-    setForm((prev) => ({
-      ...prev,
-      stopIds: prev.stopIds.includes(sid)
-        ? prev.stopIds.filter((s) => s !== sid)
-        : [...prev.stopIds, sid],
-    }));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -80,20 +71,12 @@ export default function TransportAddSetup({ data, busy, onLoad, onSave }) {
       </div>
       <div className="col-12">
         <label className="form-label">Stops *</label>
-        <div className="row g-2">
-          {data?.stops?.map((stop) => (
-            <div key={stop.id} className="col-md-4">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={form.stopIds.includes(String(stop.id))}
-                  onChange={() => toggleStop(stop.id)}
-                />{' '}
-                {stop.name}
-              </label>
-            </div>
-          ))}
-        </div>
+        <CheckListSelect
+          options={(data?.stops || []).map((stop) => ({ value: String(stop.id), label: stop.name }))}
+          value={form.stopIds}
+          onChange={(next) => set('stopIds', next)}
+          searchPlaceholder="Search stops..."
+        />
       </div>
       <div className="col-12">
         <button type="submit" className="btn btn-danger" disabled={busy}>Save</button>

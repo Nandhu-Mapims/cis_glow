@@ -3,6 +3,7 @@ import { Link, useOutletContext } from 'react-router-dom';
 import api from '../../api/client';
 import { Breadcrumbs, PageHeader, PageLoading } from '../../components/PageShell';
 import DashboardLayout from '../../layouts/DashboardLayout';
+import SearchableSelect from '../../components/SearchableSelect';
 
 function StudentDetail({ detail }) {
   if (!detail) {
@@ -239,20 +240,18 @@ export default function PortfolioIndividualReportPage() {
                   </button>
                 </div>
               ) : (
-                <select
-                  className="form-select mb-3"
-                  value={fields.searchCourse}
-                  onChange={(e) => load({ searchCourse: e.target.value, studentId: null })}
-                >
-                  <option value="">--Select--</option>
-                  {(data?.courseOptions || []).map((course) => (
-                    <optgroup key={course.id} label={`${course.courseName} | ${course.label}`}>
-                      {course.batchOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
+                <div className="mb-3">
+                  <SearchableSelect
+                    groups={(data?.courseOptions || []).map((course) => ({
+                      label: `${course.courseName} | ${course.label}`,
+                      options: course.batchOptions,
+                    }))}
+                    value={fields.searchCourse}
+                    onChange={(val) => load({ searchCourse: val, studentId: null })}
+                    placeholder="--Select--"
+                    searchPlaceholder="Search course / batch..."
+                  />
+                </div>
               )}
 
               <div className="d-flex flex-column gap-1">
