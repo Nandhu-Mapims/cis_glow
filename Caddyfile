@@ -1,0 +1,50 @@
+# Caddy reverse proxy for this LOCAL/LAN machine. Port 80 here is NOT used —
+# `apache2` already owns it on this host (serving the live legacy PHP CIS
+# app), and that's not something to stop/touch. The live modernized app stays
+# on plain http://192.168.101.116:1003 directly (real users are on it right
+# now — see docker-compose.yml's `frontend` service). Caddy's only job on
+# this machine is the isolated HTTPS test path below.
+#
+# (The commented-out domain block further down is for a deployment that DOES
+# own port 80/443 — e.g. the VPS — not this machine.)
+#
+# Global options block: declaring any `https://` site normally makes Caddy
+# ALSO silently bind :80 itself for automatic HTTP->HTTPS redirects — with
+# apache2 already on :80, that alone was enough to crash-loop the whole
+# process (every site in a Caddyfile fails to start if any one listener
+# can't bind). `disable_redirects` turns off just that implicit :80 listener
+# while leaving normal internal-CA cert issuance for `tls internal` intact.
+{
+	auto_https disable_redirects
+}
+
+# --- LOCAL/LAN self-signed HTTPS test path — port 7001 ---
+# Isolated from the live :80/:1003 path above. Proxies to frontend-test
+# (docker-compose.yml), a second frontend container on host port 7011, itself
+# talking to the SAME backend (:2003) and SAME database as production — this
+# is purely a TLS-termination test, not a separate app/data stack. `tls
+# internal` mints a certificate from Caddy's own local CA (Let's Encrypt
+# can't issue for private IPs) — browsers/phones will show an "untrusted
+# certificate" warning until that CA's root is installed on the test device.
+https://192.168.101.116:7001 {
+	tls internal
+	reverse_proxy 127.0.0.1:7011 {
+		header_up X-Forwarded-For {remote_host}
+	}
+}
+
+# --- ONCE YOU HAVE A DOMAIN POINTED AT THIS VPS'S IP ---
+# Comment out (or delete) the `:80 { ... }` block above and uncomment this
+# one, replacing your-domain.example with the real domain. Caddy will
+# automatically obtain and renew a free Let's Encrypt certificate — no
+# other configuration needed — and will also start redirecting any plain
+# HTTP requests on port 80 to HTTPS automatically.
+#
+# your-domain.example {
+# 	reverse_proxy 127.0.0.1:1003 {
+# 		header_up X-Forwarded-For {remote_host}
+# 	}
+# }
+#
+# Also update CLIENT_URL in your root .env to https://your-domain.example
+# (see docker-compose.yml's backend service) and restart: docker compose up -d

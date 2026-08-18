@@ -57,7 +57,7 @@ export default function AdminUserList() {
   const columns = useMemo(() => [
     {
       key: 'memberId',
-      header: 'Member ID',
+      header: 'Staff ID',
       primary: true,
       sortable: true,
       searchField: true,
@@ -141,7 +141,7 @@ export default function AdminUserList() {
                 className="form-control"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Member ID, name, or email"
+                placeholder="Staff ID, name, or email"
                 autoComplete="off"
               />
               <button type="submit" className="btn btn-primary" disabled={busy}>

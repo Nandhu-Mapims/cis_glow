@@ -55,7 +55,7 @@ export default function Login() {
 
   // Server sends a fixed legacy-parity string here; rewrite it into a full sentence for display.
   const displayError = error === 'Wrong! Username or Password.'
-    ? 'Incorrect Member ID or password. Check your details and try again.'
+    ? 'Incorrect Staff ID or password. Check your details and try again.'
     : error;
 
   const handlePasswordKeyEvent = (event) => {
@@ -108,7 +108,7 @@ export default function Login() {
                   maxLength={20}
                   autoComplete="username"
                   autoFocus
-                  placeholder="Member ID"
+                  placeholder="Staff ID"
                   onChange={(e) => setUsername(validateCharNum(e.target.value))}
                 />
               </div>

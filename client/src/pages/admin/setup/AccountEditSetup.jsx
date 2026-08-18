@@ -103,7 +103,7 @@ function AccountEditDetail({ data, busy, onLoad, onSave }) {
         <h4>Basic Information</h4>
         <div className="row g-3">
           <div className="col-md-6">
-            <label className="form-label">Member ID</label>
+            <label className="form-label">Staff ID</label>
             <div className="form-control-plaintext">{user.memberId}</div>
           </div>
           <div className="col-md-6">
@@ -218,7 +218,7 @@ function AccountList({ data, busy, onLoad, onSave }) {
         <table className="table table-hover">
           <thead>
             <tr>
-              <th>Member ID</th>
+              <th>Staff ID</th>
               <th>Member Name</th>
               <th />
             </tr>

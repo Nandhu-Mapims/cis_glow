@@ -6,7 +6,25 @@ services:
       - ./server/.env
     environment:
       PORT: 2003
-      CLIENT_URL: http://localhost:1003
+      # Override via a root-level .env's CLIENT_URL (and/or CLIENT_URLS for
+      # multiple allowed origins, comma-separated) once this is reachable at
+      # something other than localhost — e.g. a VPS's public IP or domain —
+      # otherwise the backend's CORS check rejects the frontend's requests.
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:1003}
+      CLIENT_URLS: ${CLIENT_URLS:-}
+      # No DATABASE_URL override here — this stack uses the same shared host
+      # database as everything else (server/.env's DATABASE_URL, the real
+      # apdchedu_cisapp DB the legacy PHP app also uses). network_mode: host
+      # means this container reaches it via the host's network stack
+      # (127.0.0.1:3306) exactly like a non-Docker `npm run dev` would.
+    volumes:
+      # staff.csv lives at the repo root, outside this service's build
+      # context (./server), so it's never baked into the image — mount it
+      # at /staff.csv so scripts/import-staff-accounts.js's default path
+      # resolution (path.join(__dirname, '../../staff.csv'), where
+      # __dirname is /app/scripts in the container) finds it without
+      # needing STAFF_CSV_PATH set explicitly.
+      - ./staff.csv:/staff.csv:ro
     network_mode: host
     restart: unless-stopped
 
@@ -18,5 +36,48 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
+      # Opened LAN-wide (not just 127.0.0.1) for direct access during
+      # development. Caddy on :80 still proxies to this same port and
+      # remains the intended path for anything public-facing. LIVE — real
+      # users are on this port, don't repoint/remove without a maintenance
+      # window (see the frontend-test service below for isolated testing).
       - "1003:1003"
     restart: unless-stopped
+
+  frontend-test:
+    # Isolated HTTPS test path — same image/build as `frontend`, same shared
+    # backend (:2003) and same shared database as production. Only published
+    # on 7011 (internal-only; Caddy is what proxies 7001 -> 7011 with a
+    # self-signed cert — see Caddyfile). Not meant for direct/public access.
+    # Safe to `docker compose stop frontend-test` any time without touching
+    # the live frontend service at all.
+    build:
+      context: ./client
+    depends_on:
+      - backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "7011:1003"
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - frontend-test
+    # Host networking so Caddy can reach frontend's loopback-bound
+    # 127.0.0.1:1003 directly (a bridge-network container's "localhost"
+    # would be its own network namespace, not the host's) and so it can
+    # bind the host's real 80/443 for Let's Encrypt's HTTP-01/TLS-ALPN-01
+    # challenges once a domain is configured (see Caddyfile).
+    network_mode: host
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

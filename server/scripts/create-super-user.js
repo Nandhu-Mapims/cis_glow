@@ -45,9 +45,16 @@ async function main() {
     throw new Error('SUPER_USER_ID must be at least 3 characters');
   }
 
-  const existing = await prisma.web_account_setup.findFirst({
-    where: { del: 1, member_id: memberId },
-  });
+  // Raw SELECT (not prisma.web_account_setup.findFirst) — some rows in this
+  // legacy-shared table have zero-date (`0000-00-00`) timestamp columns,
+  // which Prisma's typed client throws on when deserializing a full row
+  // into DateTime fields. Selecting only the non-date columns we actually
+  // need sidesteps that entirely (see CLAUDE.md "Zero dates").
+  const existingRows = await prisma.$queryRaw`
+    SELECT id, access_type FROM web_account_setup
+    WHERE del = 1 AND member_id = ${memberId} LIMIT 1
+  `;
+  const existing = existingRows[0];
 
   if (existing) {
     if (existing.access_type === 'Global') {
@@ -56,16 +63,18 @@ async function main() {
       if (process.env.SUPER_USER_FORCE !== '1') {
         return;
       }
-      await prisma.web_account_setup.update({
-        where: { id: existing.id },
-        data: {
-          password: encrypt(plainPassword),
-          reset_password: '',
-          updated_dt: createdDt,
-          updated_ip: createdIp,
-          updated_by: createdBy,
-        },
-      });
+      // Raw UPDATE for the same reason — .update() reads the full row back
+      // afterward and would hit the same zero-date parse error on unrelated
+      // columns like created_dt.
+      await prisma.$executeRaw`
+        UPDATE web_account_setup
+        SET password = ${encrypt(plainPassword)},
+            reset_password = '',
+            updated_dt = ${createdDt},
+            updated_ip = ${createdIp},
+            updated_by = ${createdBy}
+        WHERE id = ${existing.id}
+      `;
       console.log('Password updated for existing Global user.');
       console.log(JSON.stringify({ memberId, password: plainPassword, accessType: 'Global' }, null, 2));
       return;

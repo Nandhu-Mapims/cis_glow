@@ -1,0 +1,1198 @@
+===============================================================================
+CIS MODERNIZED — DATABASE / DOCKER SCRIPTS REFERENCE
+===============================================================================
+All scripts below live under scripts/ and are executable from the repo root.
+Generated as a reference copy alongside the working .sh files — if you edit a
+script, update it here too (or just re-run this export).
+
+Repo root: /home/mapims/cis/legacy-cis-modernized
+
+Related docker-compose.yml services (see that file for the source of truth):
+  - mariadb  : dev-only, port 3003 -> 3306, seeded on first container creation
+               from TWO files (docker-entrypoint-initdb.d runs alphabetically):
+                 10-apdchedu_cisapp.sql <- ./apdchedu_cisapp.sql (full dump, 2026-08-08)
+                 20-extra-tables.sql    <- ./extra-tables.sql (role_tb/role_menu_tb/
+                                            user_role_tb, added to the live DB 2026-08-10,
+                                            not present in the big dump)
+  - backend  : port 2003
+  - frontend : port 1003
+
+===============================================================================
+1. scripts/import-db.sh
+===============================================================================
+PURPOSE
+  Import a MySQL/MariaDB .sql dump into the dev-only `mariadb` docker-compose
+  service (docker-compose.yml, port 3003, container database
+  `apdchedu_cisapp`). Targets ONLY the containerized dev database — never
+  touches the host MariaDB the live legacy PHP app uses.
+
+USAGE
+  scripts/import-db.sh apdchedu_cisapp.sql
+  scripts/import-db.sh /path/to/other-dump.sql
+  scripts/import-db.sh apdchedu_cisapp.sql --yes   # skip confirmation prompt
+
+REQUIREMENTS
+  - docker compose service `mariadb` must already be running:
+      docker compose up -d mariadb
+  - Reads MARIADB_ROOT_PASSWORD from the environment if set (falls back to
+    the same "cis_dev_root" default docker-compose.yml uses).
+  - Optional: install `pv` for a progress bar on large imports.
+
+--- FULL SOURCE ---------------------------------------------------------------
+#!/usr/bin/env bash
+# Import a MySQL/MariaDB dump into the dev-only `mariadb` docker-compose service
+# (see docker-compose.yml — port 3003, container database `apdchedu_cisapp`).
+#
+# This targets ONLY the containerized dev database. It never touches the host
+# MariaDB the live legacy PHP app uses.
+#
+# Usage:
+#   scripts/import-db.sh apdchedu_cisapp.sql
+#   scripts/import-db.sh /path/to/other-dump.sql
+#   scripts/import-db.sh apdchedu_cisapp.sql --yes   # skip confirmation prompt
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
+
+SQL_FILE="${1:-}"
+AUTO_YES="${2:-}"
+
+if [ -z "$SQL_FILE" ]; then
+  echo "Usage: $0 <path-to-sql-file> [--yes]" >&2
+  exit 1
+fi
+
+if [ ! -f "$SQL_FILE" ]; then
+  echo "File not found: $SQL_FILE" >&2
+  exit 1
+fi
+
+DB_NAME="apdchedu_cisapp"
+DB_ROOT_PASSWORD="${MARIADB_ROOT_PASSWORD:-cis_dev_root}"
+
+if ! docker compose ps --status running mariadb --format '{{.Name}}' 2>/dev/null | grep -q .; then
+  echo "The 'mariadb' service isn't running. Start it first:" >&2
+  echo "  docker compose up -d mariadb" >&2
+  exit 1
+fi
+
+FILE_SIZE_HUMAN="$(du -h "$SQL_FILE" | cut -f1)"
+
+if [ "$AUTO_YES" != "--yes" ]; then
+  echo "This will import '$SQL_FILE' ($FILE_SIZE_HUMAN) into the docker mariadb"
+  echo "container's '$DB_NAME' database (port 3003). The dump's own DROP TABLE"
+  echo "statements mean matching tables will be replaced."
+  read -r -p "Continue? [y/N] " REPLY
+  case "$REPLY" in
+    [yY]|[yY][eE][sS]) ;;
+    *) echo "Aborted."; exit 1 ;;
+  esac
+fi
+
+echo "Importing $SQL_FILE ($FILE_SIZE_HUMAN) into mariadb:$DB_NAME ..."
+START_TS=$(date +%s)
+
+if command -v pv >/dev/null 2>&1; then
+  pv "$SQL_FILE" | docker compose exec -T mariadb sh -c "exec mysql -uroot -p'$DB_ROOT_PASSWORD' '$DB_NAME'"
+else
+  echo "(tip: install 'pv' for a progress bar on large imports)"
+  docker compose exec -T mariadb sh -c "exec mysql -uroot -p'$DB_ROOT_PASSWORD' '$DB_NAME'" < "$SQL_FILE"
+fi
+
+ELAPSED=$(( $(date +%s) - START_TS ))
+echo "Done in ${ELAPSED}s."
+--- END FULL SOURCE -----------------------------------------------------------
+
+
+===============================================================================
+2. scripts/generate-schema-migration.sh
+===============================================================================
+PURPOSE
+  Compare an OLD baseline schema (a mysqldump snapshot, e.g. apdchedu_cisapp.sql)
+  against the CURRENT LIVE database's schema (read from server/.env's
+  DATABASE_URL), and generate a single, production-ready SQL migration script
+  capturing what changed since the baseline: new tables, new columns, new
+  indexes.
+
+WHAT IT TOUCHES
+  - READS the live database's schema only (information_schema queries +
+    SHOW CREATE TABLE) — never writes to real tables or data.
+  - Loads the OLD baseline schema (DDL only, no data) into the SAME live
+    database as a set of temporary, uniquely-prefixed tables
+    (bchk_<pid>_<original name>), used only for comparison, then drops every
+    one of those prefixed tables again when done (even on error, via trap).
+    The app's DB user only has privileges on `apdchedu_cisapp` itself (no
+    CREATE DATABASE), so a separate scratch database isn't an option —
+    prefixed tables inside the same DB is the alternative that stays within
+    those privileges while still never touching a real table.
+
+WHAT THE GENERATED MIGRATION SCRIPT CONTAINS
+  - Safe, additive changes only: CREATE TABLE IF NOT EXISTS, ADD COLUMN IF
+    NOT EXISTS, ADD INDEX/UNIQUE INDEX IF NOT EXISTS — all idempotent, so
+    it's safe to run more than once.
+  - A "REVIEW REQUIRED" section at the bottom listing anything dropped or
+    changed (removed tables/columns/indexes, column type/nullability
+    changes) as COMMENTS ONLY — nothing destructive is ever auto-applied.
+    Hand-write and verify those statements yourself before running them.
+
+USAGE
+  scripts/generate-schema-migration.sh [old-dump.sql] [output.sql]
+
+  Defaults: old-dump.sql = apdchedu_cisapp.sql (repo root)
+            output.sql   = schema-migration-<UTC timestamp>.sql (repo root)
+
+REQUIREMENTS
+  - server/.env must exist with a valid DATABASE_URL (this is the LIVE DB
+    the script connects to — read/compare only, plus the throwaway prefixed
+    tables described above).
+  - `node` and `mysql` client on PATH.
+
+NOTE ON THE apdchedu_cisapp.sql BASELINE
+  As of the last run (2026-08-12), that dump's newest data (log_tb) is dated
+  2026-02-13 — roughly 6 months stale. A diff against it will surface ALL
+  schema drift since Feb, not just recent hand-made changes. Last real run
+  produced: 261 new tables, 0 changed columns, 0 changed indexes on the
+  182 tables shared between the dump and the live DB. If you get a fresher
+  baseline dump later, re-run against that for a tighter diff.
+
+--- FULL SOURCE ---------------------------------------------------------------
+#!/usr/bin/env bash
+# Compare the OLD baseline schema (a mysqldump snapshot, e.g. apdchedu_cisapp.sql)
+# against the CURRENT live database's schema (read from server/.env's
+# DATABASE_URL), and generate a single, production-ready SQL migration script
+# capturing what changed since the baseline — new tables, new columns, new
+# indexes.
+#
+# What this script touches:
+#   - READS the live database's schema only (information_schema queries +
+#     SHOW CREATE TABLE) — never writes to real tables or data.
+#   - Loads the OLD baseline schema (DDL only, no data) into the SAME live
+#     database as a set of temporary, uniquely-prefixed tables
+#     (`bchk_<pid>_<original name>`), used only for comparison, then drops
+#     every one of those prefixed tables again when done (even on error, via
+#     trap). The app's DB user only has privileges on this one database (no
+#     CREATE DATABASE), so a separate scratch database isn't an option —
+#     prefixed tables inside the same DB is the alternative that stays
+#     within those privileges while still never touching a real table.
+#
+# What the generated migration script contains:
+#   - Safe, additive changes only: CREATE TABLE IF NOT EXISTS, ADD COLUMN IF
+#     NOT EXISTS, ADD INDEX/UNIQUE INDEX IF NOT EXISTS — all idempotent, so
+#     it's safe to run more than once.
+#   - A "REVIEW REQUIRED" section at the bottom listing anything dropped or
+#     changed (removed tables/columns/indexes, column type/nullability
+#     changes) as comments only — nothing destructive is ever auto-applied.
+#     Hand-write and verify those statements yourself before running them.
+#
+# Usage:
+#   scripts/generate-schema-migration.sh [old-dump.sql] [output.sql]
+#
+# Defaults: old-dump.sql = apdchedu_cisapp.sql (repo root)
+#           output.sql   = schema-migration-<UTC timestamp>.sql (repo root)
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
+
+ENV_FILE="$REPO_ROOT/server/.env"
+OLD_DUMP="${1:-$REPO_ROOT/apdchedu_cisapp.sql}"
+OUT_FILE="${2:-$REPO_ROOT/schema-migration-$(date -u +%Y%m%d-%H%M%S).sql}"
+
+if [ ! -f "$ENV_FILE" ]; then
+  echo "Missing $ENV_FILE — can't read DATABASE_URL." >&2
+  exit 1
+fi
+if [ ! -f "$OLD_DUMP" ]; then
+  echo "Baseline dump not found: $OLD_DUMP" >&2
+  exit 1
+fi
+if ! command -v node >/dev/null 2>&1; then
+  echo "This script needs 'node' on PATH to parse DATABASE_URL safely." >&2
+  exit 1
+fi
+
+DB_URL="$(grep -E '^DATABASE_URL=' "$ENV_FILE" | sed -E 's/^DATABASE_URL="?(.*)"?$/\1/' | sed -E 's/"$//')"
+if [ -z "$DB_URL" ]; then
+  echo "DATABASE_URL not found in $ENV_FILE." >&2
+  exit 1
+fi
+
+read -r DB_HOST DB_PORT DB_USER DB_PASS DB_NAME <<PARSED
+$(node -e '
+  const u = new URL(process.argv[1]);
+  console.log([u.hostname, u.port || 3306, u.username, decodeURIComponent(u.password), u.pathname.slice(1)].join(" "));
+' "$DB_URL")
+PARSED
+
+if [ -z "$DB_NAME" ]; then
+  echo "Could not parse DATABASE_URL." >&2
+  exit 1
+fi
+
+mysql_live() {
+  mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$@"
+}
+
+PREFIX="bchk_$$_"
+STRIPPED_SCHEMA="$(mktemp)"
+PREFIXED_SCHEMA="$(mktemp)"
+
+cleanup() {
+  local tables
+  tables="$(mysql_live -N -B -e "
+    SELECT table_name FROM information_schema.tables
+    WHERE table_schema='$DB_NAME' AND table_name LIKE '${PREFIX}%';
+  " 2>/dev/null || true)"
+  if [ -n "$tables" ]; then
+    while IFS= read -r t; do
+      [ -z "$t" ] && continue
+      mysql_live "$DB_NAME" -e "DROP TABLE IF EXISTS \`$t\`;" 2>/dev/null || true
+    done <<< "$tables"
+  fi
+  rm -f "$STRIPPED_SCHEMA" "$PREFIXED_SCHEMA"
+}
+trap cleanup EXIT
+
+echo "Live DB:  $DB_NAME @ $DB_HOST:$DB_PORT"
+echo "Baseline: $OLD_DUMP"
+echo
+
+echo "1/4  Extracting schema-only DDL from the baseline dump (stripping data)..."
+awk '
+  /^LOCK TABLES/  { skip = 1 }
+  /^UNLOCK TABLES;/ { skip = 0; next }
+  skip { next }
+  /^INSERT INTO/  { next }
+  { print }
+' "$OLD_DUMP" > "$STRIPPED_SCHEMA"
+
+# Rewrite table names so the baseline schema loads as throwaway
+# bchk_<pid>_<name> tables instead of colliding with the real live tables.
+sed -E \
+  -e "s/^DROP TABLE IF EXISTS \`([^\`]+)\`;/DROP TABLE IF EXISTS \`${PREFIX}\1\`;/" \
+  -e "s/^CREATE TABLE \`([^\`]+)\` \(/CREATE TABLE \`${PREFIX}\1\` (/" \
+  "$STRIPPED_SCHEMA" > "$PREFIXED_SCHEMA"
+
+echo "2/4  Loading baseline schema as temporary '${PREFIX}*' tables..."
+mysql_live "$DB_NAME" < "$PREFIXED_SCHEMA"
+
+echo "3/4  Comparing schemas and generating migration..."
+{
+  echo "-- Auto-generated schema migration"
+  echo "-- Generated: $(date -u +%FT%TZ)"
+  echo "-- Baseline:  $OLD_DUMP"
+  echo "-- Live DB:   $DB_NAME @ $DB_HOST:$DB_PORT"
+  echo "--"
+  echo "-- Everything above the REVIEW REQUIRED marker is additive-only"
+  echo "-- (CREATE TABLE / ADD COLUMN / ADD INDEX, all IF NOT EXISTS) and safe"
+  echo "-- to run against production as-is. Everything below it is a comment-only"
+  echo "-- report of removed/changed items -- nothing there is auto-applied;"
+  echo "-- review and hand-write those statements before running them."
+  echo
+  echo "USE \`$DB_NAME\`;"
+  echo
+
+  echo "-- ==== New tables ===="
+  NEW_TABLES="$(mysql_live -N -B -e "
+    SELECT table_name FROM information_schema.tables
+    WHERE table_schema='$DB_NAME' AND table_name NOT LIKE '${PREFIX}%'
+      AND CONCAT('$PREFIX', table_name) NOT IN (
+        SELECT table_name FROM information_schema.tables
+        WHERE table_schema='$DB_NAME' AND table_name LIKE '${PREFIX}%'
+      );
+  ")"
+  if [ -n "$NEW_TABLES" ]; then
+    while IFS= read -r t; do
+      [ -z "$t" ] && continue
+      echo "-- New table: $t"
+      # -B (batch) mode escapes embedded newlines/tabs in SHOW CREATE TABLE's
+      # multi-line field as literal \n/\t -- unescape them back to real
+      # whitespace before writing the DDL out.
+      mysql_live -N -B -e "SHOW CREATE TABLE \`$DB_NAME\`.\`$t\`;" \
+        | cut -f2 \
+        | sed 's/\\n/\n/g; s/\\t/\t/g' \
+        | sed '1s/^CREATE TABLE/CREATE TABLE IF NOT EXISTS/'
+      echo ";"
+      echo
+    done <<< "$NEW_TABLES"
+  fi
+
+  echo "-- ==== New columns on existing tables ===="
+  mysql_live -N -B -e "
+    SELECT n.table_name, n.column_name, n.column_type,
+           IF(n.is_nullable='YES','NULL','NOT NULL'),
+           IF(n.column_default IS NULL,'', CONCAT(' DEFAULT ', QUOTE(n.column_default))),
+           IF(n.extra<>'', CONCAT(' ', n.extra), '')
+    FROM information_schema.columns n
+    LEFT JOIN information_schema.columns o
+      ON o.table_schema='$DB_NAME' AND o.table_name=CONCAT('$PREFIX', n.table_name) AND o.column_name=n.column_name
+    WHERE n.table_schema='$DB_NAME' AND n.table_name NOT LIKE '${PREFIX}%'
+      AND EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema='$DB_NAME' AND table_name=CONCAT('$PREFIX', n.table_name)
+      )
+      AND o.column_name IS NULL
+    ORDER BY n.table_name, n.ordinal_position;
+  " | while IFS=$'\t' read -r tbl col coltype nullable dflt extra; do
+    [ -z "$tbl" ] && continue
+    echo "ALTER TABLE \`$tbl\` ADD COLUMN IF NOT EXISTS \`$col\` $coltype $nullable$dflt$extra;"
+  done
+  echo
+
+  echo "-- ==== New indexes on existing tables ===="
+  mysql_live -N -B -e "
+    SELECT s.table_name, s.index_name, MIN(s.non_unique),
+      GROUP_CONCAT(
+        CASE WHEN s.sub_part IS NOT NULL
+          THEN CONCAT('\`', s.column_name, '\`(', s.sub_part, ')')
+          ELSE CONCAT('\`', s.column_name, '\`')
+        END ORDER BY s.seq_in_index SEPARATOR ','
+      )
+    FROM information_schema.statistics s
+    WHERE s.table_schema='$DB_NAME' AND s.table_name NOT LIKE '${PREFIX}%' AND s.index_name<>'PRIMARY'
+      AND EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema='$DB_NAME' AND table_name=CONCAT('$PREFIX', s.table_name)
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM information_schema.statistics b
+        WHERE b.table_schema='$DB_NAME' AND b.table_name=CONCAT('$PREFIX', s.table_name) AND b.index_name=s.index_name
+      )
+    GROUP BY s.table_name, s.index_name;
+  " | while IFS=$'\t' read -r tbl idx nonuniq cols; do
+    [ -z "$tbl" ] && continue
+    if [ "$nonuniq" = "0" ]; then
+      echo "ALTER TABLE \`$tbl\` ADD UNIQUE INDEX IF NOT EXISTS \`$idx\` ($cols);"
+    else
+      echo "ALTER TABLE \`$tbl\` ADD INDEX IF NOT EXISTS \`$idx\` ($cols);"
+    fi
+  done
+  echo
+
+  echo "-- ============================================================"
+  echo "-- REVIEW REQUIRED -- comments only, nothing below is auto-applied."
+  echo "-- ============================================================"
+  echo
+
+  echo "-- Tables in the baseline but missing from the live DB (dropped, or renamed?):"
+  mysql_live -N -B -e "
+    SELECT SUBSTRING(table_name, LENGTH('$PREFIX')+1) FROM information_schema.tables
+    WHERE table_schema='$DB_NAME' AND table_name LIKE '${PREFIX}%'
+      AND SUBSTRING(table_name, LENGTH('$PREFIX')+1) NOT IN (
+        SELECT table_name FROM information_schema.tables
+        WHERE table_schema='$DB_NAME' AND table_name NOT LIKE '${PREFIX}%'
+      );
+  " | while IFS= read -r t; do
+    [ -z "$t" ] && continue
+    echo "--   $t"
+  done
+  echo
+
+  echo "-- Columns removed since the baseline:"
+  mysql_live -N -B -e "
+    SELECT SUBSTRING(o.table_name, LENGTH('$PREFIX')+1), o.column_name
+    FROM information_schema.columns o
+    LEFT JOIN information_schema.columns n
+      ON n.table_schema='$DB_NAME' AND n.table_name=SUBSTRING(o.table_name, LENGTH('$PREFIX')+1) AND n.column_name=o.column_name
+    WHERE o.table_schema='$DB_NAME' AND o.table_name LIKE '${PREFIX}%'
+      AND EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema='$DB_NAME' AND table_name=SUBSTRING(o.table_name, LENGTH('$PREFIX')+1)
+      )
+      AND n.column_name IS NULL;
+  " | while IFS=$'\t' read -r tbl col; do
+    [ -z "$tbl" ] && continue
+    echo "--   $tbl.$col"
+  done
+  echo
+
+  echo "-- Columns whose type/nullability changed since the baseline:"
+  mysql_live -N -B -e "
+    SELECT n.table_name, n.column_name, o.column_type, n.column_type, o.is_nullable, n.is_nullable
+    FROM information_schema.columns n
+    JOIN information_schema.columns o
+      ON o.table_schema='$DB_NAME' AND o.table_name=CONCAT('$PREFIX', n.table_name) AND o.column_name=n.column_name
+    WHERE n.table_schema='$DB_NAME' AND n.table_name NOT LIKE '${PREFIX}%'
+      AND (n.column_type<>o.column_type OR n.is_nullable<>o.is_nullable);
+  " | while IFS=$'\t' read -r tbl col oldtype newtype oldnull newnull; do
+    [ -z "$tbl" ] && continue
+    echo "--   $tbl.$col: was [$oldtype $oldnull] -> now [$newtype $newnull]"
+  done
+  echo
+
+  echo "-- Indexes removed since the baseline:"
+  mysql_live -N -B -e "
+    SELECT SUBSTRING(b.table_name, LENGTH('$PREFIX')+1), b.index_name
+    FROM information_schema.statistics b
+    WHERE b.table_schema='$DB_NAME' AND b.table_name LIKE '${PREFIX}%' AND b.index_name<>'PRIMARY'
+      AND EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema='$DB_NAME' AND table_name=SUBSTRING(b.table_name, LENGTH('$PREFIX')+1)
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM information_schema.statistics s
+        WHERE s.table_schema='$DB_NAME' AND s.table_name=SUBSTRING(b.table_name, LENGTH('$PREFIX')+1) AND s.index_name=b.index_name
+      )
+    GROUP BY b.table_name, b.index_name;
+  " | while IFS=$'\t' read -r tbl idx; do
+    [ -z "$tbl" ] && continue
+    echo "--   $tbl.$idx"
+  done
+
+} > "$OUT_FILE"
+
+echo "4/4  Done."
+echo
+echo "Migration script written to: $OUT_FILE"
+echo "Temporary '${PREFIX}*' tables will be dropped automatically on exit."
+--- END FULL SOURCE -----------------------------------------------------------
+
+
+===============================================================================
+3. scripts/sync-user-data.sh
+===============================================================================
+PURPOSE
+  Export CURRENT DATA (not schema) for the "accounts + access/auth" table set
+  from the LIVE database into a SQL file, so the docker dev database can be
+  refreshed with real, current accounts/permissions instead of whatever was
+  in apdchedu_cisapp.sql at dump time.
+
+TABLES COVERED
+  web_account_setup              -- login accounts
+  access_tb                      -- login day/time/device restrictions
+  authentication_tb              -- per-user menu grants
+  dept_authentication            -- department/committee scoping (dept-auth, committee-access)
+  dept_auth                      -- department scoping, v1 (dept-auth-v1)
+  dashboard_access                -- per-user dashboard widget visibility
+  role_tb / role_menu_tb / user_role_tb -- Role Manager / Assign Roles
+  admin_staff_authentication_tb   -- staff self-service portal menu grants
+
+WHAT IT DOES
+  1. READS this data from the live DB only (mysqldump --no-create-info —
+     data rows only, no DDL) — never writes to the live DB.
+  2. Writes a single .sql file that DELETEs existing rows in each of these
+     tables, then re-inserts the live rows — a full replace per table, not
+     a merge. Wrapped in a transaction.
+  Does NOT touch the docker container itself — feed the output through
+  import-db.sh (see script 1 above).
+
+USAGE
+  scripts/sync-user-data.sh [output.sql]
+  scripts/import-db.sh user-data-sync-<timestamp>.sql --yes   # actually apply it
+
+REQUIREMENTS
+  - server/.env must have a valid DATABASE_URL (the LIVE DB this reads from).
+  - `node`, `mysql`, `mysqldump` on PATH.
+
+--- FULL SOURCE ---------------------------------------------------------------
+#!/usr/bin/env bash
+# Export the CURRENT data (not schema) for the "accounts + access/auth"
+# table set from the LIVE database (server/.env's DATABASE_URL) into a SQL
+# file, ready to import into the docker dev mariadb container so the dev
+# environment logs in with real, current accounts/permissions.
+#
+# Tables covered:
+#   web_account_setup              -- login accounts
+#   access_tb                      -- login day/time/device restrictions
+#   authentication_tb               -- per-user menu grants
+#   dept_authentication             -- department/committee scoping (dept-auth, committee-access)
+#   dept_auth                       -- department scoping, v1 (dept-auth-v1)
+#   dashboard_access                -- per-user dashboard widget visibility
+#   role_tb / role_menu_tb / user_role_tb -- Role Manager / Assign Roles
+#   admin_staff_authentication_tb   -- staff self-service portal menu grants
+#
+# What this script does:
+#   1. READS this data from the live DB only (mysqldump --no-create-info,
+#      i.e. data rows only, no DDL) — never writes to the live DB.
+#   2. Writes a single .sql file that first DELETEs existing rows in each of
+#      these tables, then re-inserts the live rows — a full replace per
+#      table, not a merge. Wrapped in a transaction.
+#
+# This does NOT touch the docker container by itself — pass the output
+# through the existing import script:
+#   scripts/sync-user-data.sh
+#   scripts/import-db.sh user-data-sync-<timestamp>.sql --yes
+#
+# Usage:
+#   scripts/sync-user-data.sh [output.sql]
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
+
+ENV_FILE="$REPO_ROOT/server/.env"
+OUT_FILE="${1:-$REPO_ROOT/user-data-sync-$(date -u +%Y%m%d-%H%M%S).sql}"
+
+TABLES=(
+  web_account_setup
+  access_tb
+  authentication_tb
+  dept_authentication
+  dept_auth
+  dashboard_access
+  role_tb
+  role_menu_tb
+  user_role_tb
+  admin_staff_authentication_tb
+)
+
+if [ ! -f "$ENV_FILE" ]; then
+  echo "Missing $ENV_FILE — can't read DATABASE_URL." >&2
+  exit 1
+fi
+if ! command -v node >/dev/null 2>&1; then
+  echo "This script needs 'node' on PATH to parse DATABASE_URL safely." >&2
+  exit 1
+fi
+
+DB_URL="$(grep -E '^DATABASE_URL=' "$ENV_FILE" | sed -E 's/^DATABASE_URL="?(.*)"?$/\1/' | sed -E 's/"$//')"
+if [ -z "$DB_URL" ]; then
+  echo "DATABASE_URL not found in $ENV_FILE." >&2
+  exit 1
+fi
+
+read -r DB_HOST DB_PORT DB_USER DB_PASS DB_NAME <<PARSED
+$(node -e '
+  const u = new URL(process.argv[1]);
+  console.log([u.hostname, u.port || 3306, u.username, decodeURIComponent(u.password), u.pathname.slice(1)].join(" "));
+' "$DB_URL")
+PARSED
+
+if [ -z "$DB_NAME" ]; then
+  echo "Could not parse DATABASE_URL." >&2
+  exit 1
+fi
+
+echo "Live DB: $DB_NAME @ $DB_HOST:$DB_PORT"
+echo "Tables:  ${TABLES[*]}"
+echo
+
+echo "1/2  Verifying all tables exist on the live DB..."
+DUMP_TABLES=()
+MISSING=()
+for t in "${TABLES[@]}"; do
+  EXISTS="$(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -N -B -e "
+    SELECT COUNT(*) FROM information_schema.tables
+    WHERE table_schema='$DB_NAME' AND table_name='$t';
+  ")"
+  if [ "$EXISTS" = "0" ]; then
+    MISSING+=("$t")
+  else
+    DUMP_TABLES+=("$t")
+  fi
+done
+if [ "${#MISSING[@]}" -gt 0 ]; then
+  echo "Missing on live DB, skipping: ${MISSING[*]}" >&2
+fi
+if [ "${#DUMP_TABLES[@]}" -eq 0 ]; then
+  echo "None of the requested tables exist on the live DB — nothing to export." >&2
+  exit 1
+fi
+
+echo "2/2  Exporting data-only dump..."
+{
+  echo "-- User/access data sync from live DB"
+  echo "-- Generated: $(date -u +%FT%TZ)"
+  echo "-- Source:    $DB_NAME @ $DB_HOST:$DB_PORT"
+  echo "-- Tables:    ${TABLES[*]}"
+  echo "--"
+  echo "-- Full replace per table (DELETE then re-INSERT from the live"
+  echo "-- snapshot), not a merge. Import with:"
+  echo "--   scripts/import-db.sh $(basename "$OUT_FILE") --yes"
+  echo
+  echo "SET FOREIGN_KEY_CHECKS=0;"
+  echo "START TRANSACTION;"
+  echo
+  for t in "${DUMP_TABLES[@]}"; do
+    echo "DELETE FROM \`$t\`;"
+  done
+  echo
+
+  mysqldump -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" \
+    --no-create-info --complete-insert --skip-add-locks \
+    --skip-comments --skip-set-charset --skip-triggers \
+    --single-transaction \
+    "$DB_NAME" "${DUMP_TABLES[@]}"
+
+  echo
+  echo "COMMIT;"
+  echo "SET FOREIGN_KEY_CHECKS=1;"
+} > "$OUT_FILE"
+
+ROW_COUNT="$(grep -c '^INSERT INTO' "$OUT_FILE" || true)"
+echo
+echo "Data export written to: $OUT_FILE"
+echo "($ROW_COUNT INSERT statement(s) — some tables may batch multiple rows per statement)"
+echo
+echo "Next step — import into the docker dev database:"
+echo "  ./scripts/import-db.sh $(basename "$OUT_FILE") --yes"
+--- END FULL SOURCE -----------------------------------------------------------
+
+
+===============================================================================
+4. extra-tables.sql (data file — tables NOT present in apdchedu_cisapp.sql;
+   not a script, but referenced by docker-compose.yml's mariadb service,
+   see script 1 above)
+===============================================================================
+--- FULL SOURCE ---------------------------------------------------------------
+-- Extra tables NOT present in apdchedu_cisapp.sql, so a fresh docker
+-- mariadb container seeded only from that dump won't have them without this
+-- file. Loaded automatically by docker-compose.yml's mariadb service on
+-- first container creation (docker-entrypoint-initdb.d runs files in
+-- alphabetical order, so apdchedu_cisapp.sql imports first, then this
+-- file). All statements are IF NOT EXISTS, so re-running this file is
+-- always safe.
+--
+-- Two different reasons a table ends up here:
+--
+-- 1. Added to the live DB after the dump was taken (dump: 2026-08-08,
+--    these: 2026-08-10) — the Role Manager / Assign Roles feature (a
+--    modernized-app-only capability with no legacy PHP equivalent, see
+--    ADMIN_ROLE_MODULE_UPGRADE.md and CISFLOW/admin-module-new.md §12-13):
+--      role_tb       -- reusable named roles (role_name, description)
+--      role_menu_tb  -- which menu items each role grants
+--      user_role_tb  -- which users have which roles assigned
+--
+-- 2. Deliberately EXCLUDED from apdchedu_cisapp.sql entirely (no CREATE
+--    TABLE, no data — verified via `grep -c web_account_setup
+--    apdchedu_cisapp.sql` = 0) because it's the login-credentials table:
+--      web_account_setup -- user accounts (member_id/password/access_type/etc.)
+--    Schema only here — NO account data ships in this auto-seeded file, on
+--    purpose, same reasoning the original dump used. To populate real
+--    accounts into the docker DB, run scripts/sync-user-data.sh then
+--    scripts/import-db.sh on its output, or scripts/create-super-user.js /
+--    scripts/import-staff-accounts.js for individual/bulk account
+--    provisioning (see sections 5-6 below).
+
+CREATE TABLE IF NOT EXISTS `web_account_setup` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `member_id` varchar(70) NOT NULL,
+  `member_name` varchar(155) NOT NULL,
+  `address_mobile` varchar(15) NOT NULL,
+  `address_email` varchar(155) NOT NULL,
+  `password` text NOT NULL,
+  `reset_password` text NOT NULL,
+  `photo` varchar(155) NOT NULL,
+  `acc_gender` varchar(15) NOT NULL,
+  `access_type` varchar(10) NOT NULL DEFAULT 'Limit',
+  `created_dt` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `created_ip` varchar(15) NOT NULL,
+  `created_by` varchar(70) NOT NULL,
+  `updated_dt` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `updated_ip` varchar(15) NOT NULL,
+  `updated_by` varchar(70) NOT NULL,
+  `del` int(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `idx_wa_del_member` (`del`,`member_id`),
+  KEY `idx_wa_del_email` (`del`,`address_email`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+CREATE TABLE IF NOT EXISTS `role_tb` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `role_name` varchar(100) NOT NULL,
+  `description` varchar(255) NOT NULL DEFAULT '',
+  `created_dt` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `created_ip` varchar(15) NOT NULL DEFAULT '',
+  `created_by` varchar(70) NOT NULL DEFAULT '',
+  `updated_dt` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `updated_ip` varchar(15) NOT NULL DEFAULT '',
+  `updated_by` varchar(70) NOT NULL DEFAULT '',
+  `del` int(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `idx_role_del_name` (`del`,`role_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+CREATE TABLE IF NOT EXISTS `role_menu_tb` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `role_id` int(11) NOT NULL,
+  `menu_id` int(11) NOT NULL,
+  `authentication` int(1) NOT NULL DEFAULT 0,
+  `created_dt` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `created_ip` varchar(15) NOT NULL DEFAULT '',
+  `created_by` varchar(70) NOT NULL DEFAULT '',
+  `updated_dt` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `updated_ip` varchar(15) NOT NULL DEFAULT '',
+  `updated_by` varchar(70) NOT NULL DEFAULT '',
+  `del` int(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `role_id` (`role_id`),
+  KEY `menu_id` (`menu_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+CREATE TABLE IF NOT EXISTS `user_role_tb` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `role_id` int(11) NOT NULL,
+  `created_dt` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `created_ip` varchar(15) NOT NULL DEFAULT '',
+  `created_by` varchar(70) NOT NULL DEFAULT '',
+  `updated_dt` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `updated_ip` varchar(15) NOT NULL DEFAULT '',
+  `updated_by` varchar(70) NOT NULL DEFAULT '',
+  `del` int(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `role_id` (`role_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+--- END FULL SOURCE -----------------------------------------------------------
+
+
+===============================================================================
+5. server/scripts/create-super-user.js
+===============================================================================
+PURPOSE
+  Create or force-update a Global (super admin) account in web_account_setup.
+  Pre-existing script (not new this session) — documented here for
+  completeness since INSTALLATION.md's CISADMIN step uses it.
+
+USAGE (run inside the backend container or locally in server/ with the
+right DATABASE_URL active)
+  node scripts/create-super-user.js
+  SUPER_USER_ID=CISADMIN SUPER_USER_PASSWORD='YourPass123' node scripts/create-super-user.js
+  SUPER_USER_ID=CISADMIN SUPER_USER_PASSWORD='YourPass123' SUPER_USER_FORCE=1 node scripts/create-super-user.js
+
+BEHAVIOR
+  - No existing account with that member_id -> creates it fresh as Global,
+    plus an unrestricted access_tb row (matches account_add.php's defaults).
+  - Existing Global account, SUPER_USER_FORCE not set -> no-op, just prints
+    that it already exists.
+  - Existing Global account, SUPER_USER_FORCE=1 -> updates the password in
+    place and clears reset_password.
+  - Existing NON-Global account with that member_id -> throws (refuses to
+    silently upgrade a Limit account to Global).
+
+Full source: server/scripts/create-super-user.js (not duplicated here —
+see that file directly, or git blame for when it was added).
+
+
+===============================================================================
+6. server/scripts/import-staff-accounts.js
+===============================================================================
+PURPOSE
+  Bulk-create/update Limit-access accounts from staff.csv (or any CSV in the
+  same shape) — one account per unique Staff ID, deduped across rows (a
+  staff member can appear once per Designation they're associated with).
+
+CSV FORMAT (see staff.csv at repo root)
+  , S.No , Designation , Staff ID , Staff Name , password
+  A markdown-table-style file: header row, "---" separator row, then data
+  rows. Only rows whose Staff ID column is purely numeric are treated as
+  data (this is what skips the header/separator rows).
+
+USAGE
+  node scripts/import-staff-accounts.js
+  node scripts/import-staff-accounts.js /path/to/other.csv
+  STAFF_CSV_PATH=/path/to/other.csv node scripts/import-staff-accounts.js
+
+BEHAVIOR (per unique Staff ID)
+  - Doesn't exist yet -> creates it (access_type: 'Limit', member_name from
+    the CSV, password = encrypt(CSV password), unrestricted access_tb row).
+  - Exists, not Global -> updates just the password (and reset_password is
+    cleared), leaves everything else as-is.
+  - Exists, Global -> skipped entirely, never touched.
+  Prints a summary table (console.table) of created/updated/skipped rows
+  when done. Safe to re-run — upsert keyed on Staff ID, not a blind insert.
+
+WHAT IT DOES NOT DO
+  Department/menu authorization is NOT set up by this script — the CSV's
+  Designation column is informational only. Do that manually afterward via
+  Admin > Department Authentication / Menu Authentication per account, same
+  as any other new account in this app.
+
+--- FULL SOURCE ---------------------------------------------------------------
+/**
+ * Bulk-create/update login accounts (web_account_setup) from a CSV of
+ * staff ID / name / password rows — used to provision initial production
+ * accounts for staff who need CIS access (front office, accounts, library,
+ * hostel, exam cell, etc.).
+ *
+ * CSV format expected (see ../../staff.csv): a markdown-table-style file —
+ * header row, a "---" separator row, then data rows of
+ *   , S.No , Designation , Staff ID , Staff Name , password
+ * One staff member may appear on multiple rows (one per Designation they're
+ * involved in, e.g. both "Students" and "Quality") — this script dedupes by
+ * Staff ID and creates/updates ONE account per unique Staff ID. Designation
+ * is informational only; it does not set up department/menu scoping — do
+ * that afterward in Admin > Department Authentication / Menu Authentication
+ * for each account, same as any other new account.
+ *
+ * Every account created here gets `access_type: 'Limit'` (never Global —
+ * use scripts/create-super-user.js for that) and, like account_add.php /
+ * accountSetup.js's saveAccountAdd, an unrestricted access_tb row (all 7
+ * days, 00:00-23:59) so nobody is accidentally locked out on day one.
+ *
+ * Usage:
+ *   node scripts/import-staff-accounts.js
+ *   node scripts/import-staff-accounts.js /path/to/other.csv
+ *   STAFF_CSV_PATH=/path/to/other.csv node scripts/import-staff-accounts.js
+ *
+ * Safe to re-run: existing accounts (matched by Staff ID = member_id) get
+ * their password updated to the CSV's value; nothing is duplicated.
+ */
+
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { prisma } from '../src/config/prisma.js';
+import { encrypt } from '../src/services/password.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+function parseCsvLine(line) {
+  // Fields are quoted and comma-separated, with a leading empty field
+  // (",\"...\",\"...\"") — a plain split on '","' after stripping the
+  // outer quotes/leading comma is enough for this well-formed file.
+  return line
+    .split(',')
+    .map((cell) => cell.trim())
+    .filter((cell) => cell.length > 0 || cell === '')
+    .map((cell) => cell.replace(/^"|"$/g, '').trim())
+    .filter((cell, idx, arr) => !(idx === 0 && cell === ''));
+}
+
+function loadRows(csvPath) {
+  const raw = fs.readFileSync(csvPath, 'utf8');
+  const lines = raw.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  const rows = [];
+  for (const line of lines) {
+    const cells = parseCsvLine(line);
+    if (cells.length < 5) continue;
+    const [sno, designation, staffId, staffName, password] = cells;
+    if (!/^\d+$/.test(staffId)) continue; // skips header + "---" separator rows
+    rows.push({
+      sno, designation, staffId: staffId.trim(), staffName: staffName.trim(), password: password.trim(),
+    });
+  }
+  return rows;
+}
+
+function nowSql() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+async function main() {
+  const csvPath = process.argv[2] || process.env.STAFF_CSV_PATH || path.join(__dirname, '../../staff.csv');
+  if (!fs.existsSync(csvPath)) {
+    throw new Error(`CSV not found: ${csvPath}`);
+  }
+
+  const rows = loadRows(csvPath);
+  if (rows.length === 0) {
+    throw new Error(`No data rows parsed from ${csvPath} — check the format matches the header/---/data-row layout.`);
+  }
+
+  // Dedupe by Staff ID; keep the first name/password seen, collect all
+  // designations for the summary printout.
+  const byStaffId = new Map();
+  for (const row of rows) {
+    if (!byStaffId.has(row.staffId)) {
+      byStaffId.set(row.staffId, { ...row, designations: [row.designation] });
+    } else {
+      byStaffId.get(row.staffId).designations.push(row.designation);
+    }
+  }
+
+  console.log(`Parsed ${rows.length} row(s) -> ${byStaffId.size} unique staff ID(s) from ${csvPath}`);
+
+  const createdBy = String(process.env.STAFF_IMPORT_CREATED_BY || 'system').trim();
+  const createdIp = '127.0.0.1';
+  const results = [];
+
+  for (const staff of byStaffId.values()) {
+    const memberId = staff.staffId;
+    const now = new Date();
+
+    // Raw SELECT (not prisma.web_account_setup.findFirst) — some rows in
+    // this legacy-shared table have zero-date (`0000-00-00`) timestamp
+    // columns, which Prisma's typed client throws on when deserializing a
+    // full row into DateTime fields. Selecting only the non-date columns
+    // we actually need sidesteps that entirely (see CLAUDE.md "Zero dates").
+    const existingRows = await prisma.$queryRaw`
+      SELECT id, access_type, member_name FROM web_account_setup
+      WHERE del = 1 AND member_id = ${memberId} LIMIT 1
+    `;
+    const existing = existingRows[0];
+
+    if (existing) {
+      if (existing.access_type === 'Global') {
+        results.push({ memberId, status: 'skipped (Global account, not touched)' });
+        continue;
+      }
+      // Raw UPDATE for the same reason — prisma.web_account_setup.update()
+      // reads the full row back afterward and would hit the same zero-date
+      // parse error on unrelated columns like created_dt.
+      await prisma.$executeRaw`
+        UPDATE web_account_setup
+        SET password = ${encrypt(staff.password)},
+            member_name = ${existing.member_name || staff.staffName},
+            reset_password = '',
+            updated_dt = ${now},
+            updated_ip = ${createdIp},
+            updated_by = ${createdBy}
+        WHERE id = ${existing.id}
+      `;
+      results.push({ memberId, status: 'updated', name: staff.staffName, designations: staff.designations.join(', ') });
+      continue;
+    }
+
+    const user = await prisma.web_account_setup.create({
+      data: {
+        member_id: memberId,
+        member_name: staff.staffName,
+        address_mobile: '',
+        address_email: '',
+        password: encrypt(staff.password),
+        reset_password: '',
+        photo: '',
+        acc_gender: '',
+        access_type: 'Limit',
+        created_dt: now,
+        created_ip: createdIp,
+        created_by: createdBy,
+        updated_dt: now,
+        updated_ip: createdIp,
+        updated_by: createdBy,
+        del: 1,
+      },
+    });
+
+    try {
+      await prisma.$executeRaw`
+        INSERT INTO access_tb (
+          user_id, local_access, random_id, random_id_1, random_id_2, random_id_3, random_id_4,
+          date_base, from_date, to_date, day_base, allow_day, allow_from_time, allow_to_time,
+          created_dt, created_ip, created_by, updated_dt, updated_ip, updated_by, del
+        ) VALUES (
+          ${String(user.id)}, 0, '0', '', '', '', '',
+          0, ${now}, '0000-00-00 00:00:00', 1, '1,2,3,4,5,6,7', '00:00:00', '23:59:00',
+          ${now}, ${createdIp}, ${createdBy}, ${now}, ${createdIp}, ${createdBy}, 1
+        )
+      `;
+    } catch (accessError) {
+      console.warn(`Note: access_tb row skipped for ${memberId}:`, accessError.message);
+    }
+
+    results.push({ memberId, status: 'created', name: staff.staffName, designations: staff.designations.join(', ') });
+  }
+
+  console.log('\nDone:');
+  console.table(results);
+  console.log(`\nRun at: ${nowSql()}`);
+  console.log('\nNext step: assign each account\'s department/menu access in Admin > Department');
+  console.log('Authentication and Menu Authentication (Designation from the CSV is a hint, not applied automatically).');
+}
+
+main()
+  .catch((error) => {
+    console.error(error.message || error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+--- END FULL SOURCE -----------------------------------------------------------
+
+
+===============================================================================
+7. docker-compose.yml (context — not a script, but what the scripts above
+   assume/depend on)
+===============================================================================
+--- FULL SOURCE ---------------------------------------------------------------
+services:
+  mariadb:
+    image: mariadb:10.11
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-cis_dev_root}
+      MYSQL_DATABASE: apdchedu_cisapp
+      MYSQL_USER: ${MARIADB_APP_USER:-apdchedu_cisapp}
+      MYSQL_PASSWORD: ${MARIADB_APP_PASSWORD:-cis_dev_password}
+    ports:
+      # Loopback-only. Docker's own iptables rules for published container
+      # ports bypass ufw's normal INPUT filtering (a well-known gotcha) — a
+      # plain "3003:3306" here would be reachable from the public internet
+      # regardless of any ufw rule. Binding to 127.0.0.1 is enforced by
+      # Docker itself, not the host firewall, so it can't be misconfigured
+      # away by a ufw mistake. backend already connects via 127.0.0.1:3003
+      # (see DATABASE_URL below), so this is a pure hardening change with
+      # zero behavior difference for the app itself.
+      - "127.0.0.1:3003:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      # One-time seed from the repo's dump — only runs against an empty data
+      # directory (first container creation). This is a dev-only container
+      # seeded from a point-in-time snapshot; it is NOT the shared database
+      # the live legacy PHP app uses, and never overwrites that host DB.
+      - ./apdchedu_cisapp.sql:/docker-entrypoint-initdb.d/10-apdchedu_cisapp.sql:ro
+      # Tables added to the live DB after the dump above was taken (see
+      # extra-tables.sql's header). docker-entrypoint-initdb.d runs files in
+      # alphabetical order, so the numeric prefixes guarantee the big dump
+      # imports before this one.
+      - ./extra-tables.sql:/docker-entrypoint-initdb.d/20-extra-tables.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./server
+    env_file:
+      - ./server/.env
+    environment:
+      PORT: 2003
+      # Override via a root-level .env's CLIENT_URL (and/or CLIENT_URLS for
+      # multiple allowed origins, comma-separated) once this is reachable at
+      # something other than localhost — e.g. a VPS's public IP or domain —
+      # otherwise the backend's CORS check rejects the frontend's requests.
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:1003}
+      CLIENT_URLS: ${CLIENT_URLS:-}
+      # Overrides server/.env's DATABASE_URL when run via docker-compose, so
+      # this stack is self-contained against the dev-only mariadb service
+      # above rather than the shared host database. network_mode: host means
+      # this container sees the host network stack directly, so it reaches
+      # the mariadb service's published port via 127.0.0.1, not a Docker
+      # service hostname.
+      DATABASE_URL: mysql://${MARIADB_APP_USER:-apdchedu_cisapp}:${MARIADB_APP_PASSWORD:-cis_dev_password}@127.0.0.1:3003/apdchedu_cisapp?connection_limit=10&pool_timeout=20
+    volumes:
+      # staff.csv lives at the repo root, outside this service's build
+      # context (./server), so it's never baked into the image — mount it
+      # at /staff.csv so scripts/import-staff-accounts.js's default path
+      # resolution (path.join(__dirname, '../../staff.csv'), where
+      # __dirname is /app/scripts in the container) finds it without
+      # needing STAFF_CSV_PATH set explicitly.
+      - ./staff.csv:/staff.csv:ro
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    network_mode: host
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./client
+    depends_on:
+      - backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      # Loopback-only, same reasoning as mariadb above. Caddy is the only
+      # service that should be reachable from the public internet — it
+      # proxies to 127.0.0.1:1003 (see Caddyfile).
+      - "127.0.0.1:1003:1003"
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+    # Host networking so Caddy can reach frontend's loopback-bound
+    # 127.0.0.1:1003 directly (a bridge-network container's "localhost"
+    # would be its own network namespace, not the host's) and so it can
+    # bind the host's real 80/443 for Let's Encrypt's HTTP-01/TLS-ALPN-01
+    # challenges once a domain is configured (see Caddyfile).
+    network_mode: host
+    restart: unless-stopped
+
+volumes:
+  mariadb_data:
+  caddy_data:
+  caddy_config:
+--- END FULL SOURCE -----------------------------------------------------------
+
+
+===============================================================================
+8. Caddyfile (reverse proxy config — the only service in docker-compose.yml
+   meant to be reachable from the public internet; see DEPLOYMENT.md)
+===============================================================================
+--- FULL SOURCE ---------------------------------------------------------------
+# Caddy reverse proxy — the ONLY service in this stack meant to be reachable
+# from the public internet. Everything else (frontend:1003, backend:2003,
+# mariadb:3003) is bound to 127.0.0.1 in docker-compose.yml specifically so
+# Caddy is the sole entry point.
+#
+# CURRENT MODE: plain HTTP on port 80, no domain yet (IP-only deployment).
+# Real passwords go over this connection (the login form posts a_password
+# directly) — plain HTTP means anyone on the network path between a user
+# and this server can read those credentials. Get a domain pointed at this
+# VPS and switch to the HTTPS block below as soon as possible; don't run
+# this configuration as a long-term production setup.
+
+:80 {
+	reverse_proxy 127.0.0.1:1003
+
+	# Real client IP through to the app (Express trusts one proxy hop —
+	# see server/src/app.js's `trust proxy` setting — so this must be the
+	# only hop between the internet and the app for IP-based rate limiting
+	# on /api/auth/login to work correctly).
+	header_up X-Forwarded-For {remote_host}
+}
+
+# --- ONCE YOU HAVE A DOMAIN POINTED AT THIS VPS'S IP ---
+# Comment out (or delete) the `:80 { ... }` block above and uncomment this
+# one, replacing your-domain.example with the real domain. Caddy will
+# automatically obtain and renew a free Let's Encrypt certificate — no
+# other configuration needed — and will also start redirecting any plain
+# HTTP requests on port 80 to HTTPS automatically.
+#
+# your-domain.example {
+# 	reverse_proxy 127.0.0.1:1003
+# 	header_up X-Forwarded-For {remote_host}
+# }
+#
+# Also update CLIENT_URL in your root .env to https://your-domain.example
+# (see docker-compose.yml's backend service) and restart: docker compose up -d
+--- END FULL SOURCE -----------------------------------------------------------
+
+===============================================================================
+QUICK REFERENCE — TYPICAL WORKFLOW
+===============================================================================
+1. Start the dev stack (frontend :1003, backend :2003, mariadb :3003):
+     docker compose up -d
+
+2. Re-import a fresh dump into the dev mariadb container at any time:
+     ./scripts/import-db.sh apdchedu_cisapp.sql
+     ./scripts/import-db.sh apdchedu_cisapp.sql --yes   # no confirm prompt
+
+3. Generate a production-ready migration script diffing an old baseline dump
+   against the LIVE database (server/.env's DATABASE_URL):
+     ./scripts/generate-schema-migration.sh
+     ./scripts/generate-schema-migration.sh path/to/older-dump.sql
+     ./scripts/generate-schema-migration.sh path/to/older-dump.sql my-output.sql
+
+   Output: schema-migration-<timestamp>.sql — additive statements are ready
+   to run as-is; the REVIEW REQUIRED section at the bottom is comments only
+   and needs manual review before anything there is applied.
+
+4. Refresh the docker dev DB's accounts/access data from the live DB
+   (web_account_setup, access_tb, authentication_tb, dept_authentication,
+   dept_auth, dashboard_access, role_tb, role_menu_tb, user_role_tb,
+   admin_staff_authentication_tb):
+     ./scripts/sync-user-data.sh
+     ./scripts/import-db.sh user-data-sync-<timestamp>.sql --yes
+
+   This is a full replace per table (DELETE then re-INSERT from the live
+   snapshot), not a merge — the docker DB's rows in these 10 tables end up
+   identical to the live DB's at export time.
+
+5. Production account provisioning — see INSTALLATION.md for the full
+   procedure. Short version:
+     docker compose exec backend sh -c \
+       "SUPER_USER_ID=CISADMIN SUPER_USER_PASSWORD='...' SUPER_USER_FORCE=1 node scripts/create-super-user.js"
+     docker compose exec backend sh -c "node scripts/import-staff-accounts.js"
+===============================================================================
