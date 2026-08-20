@@ -195,6 +195,29 @@ async function studentLibraryAttendanceByDay(fromDate, toDate, courseName) {
   return result;
 }
 
+function esc(v) { return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function buildPrintHtml(rows) {
+  const body = rows.map((r) => `
+    <tr>
+      <td>${r.sn}</td>
+      <td>${esc(r.date)}</td>
+      <td>${r.issued}</td>
+      <td>${r.returned}</td>
+      <td>${esc(r.due)}</td>
+      <td>${r.ugIn}</td>
+      <td>${r.ugOut}</td>
+      <td>${r.pgIn}</td>
+      <td>${r.pgOut}</td>
+      <td>${r.staffIn}</td>
+      <td>${r.staffOut}</td>
+    </tr>`).join('');
+  return `<h3>Daily Summary</h3><table border="1" cellspacing="0" cellpadding="4"><thead><tr>
+    <th>S.No</th><th>Date</th><th>Issued</th><th>Return</th><th>Due</th>
+    <th>U.G In</th><th>U.G Out</th><th>P.G In</th><th>P.G Out</th><th>Staff In</th><th>Staff Out</th>
+  </tr></thead><tbody>${body}</tbody></table>`;
+}
+
 function formatSummaryDate(isoDate) {
   const d = new Date(isoDate);
   const dd = String(d.getDate()).padStart(2, '0');
@@ -249,6 +272,7 @@ export async function loadEntryReportSetup(memberId, fields = {}, audit = {}) {
       returned: rows.reduce((sum, row) => sum + row.returned, 0),
     },
     rows,
+    printHtml: buildPrintHtml(rows),
   };
 }
 

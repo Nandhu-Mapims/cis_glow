@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import SetupAlerts from '../../fees/setup/SetupAlerts';
 import { useAcademicSetupApi } from './useAcademicSetupApi';
+import { printReportHtml } from '../../../utils/printReport';
 
 export default function AcademicCalendarSetup() {
   const { data, busy, error, notice, clearNotice, load, save } = useAcademicSetupApi('academic-calendar');
@@ -72,7 +73,12 @@ export default function AcademicCalendarSetup() {
           </select>
         </div>
         <div className="col-md-9">
-          {data?.monthLabel ? <h5 className="mt-4">{data.monthLabel}</h5> : null}
+          {data?.monthLabel ? (
+            <div className="d-flex justify-content-between align-items-center mt-4">
+              <h5 className="mb-0">{data.monthLabel}</h5>
+              <button type="button" className="btn btn-outline-secondary" disabled={!data?.printHtml} onClick={() => printReportHtml(data.printHtml, 'academic-calendar')}>Print</button>
+            </div>
+          ) : null}
           {rows.length ? (
             <form onSubmit={handleSave} className="mt-3">
               <div className="table-responsive">

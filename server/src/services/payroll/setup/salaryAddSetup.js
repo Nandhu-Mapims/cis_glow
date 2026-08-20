@@ -306,8 +306,10 @@ export async function loadSalaryReportSetup(fields = {}, memberId, audit = {}) {
   }
 
   const staffRows = await prisma.$queryRawUnsafe(
-    `SELECT A.id, A.staff_id, A.staff_name, A.staff_initial, A.staff_title, A.job_category
+    `SELECT A.id, A.staff_id, A.staff_name, A.staff_initial, A.staff_title, A.job_category,
+       B.category_name
      FROM staff_profile_tb AS A
+     LEFT JOIN edu_setup_tb AS B ON A.job_category = B.id AND B.category = 'Category'
      WHERE A.del = 1 ${categoryFilter}
      ORDER BY A.staff_id ASC`,
   );
@@ -318,6 +320,7 @@ export async function loadSalaryReportSetup(fields = {}, memberId, audit = {}) {
     report.push({
       staffId: staff.staff_id,
       name: staffDisplayName(staff),
+      category: staff.category_name || '',
       salaries,
     });
   }

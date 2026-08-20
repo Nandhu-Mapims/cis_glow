@@ -3,9 +3,11 @@ import { useLocation } from 'react-router-dom';
 import CommandPalette from '../components/CommandPalette';
 import { CommandPaletteProvider } from '../components/CommandPaletteContext';
 import Header from './Header';
+import Sidebar from './Sidebar';
 import TopNav from './TopNav';
 
 const ShellLayoutContext = createContext(0);
+const SIDEBAR_COLLAPSED_KEY = 'cis_sidebar_collapsed';
 
 function MainScrollReset() {
   const { pathname } = useLocation();
@@ -45,8 +47,15 @@ export default function DashboardLayout({
 }) {
   const shellDepth = useContext(ShellLayoutContext);
   const [navOpen, setNavOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(
+    () => typeof window !== 'undefined' && window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1',
+  );
   const chromeRef = useRef(null);
   useChromeHeightVar(chromeRef);
+
+  useEffect(() => {
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0');
+  }, [collapsed]);
 
   if (shellDepth > 0) {
     return children;
@@ -56,8 +65,17 @@ export default function DashboardLayout({
     <ShellLayoutContext.Provider value={shellDepth + 1}>
       <CommandPaletteProvider>
         <CommandPalette menu={menu} />
-        <div className="cis-app cis-app-topnav">
+        <div className="cis-app cis-app-sidebar">
           <MainScrollReset />
+          <Sidebar
+            settings={settings}
+            menu={menu}
+            lastLoginAt={dashboard?.lastLoginAt}
+            collapsed={collapsed}
+            onToggleCollapse={() => setCollapsed((value) => !value)}
+            mobileOpen={navOpen}
+            onMobileClose={() => setNavOpen(false)}
+          />
           <div className="cis-body">
             <div className="cis-main-column">
               <main className="cis-main">
@@ -65,11 +83,8 @@ export default function DashboardLayout({
                   <div className="cis-content-canvas">
                     <div className="cis-chrome-sticky" ref={chromeRef}>
                       <TopNav
-                        settings={settings}
                         menu={menu}
                         lastLoginAt={dashboard?.lastLoginAt}
-                        mobileOpen={navOpen}
-                        onMobileClose={() => setNavOpen(false)}
                       />
                       <Header
                         settings={settings}

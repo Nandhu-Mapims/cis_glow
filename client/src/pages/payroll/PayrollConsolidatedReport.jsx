@@ -29,6 +29,7 @@ export default function PayrollConsolidatedReport() {
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
   const [selectedMonths, setSelectedMonths] = useState([]);
+  const [pdfBusy, setPdfBusy] = useState(false);
   const reportRef = useRef(null);
 
   const loadReport = useCallback(async (fields = {}) => {
@@ -72,6 +73,21 @@ export default function PayrollConsolidatedReport() {
     await loadReport({ payroll_month: selectedMonths, Submit: 'Generate' });
   };
 
+  const downloadPdf = async () => {
+    setPdfBusy(true);
+    setError(null);
+    try {
+      const res = await api.post('/api/payroll/consolidated-report/pdf', { fields: { payroll_month: selectedMonths } });
+      if (res.data?.downloadUrl) {
+        window.open(res.data.downloadUrl, '_blank');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to generate consolidated report PDF');
+    } finally {
+      setPdfBusy(false);
+    }
+  };
+
   const reportParts = useMemo(
     () => splitConsolidatedReportHtml(data?.reportHtml || ''),
     [data?.reportHtml],
@@ -107,6 +123,16 @@ export default function PayrollConsolidatedReport() {
               }}
             >
               Print
+            </button>
+          )}
+          {data?.reportHtml && (
+            <button
+              type="button"
+              className="btn btn-outline-primary btn-sm"
+              disabled={pdfBusy}
+              onClick={downloadPdf}
+            >
+              {pdfBusy ? 'Generating PDF…' : 'Download PDF'}
             </button>
           )}
           <Link to="/payroll" className="btn btn-outline-secondary btn-sm">Back</Link>

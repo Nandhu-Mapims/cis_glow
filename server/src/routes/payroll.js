@@ -20,6 +20,7 @@ import {
 } from '../services/payroll/payrollLegacyReports.js';
 import { loadGeneratePayroll, runGeneratePayrollMore } from '../services/payroll/generatePayrollCore.js';
 import { loadStipendIndividualPdfReport } from '../services/payroll/stipendIndividualPdfReport.js';
+import { generateConsolidatedReportPdf } from '../services/payroll/payrollConsolidatedPdfNative.js';
 import { loadPayrollAttReport } from '../services/payroll/payrollAttReportCore.js';
 import { loadPayrollMonthlyReport } from '../services/payroll/payrollMonthlyReportCore.js';
 import { loadPayrollTaxReport } from '../services/payroll/payrollTaxReportCore.js';
@@ -116,6 +117,18 @@ router.post('/consolidated-report', async (req, res) => {
     return res.json(result);
   } catch (error) {
     return handleError(res, error, 'Unable to load payroll consolidated report');
+  }
+});
+
+router.post('/consolidated-report/pdf', async (req, res) => {
+  try {
+    const result = await generateConsolidatedReportPdf(req.user.memberId, req.body?.fields || {});
+    if (result.error) {
+      return res.status(400).json({ message: result.error });
+    }
+    return res.json(result);
+  } catch (error) {
+    return handleError(res, error, 'Unable to generate payroll consolidated PDF');
   }
 });
 

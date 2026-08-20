@@ -1874,6 +1874,10 @@ function ScreenFilters({ screen, meta, data, filterFields, onGenerate, onSave, o
           payload.cleariCache = fields.cleariCache;
           payload.hideAbinfo = fields.hideAbinfo;
         }
+        if (screen === 'intern-reports-att') {
+          payload.search_category = fields.search_category || [];
+          payload.report_type = fields.report_type || 'Monthly';
+        }
         if (meta.type === 'student-id-report' && !payload.student_id) {
           payload.student_id = fields.student_id || '';
         }
@@ -1917,6 +1921,40 @@ function ScreenFilters({ screen, meta, data, filterFields, onGenerate, onSave, o
         </>
       )}
       {(meta.type === 'date-category-report' || meta.type === 'date-report' || meta.type === 'pg-att-report') && dateRow}
+      {screen === 'intern-reports-att' && (
+        <>
+          <div className="col-md-8">
+            <label className="form-label">Category</label>
+            <RosterCoursePicker
+              options={data?.categoryOptions || []}
+              selected={fields.search_category || []}
+              onChange={(selected) => set('search_category', selected)}
+              disabled={busy}
+              isIntern={false}
+            />
+          </div>
+          <div className="col-12">
+            <label className="form-label">Show</label>
+            <div className="d-flex flex-wrap gap-3">
+              {[
+                ['Monthly', 'Monthly'],
+                ['Overall', 'Over All'],
+              ].map(([value, label]) => (
+                <label key={value} className="d-inline-flex align-items-center gap-1 mb-0">
+                  <input
+                    type="radio"
+                    name="report_type"
+                    value={value}
+                    checked={(fields.report_type || 'Monthly') === value}
+                    onChange={(e) => set('report_type', e.target.value)}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
       {meta.type === 'pg-att-report' && (
         <>
           <div className="col-md-3">
@@ -2140,7 +2178,7 @@ function ScreenFilters({ screen, meta, data, filterFields, onGenerate, onSave, o
       )}
       {meta.type !== 'period-att' && meta.type !== 'incharge-grid' && meta.type !== 'pg-setup' && meta.type !== 'intern-setup' && meta.type !== 'roster' && (
         <div className="col-md-2 d-flex align-items-end">
-          <button type="submit" className="btn btn-danger w-100" disabled={busy || pgGenerating || (meta.type === 'pg-att-report' && !(fields.course_name || []).length) || (meta.type === 'student-id-report' && !String(fields.student_id || '').trim())}>
+          <button type="submit" className="btn btn-danger w-100" disabled={busy || pgGenerating || (meta.type === 'pg-att-report' && !(fields.course_name || []).length) || (screen === 'intern-reports-att' && !(fields.search_category || []).length) || (meta.type === 'student-id-report' && !String(fields.student_id || '').trim())}>
             {SAVE_SCREENS.has(screen) && !['approval', 'date-roll-report', 'date-report', 'pg-att-report', 'lpd-report', 'roll-report', 'student-id-report', 'pg-punch', 'pg-punch-entry'].includes(meta.type) ? 'Save' : 'Generate'}
           </button>
         </div>

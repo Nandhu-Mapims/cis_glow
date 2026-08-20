@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
+import { printReportHtml } from '../../../utils/printReport';
 
 export default function TransactionReportSetup({ data, busy, onLoad, onSave }) {
-  const [form, setForm] = useState({ fromDate: '', toDate: '', issueReturn: '', registerNo: '', isDamaged: '' });
+  const [form, setForm] = useState({ fromDate: '', toDate: '', issueReturn: '', registerNo: '', isDamaged: '', academicYear: '', batch: '' });
   useEffect(() => { onLoad(); }, [onLoad]);
-  useEffect(() => { if (data) setForm((p) => ({ ...p, fromDate: data.fromDate || p.fromDate, toDate: data.toDate || p.toDate, issueReturn: data.issueReturn || '', registerNo: data.registerNo || '', isDamaged: data.isDamaged ?? '' })); }, [data]);
+  useEffect(() => { if (data) setForm((p) => ({ ...p, fromDate: data.fromDate || p.fromDate, toDate: data.toDate || p.toDate, issueReturn: data.issueReturn || '', registerNo: data.registerNo || '', isDamaged: data.isDamaged ?? '', academicYear: data.academicYear || '', batch: data.batch || '' })); }, [data]);
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   return (
@@ -13,7 +14,7 @@ export default function TransactionReportSetup({ data, busy, onLoad, onSave }) {
         <div className="col-md-2"><input type="date" className="form-control" value={form.toDate} min={form.fromDate || undefined} onChange={(e) => set('toDate', e.target.value)} /></div>
         <div className="col-md-2">
           <select className="form-select" value={form.issueReturn} onChange={(e) => set('issueReturn', e.target.value)}>
-            <option value="">Issued & Return</option>
+            <option value="">All</option>
             <option value="Issued">Issued</option>
             <option value="Return">Return</option>
             <option value="Due">Due</option>
@@ -27,14 +28,30 @@ export default function TransactionReportSetup({ data, busy, onLoad, onSave }) {
             <option value="0">Not damaged</option>
           </select>
         </div>
-        <div className="col-md-2"><button type="submit" className="btn btn-danger" disabled={busy}>Search</button></div>
+        <div className="col-md-2">
+          <select className="form-select" value={form.academicYear} onChange={(e) => set('academicYear', e.target.value)}>
+            <option value="">Year: All</option>
+            {data?.academicYearOptions?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        <div className="col-md-2">
+          <select className="form-select" value={form.batch} onChange={(e) => set('batch', e.target.value)}>
+            <option value="">Batch: All</option>
+            <option value="regular">Regular</option>
+            <option value="additional">Additional</option>
+          </select>
+        </div>
+        <div className="col-md-2 d-flex gap-2">
+          <button type="submit" className="btn btn-danger" disabled={busy}>Search</button>
+          <button type="button" className="btn btn-outline-secondary" disabled={!data?.printHtml} onClick={() => printReportHtml(data.printHtml)}>Print</button>
+        </div>
       </form>
       <div className="table-responsive">
         <table className="table table-bordered table-sm">
-          <thead><tr><th>Register</th><th>Book</th><th>Checkout</th><th>Due</th><th>Return</th><th>Title</th><th>Author</th><th>Dmg</th></tr></thead>
+          <thead><tr><th>S.No</th><th>Register</th><th>Book</th><th>Checkout</th><th>Due</th><th>Return</th><th>Title</th><th>Author</th><th>Dmg</th></tr></thead>
           <tbody>
             {data?.rows?.map((row, i) => (
-              <tr key={i}><td>{row.registerNo}</td><td>{row.bookId}</td><td>{row.checkOutDate}</td><td>{row.dueDate}</td><td>{row.checkInDate}</td><td>{row.resourceName}</td><td>{row.authorName}</td><td>{row.isDamage ? 'Yes' : ''}</td></tr>
+              <tr key={i}><td>{i + 1}</td><td>{row.registerNo}</td><td>{row.bookId}</td><td>{row.checkOutDate}</td><td>{row.dueDate}</td><td>{row.checkInDate}</td><td>{row.resourceName}</td><td>{row.authorName}</td><td>{row.isDamage ? 'Yes' : ''}</td></tr>
             ))}
           </tbody>
         </table>

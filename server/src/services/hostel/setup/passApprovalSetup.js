@@ -8,15 +8,26 @@ const PAGE = 'hostel_pass_approval.php';
 export async function loadPassApprovalSetup(memberId, fields = {}, audit = {}) {
   const statusFilter = fields.status ?? '0';
   const status = statusFilter === 'all' ? null : Number(statusFilter);
-  const rows = await loadPassRequests({ status, limit: 100 });
+  const passType = fields.passType === 'home' || fields.passType === 'out' ? fields.passType : null;
+  const registerNo = String(fields.registerNo || '').trim();
+  const fromDate = String(fields.fromDate || '').trim();
+  const toDate = String(fields.toDate || '').trim();
+  const rows = await loadPassRequests({
+    status, limit: 100, passType, registerNo, fromDate, toDate,
+  });
 
   await logHostelSetup(PAGE, 'View', 'Successful', String(status ?? 'all'), memberId, audit);
   return {
     statusFilter,
+    passType: passType || '',
+    registerNo,
+    fromDate,
+    toDate,
     rows: rows.map((r) => ({
       ...r,
       fromDate: formatDateDisplay(r.fromDate) || r.fromDate,
       toDate: formatDateDisplay(r.toDate) || r.toDate,
+      createdDt: formatDateDisplay(r.createdDt) || r.createdDt,
     })),
   };
 }
@@ -43,6 +54,12 @@ export async function savePassApprovalSetup(payload, memberId, audit = {}) {
   return {
     success: true,
     message: 'Pass request updated...',
-    ...(await loadPassApprovalSetup(memberId, { status: payload.statusFilter }, { ...audit, skipLog: true })),
+    ...(await loadPassApprovalSetup(memberId, {
+      status: payload.statusFilter,
+      passType: payload.passType,
+      registerNo: payload.registerNo,
+      fromDate: payload.fromDate,
+      toDate: payload.toDate,
+    }, { ...audit, skipLog: true })),
   };
 }

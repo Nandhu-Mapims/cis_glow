@@ -8,6 +8,7 @@ import {
   getStaffOrderClause,
   loadDesignationMap,
   loadPrintSetup,
+  prependPayrollLetterhead,
 } from './payrollHelpers.js';
 
 import {
@@ -63,6 +64,144 @@ const SIMPLE_AMOUNT_REPORTS = new Set([
   'security_deposit', 'sdeposit_refund', 'gross_pay',
 ]);
 
+// Itemized "Particulars / Employer Cont. / Employee Cont. / Total" breakdown —
+// ports payroll_dashboard.php's getBankPayment/getRentalPayment/getMessPayment/
+// getPFPayment/getESIPayment (staff_payroll_widget.php). Rental/Mess are
+// reported as single aggregate lines rather than legacy's per-hostel-block
+// breakdown — the block-level split wasn't part of what was reported missing.
+async function loadDashboardBreakdown(payrollMonth, categoryFilterSql) {
+  const monthSql = escapeSql(payrollMonth);
+  const rows = [];
+
+  const banks = await prisma.$queryRawUnsafe(
+    `SELECT id, category_name FROM edu_setup_tb WHERE del = 1 AND category = 'Bank' ORDER BY category_order ASC`,
+  );
+  for (const bank of banks) {
+    const [sum] = await prisma.$queryRawUnsafe(
+      `SELECT SUM(B.net_pay) AS amount
+       FROM staff_profile_tb AS A INNER JOIN staff_payroll_tb AS B ON A.id = B.staff_id
+       WHERE A.del = 1 AND B.del = 1 AND B.payroll_month = '${monthSql}' AND B.net_pay > 0
+         AND B.pay_type != 'Cheque' AND B.pay_bank = '${escapeSql(String(bank.id))}' ${categoryFilterSql}`,
+    );
+    const amount = Number(sum?.amount) || 0;
+    if (amount > 0) rows.push({ label: `Salary Bank Transfer — ${bank.category_name}`, employer: 0, employee: amount, total: amount });
+  }
+  const [cheque] = await prisma.$queryRawUnsafe(
+    `SELECT SUM(B.net_pay) AS amount
+     FROM staff_profile_tb AS A INNER JOIN staff_payroll_tb AS B ON A.id = B.staff_id
+     WHERE A.del = 1 AND B.del = 1 AND B.payroll_month = '${monthSql}' AND B.net_pay > 0
+       AND B.pay_type = 'Cheque' ${categoryFilterSql}`,
+  );
+  const chequeAmount = Number(cheque?.amount) || 0;
+  if (chequeAmount > 0) rows.push({ label: 'Salary Cheque', employer: 0, employee: chequeAmount, total: chequeAmount });
+
+  const [rental] = await prisma.$queryRawUnsafe(
+    `SELECT
+       SUM(CASE WHEN B.room_id != '' THEN B.rental_amount ELSE 0 END) AS employee,
+       SUM(CASE WHEN B.h_room_id != '' AND HB.block_type = 'Quarters' THEN B.h_rental_amount ELSE 0 END) AS employer
+     FROM staff_profile_tb AS A INNER JOIN staff_payroll_tb AS B ON A.id = B.staff_id
+     LEFT JOIN hostel_rooms_tb AS HR ON HR.id = CAST(SUBSTRING_INDEX(B.h_room_id, ',', 1) AS UNSIGNED) AND B.h_room_id != ''
+     LEFT JOIN hostel_blocks_tb AS HB ON HB.block_id = HR.block_id AND HB.del = 1
+     WHERE A.del = 1 AND B.del = 1 AND B.payroll_month = '${monthSql}' ${categoryFilterSql}`,
+  );
+  const rentalEmployee = Number(rental?.employee) || 0;
+  const rentalEmployer = Number(rental?.employer) || 0;
+  if (rentalEmployee + rentalEmployer > 0) {
+    rows.push({ label: 'Staff Quarters Rental', employer: rentalEmployer, employee: rentalEmployee, total: rentalEmployer + rentalEmployee });
+  }
+
+  const [mess] = await prisma.$queryRawUnsafe(
+    `SELECT
+       SUM(CASE WHEN B.m_room_id != '' THEN B.hostel_amount ELSE 0 END) AS employee,
+       SUM(CASE WHEN B.h_room_id != '' AND HB.block_type = 'Hostel' THEN B.h_rental_amount ELSE 0 END) AS employer
+     FROM staff_profile_tb AS A INNER JOIN staff_payroll_tb AS B ON A.id = B.staff_id
+     LEFT JOIN hostel_rooms_tb AS HR ON HR.id = CAST(SUBSTRING_INDEX(B.h_room_id, ',', 1) AS UNSIGNED) AND B.h_room_id != ''
+     LEFT JOIN hostel_blocks_tb AS HB ON HB.block_id = HR.block_id AND HB.del = 1
+     WHERE A.del = 1 AND B.del = 1 AND B.payroll_month = '${monthSql}' ${categoryFilterSql}`,
+  );
+  const messEmployee = Number(mess?.employee) || 0;
+  const messEmployer = Number(mess?.employer) || 0;
+  if (messEmployee + messEmployer > 0) {
+    rows.push({ label: 'Mess', employer: messEmployer, employee: messEmployee, total: messEmployer + messEmployee });
+  }
+
+  const [pfEsiSetup] = await prisma.$queryRawUnsafe(
+    `SELECT epf_er, eps, adm_charge, edli, adli_add, esi_er FROM basic_pfesi_setup
+     WHERE del = 1 AND from_month <= '${monthSql}' AND to_month >= '${monthSql}' ORDER BY from_month DESC LIMIT 1`,
+  );
+  if (pfEsiSetup) {
+    const epfEr = Number(pfEsiSetup.epf_er) || 0;
+    const eps = Number(pfEsiSetup.eps) || 0;
+    const admCharge = Number(pfEsiSetup.adm_charge) || 0;
+    const edli = Number(pfEsiSetup.edli) || 0;
+    const adliAdd = Number(pfEsiSetup.adli_add) || 0;
+    const esiEr = Number(pfEsiSetup.esi_er) || 0;
+
+    const pfRows = await prisma.$queryRawUnsafe(
+      `SELECT B.pf_amount, B.gross_pay, P.salary_limit
+       FROM staff_profile_tb AS A INNER JOIN staff_payroll_tb AS B ON A.id = B.staff_id
+       LEFT JOIN basic_setup_payroll_tb AS P ON P.id = A.att_category
+       WHERE A.del = 1 AND (A.releaving_date = '0000-00-00' OR A.releaving_date > '${monthSql}')
+         AND B.del = 1 AND B.payroll_month = '${monthSql}' AND B.pf_amount > 0 ${categoryFilterSql}`,
+    );
+    let employeePf = 0;
+    let cappedGrossTotal = 0;
+    let epfEmployer = 0;
+    let epsEmployer = 0;
+    for (const row of pfRows) {
+      employeePf += Number(row.pf_amount) || 0;
+      const salLimit = Number(row.salary_limit) || 0;
+      const gross = Number(row.gross_pay) || 0;
+      const capped = salLimit > 0 && gross > salLimit ? salLimit : gross;
+      cappedGrossTotal += capped;
+      epfEmployer += Math.round((capped / 100) * epfEr);
+      epsEmployer += Math.round((capped / 100) * eps);
+    }
+    const admChargeTotal = Math.round((cappedGrossTotal / 100) * admCharge);
+    const edliTotal = Math.round((cappedGrossTotal / 100) * edli);
+    const adliTotal = Math.round((cappedGrossTotal / 100) * adliAdd);
+    const pfEmployerTotal = epfEmployer + epsEmployer + admChargeTotal + edliTotal + adliTotal;
+    if (employeePf + pfEmployerTotal > 0) {
+      rows.push({ label: 'EPF', employer: pfEmployerTotal, employee: employeePf, total: pfEmployerTotal + employeePf });
+    }
+
+    const esiRows = await prisma.$queryRawUnsafe(
+      `SELECT B.esi_amount, B.gross_pay
+       FROM staff_profile_tb AS A INNER JOIN staff_payroll_tb AS B ON A.id = B.staff_id
+       WHERE A.del = 1 AND B.del = 1 AND B.payroll_month = '${monthSql}' AND B.esi_calculate > 0 ${categoryFilterSql}`,
+    );
+    let employeeEsi = 0;
+    let employerEsi = 0;
+    for (const row of esiRows) {
+      employeeEsi += Number(row.esi_amount) || 0;
+      employerEsi += Math.round((Number(row.gross_pay || 0) / 100) * esiEr);
+    }
+    if (employeeEsi + employerEsi > 0) {
+      rows.push({ label: 'ESI', employer: employerEsi, employee: employeeEsi, total: employerEsi + employeeEsi });
+    }
+  }
+
+  return rows;
+}
+
+function buildDashboardBreakdownHtml(rows) {
+  if (!rows.length) return '';
+  const body = rows.map((r, i) => `
+    <tr bgcolor="#e6e6e6">
+      <td height="20" valign="top">${i + 1}. ${escapeHtml(r.label)}</td>
+      <td valign="top" class="text-right">${formatIndianMoney(r.employer)}</td>
+      <td valign="top" class="text-right">${formatIndianMoney(r.employee)}</td>
+      <td valign="top" class="text-right">${formatIndianMoney(r.total)}</td>
+    </tr>`).join('');
+  return `<table class="table-bordered" cellpadding="3" cellspacing="0" width="100%">
+<thead><tr bgcolor="#e7e7e7">
+<th width="330" height="25" valign="top" align="center">Particulars</th>
+<th width="120" valign="top" align="center">Employer Cont.<br>(Rs)</th>
+<th width="120" valign="top" align="center">Employee Cont.<br>(Rs)</th>
+<th width="100" valign="top" align="center">Total<br>(Rs)</th>
+</tr></thead><tbody>${body}</tbody></table>`;
+}
+
 export async function buildDashboardReportHtml(payrollMonth, categoryFilterSql, generatedBy) {
   const printSetup = await loadPrintSetup('1');
   const totals = await prisma.$queryRawUnsafe(
@@ -103,6 +242,9 @@ export async function buildDashboardReportHtml(payrollMonth, categoryFilterSql, 
   );
   const bankTotal = Number(bankSummary[0]?.amount) || 0;
 
+  const breakdownRows = await loadDashboardBreakdown(payrollMonth, categoryFilterSql);
+  const breakdownHtml = buildDashboardBreakdownHtml(breakdownRows);
+
   const genLabel = generatedBy?.user
     ? `<p class="text-muted small">Generated by ${escapeHtml(generatedBy.user)} on ${escapeHtml(generatedBy.date || '')}</p>`
     : '';
@@ -141,7 +283,8 @@ export async function buildDashboardReportHtml(payrollMonth, categoryFilterSql, 
 </td>
 </tr>
 </table>
-<p class="pd_content_1">Bank / cheque payout: ${formatIndianMoney(bankTotal)} (${formatPayrollMonthLabel(payrollMonth)})</p>`, printSetup);
+<p class="pd_content_1">Bank / cheque payout: ${formatIndianMoney(bankTotal)} (${formatPayrollMonthLabel(payrollMonth)})</p>
+${breakdownHtml}`, printSetup);
 }
 
 export async function buildIndividualReportHtml(options) {
@@ -175,46 +318,48 @@ export async function buildIndividualReportHtml(options) {
     rowPerPage,
   };
 
+  const finish = async (html) => (html ? prependPayrollLetterhead(appendPayrollReportSignature(html, printSetup), printSetup) : '');
+
   if (reportFor === 'bank') {
     const bankHtml = await buildBankReport({ ...reportCtx, transferRef });
-    return bankHtml ? appendPayrollReportSignature(bankHtml, printSetup) : '';
+    return finish(bankHtml);
   }
 
   if (reportFor === 'pf') {
     const html = await buildPfReportHtml(reportCtx);
-    return html ? appendPayrollReportSignature(html, printSetup) : '';
+    return finish(html);
   }
   if (reportFor === 'esi') {
     const html = await buildEsiReportHtml(reportCtx);
-    return html ? appendPayrollReportSignature(html, printSetup) : '';
+    return finish(html);
   }
   if (reportFor === 'rental') {
     const html = await buildRentalReportHtml(reportCtx);
-    return html ? appendPayrollReportSignature(html, printSetup) : '';
+    return finish(html);
   }
   if (reportFor === 'mess') {
     const html = await buildMessReportHtml(reportCtx);
-    return html ? appendPayrollReportSignature(html, printSetup) : '';
+    return finish(html);
   }
   if (reportFor === 'lop_amount') {
     const html = await buildLopReportHtml(reportCtx);
-    return html ? appendPayrollReportSignature(html, printSetup) : '';
+    return finish(html);
   }
   if (reportFor === 'arrear_amount') {
     const html = await buildArrearReportHtml(reportCtx);
-    return html ? appendPayrollReportSignature(html, printSetup) : '';
+    return finish(html);
   }
   if (reportFor === 'loan_amount') {
     const html = await buildLoanReportHtml(reportCtx);
-    return html ? appendPayrollReportSignature(html, printSetup) : '';
+    return finish(html);
   }
   if (reportFor === 'tds_amount') {
     const html = await buildTdsReportHtml(reportCtx);
-    return html ? appendPayrollReportSignature(html, printSetup) : '';
+    return finish(html);
   }
   if (reportFor === 'transport_deduction') {
     const html = await buildTransportReportHtml(reportCtx);
-    return html ? appendPayrollReportSignature(html, printSetup) : '';
+    return finish(html);
   }
 
   if (SIMPLE_AMOUNT_REPORTS.has(reportFor)) {
@@ -230,7 +375,7 @@ export async function buildIndividualReportHtml(options) {
       rowPerPage,
       designationMap,
     });
-    return html ? appendPayrollReportSignature(html, printSetup) : '';
+    return finish(html);
   }
 
   return '';

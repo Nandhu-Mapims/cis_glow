@@ -23,15 +23,22 @@ export async function loadAttendanceReportSetup(memberId, fields = {}, audit = {
 
   let rows = [];
   if (search) {
-    let sql = `SELECT tktno, p_date, hh_mm, in_out FROM hostel_att
-      WHERE p_date >= '${escapeSql(fromDate)} 00:00:00'
-      AND p_date < DATE_ADD('${escapeSql(toDate)}', INTERVAL 1 DAY)`;
-    if (ticketNo) sql += ` AND tktno LIKE '%${escapeSql(ticketNo)}%'`;
-    sql += ' ORDER BY p_date ASC LIMIT 1000';
+    // Join key matches legacy dashboard_report.php's hostel_att pattern —
+    // TRIM(LEADING '0' ...) because tktno / register_no may differ in leading zeros.
+    let sql = `SELECT A.tktno, A.p_date, A.hh_mm, A.in_out, B.register_no, B.student_name, B.student_initial
+      FROM hostel_att AS A
+      LEFT JOIN student_profile_tb AS B
+        ON TRIM(LEADING '0' FROM B.register_no) = TRIM(LEADING '0' FROM A.tktno) AND B.del = 1
+      WHERE A.p_date >= '${escapeSql(fromDate)} 00:00:00'
+      AND A.p_date < DATE_ADD('${escapeSql(toDate)}', INTERVAL 1 DAY)`;
+    if (ticketNo) sql += ` AND A.tktno LIKE '%${escapeSql(ticketNo)}%'`;
+    sql += ' ORDER BY A.p_date ASC LIMIT 1000';
 
     const result = await prisma.$queryRawUnsafe(sql);
     rows = result.map((r) => ({
       ticketNo: r.tktno,
+      registerNo: r.register_no || '',
+      studentName: r.student_name ? `${r.student_initial || ''} ${r.student_name}`.trim() : '',
       date: new Date(r.p_date).toISOString().slice(0, 10),
       time: r.hh_mm,
       inOut: r.in_out,

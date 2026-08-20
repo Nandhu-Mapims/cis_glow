@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { printReportHtml } from '../../../utils/printReport';
 
 const COLUMNS = [
   { key: 'sn', label: 'S.No' },
@@ -40,8 +41,9 @@ export default function EntryReportSetup({ data, busy, onLoad }) {
           <label className="form-label">To</label>
           <input type="date" className="form-control" value={toDate} min={fromDate || undefined} onChange={(e) => setToDate(e.target.value)} />
         </div>
-        <div className="col-md-2 d-flex align-items-end">
+        <div className="col-md-3 d-flex align-items-end gap-2">
           <button type="button" className="btn btn-primary" onClick={run} disabled={busy}>Load</button>
+          <button type="button" className="btn btn-outline-secondary" disabled={!data?.printHtml} onClick={() => printReportHtml(data.printHtml)}>Print</button>
         </div>
       </div>
 

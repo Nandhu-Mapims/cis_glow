@@ -18,18 +18,21 @@ export function formatIndianMoney(amount) {
   return num.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
+// `monthStartDate` is a UTC-midnight DB date (see toSqlDate below) — always format
+// it with timeZone: 'UTC' so the label matches the same calendar month as the SQL
+// filter value regardless of the server's local timezone.
 export function formatPayrollMonthLabel(monthStartDate) {
   const d = new Date(monthStartDate);
   if (Number.isNaN(d.getTime())) return String(monthStartDate);
   if (ATT_MONTH_SHOW) {
-    return d.toLocaleString('en-IN', { month: 'long', year: 'numeric' });
+    return d.toLocaleString('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' });
   }
   const prev = new Date(d);
-  prev.setMonth(prev.getMonth() - 1);
-  let fromLabel = prev.toLocaleString('en-IN', { month: 'long', year: d.getMonth() === 0 ? '2-digit' : undefined });
-  const toLabel = d.toLocaleString('en-IN', { month: 'long', year: 'numeric' });
-  if (d.getMonth() === 0) {
-    fromLabel = prev.toLocaleString('en-IN', { month: 'long', year: '2-digit' });
+  prev.setUTCMonth(prev.getUTCMonth() - 1);
+  let fromLabel = prev.toLocaleString('en-IN', { month: 'long', year: d.getUTCMonth() === 0 ? '2-digit' : undefined, timeZone: 'UTC' });
+  const toLabel = d.toLocaleString('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  if (d.getUTCMonth() === 0) {
+    fromLabel = prev.toLocaleString('en-IN', { month: 'long', year: '2-digit', timeZone: 'UTC' });
   }
   return `${fromLabel} - ${toLabel}`;
 }
@@ -228,6 +231,29 @@ ${row.staff_designation ? `<p class="${desigClass}">${escapeHtml(row.staff_desig
 export function appendPayrollReportSignature(html, printSetup) {
   if (!html || !printSetup?.signatureHtml) return html;
   return `${html}${printSetup.signatureHtml}`;
+}
+
+export async function loadPayrollBannerUrl() {
+  const rows = await prisma.$queryRawUnsafe(
+    'SELECT banner_image FROM basic_banner_tb WHERE del = 1 AND id = 1 LIMIT 1',
+  );
+  const image = rows[0]?.banner_image;
+  return image ? `/legacy/img/global_images/${encodeURIComponent(image)}` : '';
+}
+
+// Mirrors legacy widget.php's callPrintHeader() — logo cell + title/sub-title cell.
+export async function prependPayrollLetterhead(html, printSetup) {
+  if (!html) return html;
+  const bannerUrl = await loadPayrollBannerUrl();
+  const logo = bannerUrl ? `<img src="${bannerUrl}" alt="" style="max-height:70px;" />` : '';
+  const title = printSetup?.title ? `<p class="pc_title title">${escapeHtml(printSetup.title)}</p>` : '';
+  const subTitle = printSetup?.sub_title ? `<p class="pc_sub-title sub-title">${escapeHtml(printSetup.sub_title)}</p>` : '';
+  if (!logo && !title && !subTitle) return html;
+  const header = `<table class="header_table" border="0" cellpadding="0" cellspacing="0" width="100%"><tbody>
+<tr><td height="70" valign="middle" width="30%">${logo}</td>
+<td nowrap align="right" valign="top" width="70%"><div class="promote_card">${title}${subTitle}</div></td></tr>
+</tbody></table>`;
+  return `${header}${html}`;
 }
 
 export async function loadPrintSetup(printId) {

@@ -81,6 +81,22 @@ async function loadMonthRows(calendarMonth) {
   return rows;
 }
 
+function esc(v) { return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function buildPrintHtml(monthLabel, rows) {
+  const body = rows.map((r) => `
+    <tr>
+      <td>${esc(r.dateLabel)}</td>
+      <td>${esc(r.event)}</td>
+      <td>${esc((r.courseTypes || []).join(', '))}</td>
+      <td>${esc(r.comment)}</td>
+    </tr>`).join('');
+  return `<div id="form_details_panel"><h3>Academic Calendar — ${esc(monthLabel)}</h3>
+    <table border="1" cellspacing="0" cellpadding="4"><thead><tr>
+      <th>Date</th><th>Event</th><th>Course</th><th>Comment</th>
+    </tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
 export async function loadAcademicCalendar(memberId, fields = {}, audit = {}) {
   const monthOptions = buildMonthOptions();
   const calendarMonth = String(fields.calendarMonth || '').trim();
@@ -103,6 +119,7 @@ export async function loadAcademicCalendar(memberId, fields = {}, audit = {}) {
     eventOptions,
     courseTypeOptions: COURSE_TYPE_OPTIONS,
     rows,
+    printHtml: rows.length ? buildPrintHtml(monthLabel, rows) : '',
   };
 }
 

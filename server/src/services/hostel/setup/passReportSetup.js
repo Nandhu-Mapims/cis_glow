@@ -4,17 +4,31 @@ import { formatDateDisplay, logHostelSetup, toIsoDate } from '../setupAudit.js';
 
 const PAGE = 'hostel_student_report.php';
 
+const STATUS_LABEL = ['Pending', 'Approved', 'Rejected'];
+
+function normalizeList(value, fallback) {
+  const list = Array.isArray(value) ? value : (value ? [value] : []);
+  const cleaned = list.map((v) => String(v).trim()).filter(Boolean);
+  return cleaned.length ? cleaned : fallback;
+}
+
 export async function loadPassReportSetup(memberId, fields = {}, audit = {}) {
   const fromDate = toIsoDate(fields.fromDate) || new Date().toISOString().slice(0, 10);
   const toDate = toIsoDate(fields.toDate) || fromDate;
-  const status = String(fields.status || '').trim();
+  const passTypes = normalizeList(fields.passType, ['home', 'out']).filter((v) => v === 'home' || v === 'out');
+  const statuses = normalizeList(fields.status, ['p', '1', '2'])
+    .map((v) => (v === 'p' ? '0' : v))
+    .filter((v) => ['0', '1', '2'].includes(v));
+  const registerNo = String(fields.registerNo || '').trim();
 
-  let sql = `SELECT A.id, A.pass_type, A.student_id, A.from_date, A.to_date, A.status, A.comments,
+  let sql = `SELECT A.id, A.pass_type, A.student_id, A.from_date, A.to_date, A.status, A.comments, A.parent_status,
     B.register_no, B.student_name, B.student_initial
     FROM hostel_pass_request AS A
     LEFT JOIN student_profile_tb AS B ON A.student_id = B.id AND B.del = 1
     WHERE A.del = 1 AND DATE(A.from_date) BETWEEN '${escapeSql(fromDate)}' AND '${escapeSql(toDate)}'`;
-  if (status !== '') sql += ` AND A.status = '${escapeSql(status)}'`;
+  if (passTypes.length) sql += ` AND A.pass_type IN (${passTypes.map((v) => `'${escapeSql(v)}'`).join(',')})`;
+  if (statuses.length) sql += ` AND A.status IN (${statuses.map((v) => `'${escapeSql(v)}'`).join(',')})`;
+  if (registerNo) sql += ` AND B.register_no LIKE '%${escapeSql(registerNo.toUpperCase())}%'`;
   sql += ' ORDER BY A.from_date DESC LIMIT 500';
 
   const rows = await prisma.$queryRawUnsafe(sql);
@@ -22,7 +36,9 @@ export async function loadPassReportSetup(memberId, fields = {}, audit = {}) {
   return {
     fromDate,
     toDate,
-    status,
+    passType: passTypes,
+    status: statuses.map((v) => (v === '0' ? 'p' : v)),
+    registerNo,
     rows: rows.map((r) => ({
       id: r.id,
       passType: r.pass_type,
@@ -30,7 +46,8 @@ export async function loadPassReportSetup(memberId, fields = {}, audit = {}) {
       studentName: `${r.student_initial || ''} ${r.student_name || ''}`.trim(),
       fromDate: formatDateDisplay(r.from_date),
       toDate: formatDateDisplay(r.to_date),
-      status: r.status,
+      status: STATUS_LABEL[Number(r.status)] || 'Pending',
+      parentStatus: STATUS_LABEL[Number(r.parent_status)] || 'Pending',
       comments: r.comments,
     })),
   };

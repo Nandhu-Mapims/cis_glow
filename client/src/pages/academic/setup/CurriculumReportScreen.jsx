@@ -423,7 +423,13 @@ export default function CurriculumReportScreen({ screen }) {
         ? 'academic-subject-timing'
         : screen === 'staff-period-completed'
           ? 'academic-staff-period-completed'
-          : 'default';
+          : screen === 'subject-handle'
+            ? 'academic-subject-handle'
+            : screen === 'department-period-completed'
+              ? 'academic-department-period-completed'
+              : screen === 'subject-handle-grid'
+                ? 'academic-subject-handle-grid'
+                : 'default';
 
   const dataRowCount = countReportRows(html);
   const showReportPanel = hasGenerated || Boolean(html);

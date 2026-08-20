@@ -62,6 +62,160 @@ export function PayrollConfigSetup({ data, load, save, busy }) {
       <div className="col-md-2"><label className="form-label">Yearly Leave</label><input name="yearly_leave" className="form-control" defaultValue={selected.yearlyLeave} /></div>
       <div className="col-md-2"><label className="form-label">Yearly EL</label><input name="yearly_el" className="form-control" defaultValue={selected.yearlyEl} /></div>
     </div>
+
+    <h6 className="mt-4 mb-2">Attendance</h6>
+    <div className="row g-3 mb-3">
+      {['live_attendance', 'live_att_photo'].map((field) => (
+        <div className="col-md-2" key={field}>
+          <label className="form-label">{field.replace(/_/g, ' ')}</label>
+          <select name={field} className="form-select" defaultValue={selected[field === 'live_attendance' ? 'liveAttendance' : 'liveAttPhoto']}>
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
+      ))}
+      <div className="col-md-2">
+        <label className="form-label">Academic Start Month</label>
+        <input name="academic_start_month" className="form-control" defaultValue={selected.academicStartMonth} />
+      </div>
+      <div className="col-md-2">
+        <label className="form-label">Academic Start Day</label>
+        <input name="academic_start_day" className="form-control" defaultValue={selected.academicStartDay} />
+      </div>
+      <div className="col-md-2">
+        <label className="form-label">Day Type</label>
+        <select name="day_type" className="form-select" defaultValue={selected.dayType}>
+          <option value="0">Month Wise</option>
+          <option value="1">Day Wise</option>
+        </select>
+      </div>
+      <div className="col-md-2"><label className="form-label">Day Count</label><input name="day_count" className="form-control" defaultValue={selected.dayCount} /></div>
+    </div>
+
+    <h6 className="mt-4 mb-2">Leave Policy</h6>
+    <div className="row g-3 mb-3">
+      <div className="col-md-2"><label className="form-label">Max Casual Leave</label><input name="max_leave" className="form-control" defaultValue={selected.maxLeave} /></div>
+      <div className="col-md-2"><label className="form-label">Max Leave per Request</label><input name="allow_leave" className="form-control" defaultValue={selected.allowLeave} /></div>
+      <div className="col-md-2"><label className="form-label">CL Apply Before (days)</label><input name="cl_apply" className="form-control" defaultValue={selected.clApply} /></div>
+      <div className="col-md-2"><label className="form-label">Leave Apply Before (days)</label><input name="leave_apply" className="form-control" defaultValue={selected.leaveApply} /></div>
+      <div className="col-md-2">
+        <label className="form-label">Allow CL on Holiday</label>
+        <select name="inc_leave_holiday" className="form-select" defaultValue={selected.incLeaveHoliday}>
+          <option value="1">Yes</option><option value="0">No</option>
+        </select>
+      </div>
+      <div className="col-md-2">
+        <label className="form-label">Include Holiday in Leave Request</label>
+        <select name="inc_lr_holiday" className="form-select" defaultValue={selected.incLrHoliday}>
+          <option value="1">Yes</option><option value="0">No</option>
+        </select>
+      </div>
+    </div>
+
+    <h6 className="mt-4 mb-2">On-Duty Policy</h6>
+    <div className="row g-3 mb-3">
+      <div className="col-md-2"><label className="form-label">Yearly OD</label><input name="yearly_od" className="form-control" defaultValue={selected.yearlyOd} /></div>
+      <div className="col-md-2"><label className="form-label">OD Apply Before (days)</label><input name="od_apply" className="form-control" defaultValue={selected.odApply} /></div>
+      <div className="col-md-4"><label className="form-label">OD Reasons (comma separated)</label><input name="od_type" className="form-control" defaultValue={selected.odType} /></div>
+      <div className="col-md-2">
+        <label className="form-label">Allow OD on Holiday</label>
+        <select name="inc_od_holiday" className="form-select" defaultValue={selected.incOdHoliday}>
+          <option value="1">Yes</option><option value="0">No</option>
+        </select>
+      </div>
+    </div>
+
+    <h6 className="mt-4 mb-2">Earned Leave Policy</h6>
+    <div className="row g-3 mb-3">
+      <div className="col-md-2"><label className="form-label">Max EL</label><input name="max_el" className="form-control" defaultValue={selected.maxEl} /></div>
+      <div className="col-md-2"><label className="form-label">Min EL</label><input name="min_el" className="form-control" defaultValue={selected.minEl} /></div>
+      <div className="col-md-2"><label className="form-label">EL Apply Before (days)</label><input name="el_apply" className="form-control" defaultValue={selected.elApply} /></div>
+      <div className="col-md-2">
+        <label className="form-label">Allow EL on Holiday</label>
+        <select name="inc_el_holiday" className="form-select" defaultValue={selected.incElHoliday}>
+          <option value="1">Yes</option><option value="0">No</option>
+        </select>
+      </div>
+    </div>
+
+    <h6 className="mt-4 mb-2">Day Off Policy</h6>
+    <div className="row g-3 mb-3">
+      <div className="col-md-2"><label className="form-label">Max Off per Request</label><input name="allow_off" className="form-control" defaultValue={selected.allowOff} /></div>
+      <div className="col-md-2">
+        <label className="form-label">Allow Off on Holiday</label>
+        <select name="inc_off_holiday" className="form-select" defaultValue={selected.incOffHoliday}>
+          <option value="1">Yes</option><option value="0">No</option>
+        </select>
+      </div>
+    </div>
+
+    <h6 className="mt-4 mb-2">Defaulter Windows</h6>
+    <div className="row g-3 mb-3">
+      <div className="col-md-2"><label className="form-label">Defaulter Submission (prev. days)</label><input name="defaulter_apply" className="form-control" defaultValue={selected.defaulterApply} /></div>
+      <div className="col-md-2"><label className="form-label">CL Defaulter Days</label><input name="d_cl_apply" className="form-control" defaultValue={selected.dClApply} /></div>
+      <div className="col-md-2"><label className="form-label">EL Defaulter Days</label><input name="d_el_apply" className="form-control" defaultValue={selected.dElApply} /></div>
+      <div className="col-md-2"><label className="form-label">OD Defaulter Days</label><input name="d_od_apply" className="form-control" defaultValue={selected.dOdApply} /></div>
+    </div>
+
+    <h6 className="mt-4 mb-2">Late / Permission Rules</h6>
+    <div className="row g-3 mb-3">
+      <div className="col-md-2"><label className="form-label">Min Late Time</label><input name="l_time" className="form-control" placeholder="HH:MM" defaultValue={selected.lateTime} /></div>
+      <div className="col-md-2"><label className="form-label">Action When Late Exceeds Limit</label><input name="l_lop" className="form-control" defaultValue={selected.lLop} /></div>
+      <div className="col-md-3">
+        <label className="form-label d-block">Late Applies</label>
+        <div className="form-check form-check-inline">
+          <input className="form-check-input" type="radio" name="l_lop_type" value="each" id="l_lop_each" defaultChecked={selected.lLopType !== 'per'} />
+          <label className="form-check-label" htmlFor="l_lop_each">Each</label>
+        </div>
+        <div className="form-check form-check-inline">
+          <input className="form-check-input" type="radio" name="l_lop_type" value="per" id="l_lop_per" defaultChecked={selected.lLopType === 'per'} />
+          <label className="form-check-label" htmlFor="l_lop_per">Per Late</label>
+        </div>
+      </div>
+      <div className="col-md-3">
+        <label className="form-label d-block">Each Late Incident Results In</label>
+        <div className="form-check form-check-inline">
+          <input className="form-check-input" type="radio" name="late_deduct" value="permission" id="late_deduct_permission" defaultChecked={selected.lateDeduct !== 'absent'} />
+          <label className="form-check-label" htmlFor="late_deduct_permission">Permission</label>
+        </div>
+        <div className="form-check form-check-inline">
+          <input className="form-check-input" type="radio" name="late_deduct" value="absent" id="late_deduct_absent" defaultChecked={selected.lateDeduct === 'absent'} />
+          <label className="form-check-label" htmlFor="late_deduct_absent">LOP</label>
+        </div>
+      </div>
+      <div className="col-md-2"><label className="form-label">Min Permission Time</label><input name="p_time" className="form-control" placeholder="HH:MM" defaultValue={selected.permissionTime} /></div>
+      <div className="col-md-2"><label className="form-label">Action When Permission Exceeds Limit</label><input name="p_lop" className="form-control" defaultValue={selected.pLop} /></div>
+      <div className="col-md-3">
+        <label className="form-label d-block">Permission Applies</label>
+        <div className="form-check form-check-inline">
+          <input className="form-check-input" type="radio" name="p_lop_type" value="each" id="p_lop_each" defaultChecked={selected.pLopType !== 'per'} />
+          <label className="form-check-label" htmlFor="p_lop_each">Each</label>
+        </div>
+        <div className="form-check form-check-inline">
+          <input className="form-check-input" type="radio" name="p_lop_type" value="per" id="p_lop_per" defaultChecked={selected.pLopType === 'per'} />
+          <label className="form-check-label" htmlFor="p_lop_per">Per Permission</label>
+        </div>
+      </div>
+    </div>
+
+    <h6 className="mt-4 mb-2">PF / ESI</h6>
+    <div className="row g-3 mb-3">
+      <div className="col-md-2">
+        <label className="form-label">EPF Contribution</label>
+        <select name="paryroll_calculation" className="form-select" defaultValue={selected.pfCalculation}>
+          <option value="1">Yes</option><option value="0">No</option>
+        </select>
+      </div>
+      <div className="col-md-2">
+        <label className="form-label">ESI Contribution</label>
+        <select name="esi_calculation" className="form-select" defaultValue={selected.esiCalculation}>
+          <option value="1">Yes</option><option value="0">No</option>
+        </select>
+      </div>
+      <div className="col-md-2"><label className="form-label">ESI Limit</label><input name="esi_limit" className="form-control" defaultValue={selected.esiLimit} /></div>
+      <div className="col-md-2"><label className="form-label">ESI Amount</label><input name="esi_amount" className="form-control" defaultValue={selected.esiAmount} /></div>
+    </div>
+
     <button type="submit" className="btn btn-primary" disabled={busy}>Update</button>
   </form>
   );
@@ -120,19 +274,43 @@ export function SalaryReportSetup({ data, load, busy }) {
         </div>
         <div className="col-md-2"><button className="btn btn-danger" disabled={busy}>Generate</button></div>
       </form>
-      {(data?.report || []).map((row) => (
-        <div key={row.staffId} className="mb-3">
-          <strong>{row.staffId}</strong> — {row.name}
-          <table className="table table-sm table-bordered mt-1">
-            <thead><tr><th>From</th><th>To</th><th>Total</th></tr></thead>
-            <tbody>
-              {row.salaries.map((s) => (
-                <tr key={s.id}><td>{s.fromDate}</td><td>{s.toDate || '—'}</td><td>{s.totalAmount}</td></tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ))}
+      <div className="table-responsive">
+        <table className="table table-sm table-bordered mt-1">
+          <thead>
+            <tr>
+              <th>S.No</th><th>S.ID</th><th>Name</th><th>Category</th>
+              <th>From</th><th>To</th><th>Basic</th><th>Margin</th><th>D.A</th>
+              <th>HRA</th><th>Medical</th><th>Conveyance</th><th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(data?.report || []).map((row, idx) => {
+              const salaries = row.salaries.length ? row.salaries : [{ id: `${row.staffId}-empty` }];
+              return salaries.map((s, i) => (
+                <tr key={s.id}>
+                  {i === 0 && (
+                    <>
+                      <td rowSpan={salaries.length}>{idx + 1}</td>
+                      <td rowSpan={salaries.length}>{row.staffId}</td>
+                      <td rowSpan={salaries.length}>{row.name}</td>
+                      <td rowSpan={salaries.length}>{row.category}</td>
+                    </>
+                  )}
+                  <td>{s.fromDate || ''}</td>
+                  <td>{s.toDate || ''}</td>
+                  <td>{s.basicPay ?? ''}</td>
+                  <td>{s.basicMargin ?? ''}</td>
+                  <td>{s.dAllowance ?? ''}</td>
+                  <td>{s.hraAllowance ?? ''}</td>
+                  <td>{s.mAllowance ?? ''}</td>
+                  <td>{s.cAllowance ?? ''}</td>
+                  <td>{s.totalAmount ?? ''}</td>
+                </tr>
+              ));
+            })}
+          </tbody>
+        </table>
+      </div>
     </>
   );
 }

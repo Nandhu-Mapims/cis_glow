@@ -553,6 +553,40 @@ export function printReportHtml(html, mode = 'default', presetWin) {
     return;
   }
 
+  if (mode === 'academic-calendar') {
+    const bodyHtml = extractReportBodyHtml(html);
+    const headHtml = `<link href="/legacy/css/style_print.css" rel="stylesheet" />
+<style>
+  @page { size: A4; margin: 15mm; }
+  body {
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    font-family: Arial, sans-serif;
+    color: #000;
+  }
+  #form_details_panel table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+  }
+  #form_details_panel th,
+  #form_details_panel td {
+    border: 1px solid #333;
+    vertical-align: middle;
+    font-size: 13px;
+    padding: 6px;
+  }
+  #form_details_panel thead tr {
+    background: #ccc;
+  }
+</style>`;
+    if (!openPrintWindow('Academic Calendar', headHtml, bodyHtml)) {
+      window.alert('Unable to open the print window. Please allow popups for this site.');
+    }
+    return;
+  }
+
   if (mode === 'academic-staff-period-completed') {
     const str = String(html || '');
     const panelStart = str.indexOf('<div id="form_details_panel">');
@@ -1102,6 +1136,42 @@ export function printReportHtml(html, mode = 'default', presetWin) {
   }
 </style>`;
     if (!openPrintWindow('Intern Attendance Statement', headHtml, bodyHtml)) {
+      window.alert('Unable to open the print window. Please allow popups for this site.');
+    }
+    return;
+  }
+
+  if (mode === 'academic-subject-handle' || mode === 'academic-department-period-completed') {
+    const bodyHtml = extractReportBodyHtml(html);
+    const title = mode === 'academic-subject-handle' ? 'Period Completed — Class' : 'Period Completed — Department';
+    const headHtml = `<link href="/legacy/css/style_print.css" rel="stylesheet" />
+<style>
+  body { margin: 0 40px; padding: 0; background: #fff; font-family: Arial, Helvetica, sans-serif; }
+  #form_details_panel { display: block !important; width: 100%; }
+  .table { width: 100%; border-collapse: collapse; margin: 0 0 16px; }
+  .table th, .table td { border: 1px solid #333; font-size: 12px; padding: 4px 6px; vertical-align: top; }
+  .table thead th { background: #ccc; font-weight: bold; }
+  .table tfoot th { font-weight: bold; }
+</style>`;
+    if (!openPrintWindow(title, headHtml, bodyHtml)) {
+      window.alert('Unable to open the print window. Please allow popups for this site.');
+    }
+    return;
+  }
+
+  if (mode === 'academic-subject-handle-grid') {
+    const bodyHtml = extractReportBodyHtml(html);
+    const headHtml = `<link href="/legacy/css/style_print.css" rel="stylesheet" />
+<style>
+  @page { size: A4 landscape; margin: 10mm; }
+  body { margin: 0; padding: 0; background: #fff; font-family: Arial, Helvetica, sans-serif; }
+  #form_details_panel { display: block !important; width: 100%; }
+  .table { width: 100%; border-collapse: collapse; margin: 0; }
+  .table th, .table td { border: 1px solid #333; font-size: 10px; padding: 3px 4px; vertical-align: top; text-align: center; }
+  .table .table-secondary { background: #ccc; font-weight: bold; }
+  .tt_time { white-space: nowrap; }
+</style>`;
+    if (!openPrintWindow('Subject Attendance Staff', headHtml, bodyHtml)) {
       window.alert('Unable to open the print window. Please allow popups for this site.');
     }
     return;

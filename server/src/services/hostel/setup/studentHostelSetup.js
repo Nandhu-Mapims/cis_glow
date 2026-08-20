@@ -3,8 +3,12 @@ import { escapeSql, parseId } from '../../../utils/sqlSafe.js';
 import {
   loadHostelBlocks,
   loadHostelRooms,
+  loadHostelSearchCourseOptions,
   loadStudentHostelStays,
   lookupStudentByRegister,
+  searchHostelStudentsByBatch,
+  searchHostelStudentsByRollNo,
+  searchHostelStudentsByYear,
 } from '../hostelShared.js';
 import { auditFields, logHostelSetup } from '../setupAudit.js';
 
@@ -12,25 +16,46 @@ const PAGE = 'student_hostel.php';
 
 export async function loadStudentHostelSetup(memberId, fields = {}, audit = {}) {
   const registerNo = String(fields.registerNo || '').trim().toUpperCase();
-  const [blocks, rooms] = await Promise.all([loadHostelBlocks(), loadHostelRooms(true)]);
+  const searchBy = String(fields.searchBy || 'roll_no').trim();
+  const searchInput = String(fields.searchInput || '').trim();
+  const searchCourse = String(fields.searchCourse || '').trim();
+  const searchYear = String(fields.searchYear || '').trim();
+
+  const [blocks, rooms, { batchOptions, yearOptions }] = await Promise.all([
+    loadHostelBlocks(), loadHostelRooms(true), loadHostelSearchCourseOptions(),
+  ]);
 
   let student = null;
   let stays = [];
+  let matches = [];
 
   if (registerNo) {
     student = await lookupStudentByRegister(registerNo);
     if (student) {
       stays = await loadStudentHostelStays(student.id);
     }
+  } else if (searchBy === 'batch' && searchCourse) {
+    matches = await searchHostelStudentsByBatch(searchCourse);
+  } else if (searchBy === 'year' && searchYear) {
+    matches = await searchHostelStudentsByYear(searchYear);
+  } else if (searchBy === 'roll_no' && searchInput) {
+    matches = await searchHostelStudentsByRollNo(searchInput.split(','));
   }
 
-  await logHostelSetup(PAGE, 'View', 'Successful', registerNo, memberId, audit);
+  await logHostelSetup(PAGE, 'View', 'Successful', registerNo || searchInput || searchCourse || searchYear, memberId, audit);
   return {
     registerNo,
+    searchBy,
+    searchInput,
+    searchCourse,
+    searchYear,
     student,
+    matches,
     stays: stays.length ? stays : [{ stayYear: '1', hostelDiscontinue: false }],
     blocks,
     rooms,
+    batchOptions,
+    yearOptions,
   };
 }
 

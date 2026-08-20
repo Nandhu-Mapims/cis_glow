@@ -1,6 +1,8 @@
 import { prisma } from '../../config/prisma.js';
 import { escapeSql, parseId } from '../../utils/sqlSafe.js';
 import { auditFields, logLibrarySetup, toIsoDate } from './setupAudit.js';
+import { studentIdCardPhotoUrl } from '../students/studentShared.js';
+import { staffPhotoDisplayUrl } from '../staff/staffShared.js';
 
 function fmtDateExpr(col, alias) {
   const a = alias || col.split('.').pop();
@@ -156,6 +158,7 @@ async function findStudentMember(registerNo, { activeOnly = true } = {}) {
     name: `${row.student_name || ''} ${row.student_initial || ''}`.trim(),
     designation,
     courseName: row.course_name || '',
+    photoUrl: (await studentIdCardPhotoUrl(row.register_no)) || '/legacy/img/empty_image.jpg',
   };
 }
 
@@ -182,6 +185,7 @@ async function findStaffMember(registerNo, { activeOnly = true } = {}) {
     name: `${row.staff_name || ''} ${row.staff_initial || ''}`.trim(),
     designation,
     courseName: '',
+    photoUrl: await staffPhotoDisplayUrl(row.staff_id, 'idcard'),
   };
 }
 

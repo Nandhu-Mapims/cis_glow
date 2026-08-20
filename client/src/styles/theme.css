@@ -78,6 +78,7 @@
   /* Layout */
   --cis-header-height: 64px;
   --cis-sidebar-width: 248px;
+  --cis-sidebar-collapsed-width: 76px;
   --cis-page-max: 1570px;
   --cis-shell-bg: #eae8e3;
   --cis-canvas-radius: 24px;

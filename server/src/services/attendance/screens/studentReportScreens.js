@@ -1,6 +1,7 @@
 import { prisma } from '../../../config/prisma.js';
 import { escapeSql } from '../../../utils/sqlSafe.js';
 import { convertNYear } from '../../fees/feeHelpers.js';
+import { loadAcademicConfig } from '../../shared/ciaSetupHelpers.js';
 import { formatDateDisplay, toIsoDate } from '../setupAudit.js';
 import {
   buildPgReportCourseOptions,
@@ -13,7 +14,6 @@ import {
   htmlTable,
   loadAttendanceBannerUrl,
   loadHolidayDates,
-  loadInternDepartments,
   logStudentAtt,
   parseDateRange,
   wrapReportHtml,
@@ -384,23 +384,148 @@ export async function loadPgReportsAttScreen(memberId, fields = {}, audit = {}) 
   };
 }
 
+// Mirrors istudent_att_report.php's Category select — course_name='U.G',
+// regular/additional CRRI batches, always current_year=5 (internship year).
+async function buildInternCategoryOptions() {
+  const config = await loadAcademicConfig();
+  const courses = await prisma.$queryRawUnsafe(
+    `SELECT id, degree_name, department_name, year_of_start FROM basic_setup_course_tb
+     WHERE del = 1 AND course_name = 'U.G' ORDER BY c_order ASC`,
+  );
+  const options = [];
+  for (const course of courses) {
+    const dept = course.department_name && course.department_name !== '-' ? ` - ${course.department_name}` : '';
+    const yearOfStart = Number(course.year_of_start) || 0;
+
+    const regularStart = Number(String(config['U.G'].regular || '').split('-')[0]) || 0;
+    for (let y = regularStart; y >= yearOfStart; y -= 1) {
+      const acYear = `${y}-${y + 1}`;
+      options.push({
+        value: `${course.id}___${acYear}___regular`,
+        label: `${course.degree_name}${dept} | ${acYear}`,
+        groupLabel: 'Regular Batch CRRI',
+      });
+    }
+    const additionalStart = Number(String(config['U.G'].additional || '').split('-')[0]) || 0;
+    for (let y = additionalStart; y >= yearOfStart; y -= 1) {
+      const acYear = `${y}-${y + 1}`;
+      options.push({
+        value: `${course.id}___${acYear}___additional`,
+        label: `${course.degree_name}${dept} | ${acYear}`,
+        groupLabel: 'Additional Batch CRRI',
+      });
+    }
+  }
+  return options;
+}
+
+// Resolves selected Category keys -> internship_timetable batches overlapping
+// the date range -> roll numbers from basic_subject_batch_tb (current_year=5).
+async function resolveInternRollNumbers(categoryKeys, fromDate, toDate) {
+  const tuples = categoryKeys
+    .map((key) => String(key).split('___'))
+    .filter((parts) => parts.length === 3 && parts[0] && parts[1] && parts[2]);
+  if (!tuples.length) return [];
+
+  const tupleWhere = tuples
+    .map(([courseId, acYear, type]) => `(course_id = '${escapeSql(courseId)}' AND academic_year = '${escapeSql(acYear)}' AND academic_type = '${escapeSql(type)}' AND current_year = '5')`)
+    .join(' OR ');
+
+  const batchRows = await prisma.$queryRawUnsafe(`
+    SELECT batch_no, course_id, academic_year, academic_type FROM internship_timetable
+    WHERE del = 1 AND (${tupleWhere})
+      AND (
+        (from_date >= '${escapeSql(fromDate)}' AND to_date <= '${escapeSql(toDate)}') OR
+        (from_date <= '${escapeSql(fromDate)}' AND to_date >= '${escapeSql(toDate)}') OR
+        (from_date <= '${escapeSql(fromDate)}' AND to_date >= '${escapeSql(fromDate)}' AND to_date <= '${escapeSql(toDate)}') OR
+        (from_date >= '${escapeSql(fromDate)}' AND from_date <= '${escapeSql(toDate)}' AND to_date >= '${escapeSql(toDate)}')
+      )
+  `);
+  if (!batchRows.length) return [];
+
+  const batchWhere = batchRows
+    .map((b) => `(course_id = '${escapeSql(String(b.course_id))}' AND academic_year = '${escapeSql(b.academic_year)}' AND academic_type = '${escapeSql(b.academic_type)}' AND current_year = '5' AND batch_no = '${escapeSql(b.batch_no)}')`)
+    .join(' OR ');
+  const rollRows = await prisma.$queryRawUnsafe(`
+    SELECT roll_no FROM basic_subject_batch_tb WHERE del = 1 AND (${batchWhere})
+  `);
+
+  const rolls = new Set();
+  for (const row of rollRows) {
+    for (const roll of String(row.roll_no || '').split(',')) {
+      const trimmed = roll.trim();
+      if (trimmed) rolls.add(trimmed);
+    }
+  }
+  return [...rolls];
+}
+
 export async function loadInternReportsAttScreen(memberId, fields = {}, audit = {}) {
   const { fromDate, toDate } = parseDateRange(fields);
-  const departments = await loadInternDepartments();
-  const rows = await prisma.$queryRawUnsafe(
-    `SELECT CAST(academic_date AS CHAR) AS academic_date, att_period, att_present, att_absent
-     FROM student_iatt_tb WHERE del=1
-       AND academic_date BETWEEN '${escapeSql(fromDate)}' AND '${escapeSql(toDate)}'
-     ORDER BY academic_date ASC LIMIT 500`,
-  );
-  const tableRows = rows.map((r) => [
-    escapeHtml(formatDateDisplay(r.academic_date)),
-    escapeHtml(r.att_period),
-    escapeHtml(String(r.att_present || '').slice(0, 60)),
-    escapeHtml(String(r.att_absent || '').slice(0, 60)),
-  ]);
+  const categoryOptions = await buildInternCategoryOptions();
+  const selectedKeys = Array.isArray(fields.search_category)
+    ? fields.search_category
+    : (fields.search_category ? [fields.search_category] : []);
+  const reportType = fields.report_type === 'Overall' ? 'Overall' : 'Monthly';
+  const shouldGenerate = fields.Submit === 'Generate' && selectedKeys.length > 0;
+
+  let reportHtml = null;
+  if (shouldGenerate) {
+    const rollNos = await resolveInternRollNumbers(selectedKeys, fromDate, toDate);
+    if (!rollNos.length) {
+      reportHtml = wrapReportHtml('Internship Attendance Report', '<p class="text-muted">No batches scheduled for the selected category and date range.</p>');
+    } else {
+      const students = await prisma.$queryRawUnsafe(`
+        SELECT register_no, student_name, student_initial FROM student_profile_tb
+        WHERE del = 1 AND register_no IN (${rollNos.map((r) => `'${escapeSql(r)}'`).join(',')})
+      `);
+      const nameByRoll = new Map(students.map((s) => [s.register_no, `${s.student_initial || ''} ${s.student_name || ''}`.trim()]));
+
+      const attRows = await prisma.$queryRawUnsafe(`
+        SELECT att_present, att_absent FROM student_iatt_tb
+        WHERE del = 1 AND academic_date BETWEEN '${escapeSql(fromDate)}' AND '${escapeSql(toDate)}'
+      `);
+      const tally = new Map(rollNos.map((r) => [r, { present: 0, absent: 0 }]));
+      for (const row of attRows) {
+        for (const roll of String(row.att_present || '').split(',')) {
+          const t = tally.get(roll.trim());
+          if (t) t.present += 1;
+        }
+        for (const roll of String(row.att_absent || '').split(',')) {
+          const t = tally.get(roll.trim());
+          if (t) t.absent += 1;
+        }
+      }
+
+      const tableRows = rollNos.map((roll) => {
+        const t = tally.get(roll) || { present: 0, absent: 0 };
+        const total = t.present + t.absent;
+        const pct = total > 0 ? `${((t.present / total) * 100).toFixed(1)}%` : '';
+        return [
+          escapeHtml(roll),
+          escapeHtml(nameByRoll.get(roll) || ''),
+          String(total),
+          String(t.present),
+          String(t.absent),
+          pct,
+        ];
+      });
+      reportHtml = wrapReportHtml(
+        `Internship Attendance Report (${reportType})`,
+        htmlTable(['Roll No', 'Student Name', 'Total', 'Present', 'Absent', '%'], tableRows),
+      );
+    }
+  }
+
   await logStudentAtt('istudent_att_report.php', fields.Submit ? 'Generate' : 'View', 'Successful', fromDate, memberId, audit);
-  return { departments, from_date: formatDateDisplay(fromDate), to_date: formatDateDisplay(toDate), reportHtml: wrapReportHtml('Internship Attendance Report', htmlTable(['Date', 'Period', 'Present', 'Absent'], tableRows)) };
+  return {
+    categoryOptions,
+    search_category: selectedKeys,
+    report_type: reportType,
+    from_date: formatDateDisplay(fromDate),
+    to_date: formatDateDisplay(toDate),
+    reportHtml,
+  };
 }
 
 export { loadInternAttStatementScreen } from '../internAttStatementCore.js';

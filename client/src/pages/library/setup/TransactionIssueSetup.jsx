@@ -77,7 +77,12 @@ export default function TransactionIssueSetup({ data, busy, onLoad, onSave }) {
         <div className="col-12">
           <table className="table table-bordered mb-3">
             <tbody>
-              <tr><td><strong>{data.member.name}</strong></td></tr>
+              <tr>
+                <td width="30%" align="center" rowSpan={3}>
+                  <img src={data.member.photoUrl} alt="" width="70" height="80" />
+                </td>
+                <td><strong>{data.member.name}</strong></td>
+              </tr>
               <tr><td>{data.member.designation}</td></tr>
               <tr><td>Issued: <strong>{data.issuedCount}</strong> / {data.limit}</td></tr>
             </tbody>

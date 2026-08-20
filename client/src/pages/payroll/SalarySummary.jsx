@@ -237,6 +237,7 @@ export default function SalarySummary() {
         busyLabel={busyLabel}
         showPanel={showReportPanel}
         reportHtml={data?.reportHtml}
+        panelClassName="payroll-report-root payroll-report-table-scroll"
         emptyFilterMessage="No salary summary data for the selected filters."
         hintMessage="Select month and category groups, then click Go."
       />
